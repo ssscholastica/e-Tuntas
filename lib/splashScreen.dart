@@ -14,10 +14,10 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
     Timer(
-      Duration(seconds: 3),
+      const Duration(seconds: 3),
       () => Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => SplashScreen()),
+        MaterialPageRoute(builder: (context) => const SplashScreen()),
       ),
     );
   }
@@ -30,9 +30,54 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              // margin: EdgeInsets.only(bottom: 50),
-              child: Image.asset("assets/logowebsite2.png", height: 300),
+            Column(
+              children: [
+                Image.asset("assets/logo ptptn 1.png", height: 100),
+                const SizedBox(height: 10),
+                const Text(
+                  "PTPN 1 Regional 4",
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 40),
+            Image.asset("assets/Credit card-pana 1.png", height: 200),
+            const SizedBox(height: 40),
+            const Text(
+              "Heading 1",
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              "Heading 2",
+              style: TextStyle(fontSize: 18, color: Colors.grey),
+            ),
+            const SizedBox(height: 30),
+            ElevatedButton(
+              onPressed: () {},
+              style: ElevatedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Text("Daftar", style: TextStyle(fontSize: 16)),
+            ),
+            const SizedBox(height: 20),
+            const Text("atau",
+                style: TextStyle(fontSize: 14, color: Colors.grey)),
+            const SizedBox(height: 20),
+            OutlinedButton(
+              onPressed: () {},
+              style: OutlinedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Text("Login", style: TextStyle(fontSize: 16)),
             ),
           ],
         ),
