@@ -13,6 +13,11 @@ class _SplashScreenState extends State<SplashScreen> {
     super.initState();
   }
 
+  final LinearGradient _gradient = const LinearGradient(
+      colors: <Color>[Color(0xFF26267E), Color(0xFF2F2F9D), Color(0xFF6F6FB9)],
+      begin: Alignment.centerLeft,
+      end: Alignment.centerRight);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -24,28 +29,44 @@ class _SplashScreenState extends State<SplashScreen> {
             padding: const EdgeInsets.only(left: 20, right: 20),
             child: Row(
               children: [
-                Image.asset("assets/logo ptpn1.png", height: 50),
-                const SizedBox(height: 10),
+                Image.asset(
+                  "assets/logo ptpn1.png",
+                  height: 34.653465270996094,
+                  width: 25,
+                ),
+                const SizedBox(
+                  width: 10,
+                ),
                 const Text(
-                  "Santunan PTPN 1 Regional 4",
+                  "Regional 4",
                   style: TextStyle(
-                      fontSize: 15,
+                      fontSize: 9,
                       fontWeight: FontWeight.bold,
-                      color: Colors.grey),
+                      color: Color(0xFF8C8C8C)),
                 ),
                 const Spacer(),
-                const Text(
-                  "E-Tuntas",
-                  style: TextStyle(
+                ShaderMask(
+                  blendMode: BlendMode.srcIn,
+                  shaderCallback: (Rect rect) {
+                    return _gradient.createShader(rect);
+                  },
+                  child: const Text(
+                    "E-Tuntas",
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF2F2F9D)),
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 40),
-          Image.asset("assets/Credit card-pana 1.png", height: 300),
+          Image.asset(
+            "assets/Credit card-pana 1.png",
+            height: 300,
+            width: 300,
+          ),
           const SizedBox(height: 40),
           Align(
             alignment: Alignment.centerLeft,
@@ -60,9 +81,21 @@ class _SplashScreenState extends State<SplashScreen> {
           const SizedBox(height: 10),
           Container(
             margin: const EdgeInsets.only(left: 30, right: 30),
-            child: const Text(
-              "Silakan lakukan Pendaftaran terlebih dahulu. Jika sudah memiliki username dan password silakan login",
-              style: TextStyle(fontSize: 15, color: Colors.black),
+            child: RichText(
+              text: const TextSpan(
+                style: TextStyle(fontSize: 14, color: Colors.black),
+                children: <TextSpan>[
+                  TextSpan(text: "Silakan lakukan "),
+                  TextSpan(
+                    text: "Pendaftaran",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  TextSpan(
+                    text:
+                        " terlebih dahulu. Jika sudah memiliki username dan password silakan login",
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 30),
