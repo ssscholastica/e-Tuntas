@@ -1,3 +1,4 @@
+import 'package:etuntas/navbar.dart';
 import 'package:flutter/material.dart';
 
 class Home extends StatefulWidget {
@@ -26,7 +27,7 @@ Widget buildImageBox(String imagePath, String label) {
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: const Color(0xFFEDEFF3),
             borderRadius: BorderRadius.circular(10),
             boxShadow: [
               BoxShadow(
@@ -151,6 +152,7 @@ Widget buildImageBox(String imagePath, String label) {
           ),
         ],
       ),
+      bottomNavigationBar: NavbarWidget(),
     );
   }
 }
