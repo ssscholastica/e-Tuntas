@@ -17,7 +17,6 @@ dev_dependencies:
   flutter_lints: ^2.0.0
 
 flutter:
-<<<<<<< Updated upstream
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
@@ -53,6 +52,3 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
-=======
-  uses-material-design: true
->>>>>>> Stashed changes

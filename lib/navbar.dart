@@ -1,4 +1,5 @@
 import 'package:etuntas/home.dart';
+import 'package:etuntas/profile.dart';
 import 'package:flutter/material.dart';
 
 class NavbarWidget extends StatelessWidget {
@@ -53,7 +54,7 @@ class NavbarWidget extends StatelessWidget {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const Home()),
+                        MaterialPageRoute(builder: (context) => const Profile()),
                       );
                     },
                     icon: const Icon(
