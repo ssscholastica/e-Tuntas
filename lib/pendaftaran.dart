@@ -1,416 +1,290 @@
+import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
-class Pendaftaran extends StatelessWidget {
+class Pendaftaran extends StatefulWidget {
+  @override
+  Pendaftaran({super.key});
+
+  @override
+  State<Pendaftaran> createState() => _PendaftaranState();
+}
+
+class _PendaftaranState extends State<Pendaftaran> {
+  final Map<String, TextEditingController> controllers = {
+    "Nama Pendaftar": TextEditingController(),
+    "Email": TextEditingController(),
+    "Alamat": TextEditingController(),
+    "Tanggal Lahir": TextEditingController(),
+    "Nomor HP": TextEditingController(),
+    "instansi": TextEditingController(),
+    "jabatan": TextEditingController(),
+  };
+
+  Future<void> selectDate(BuildContext context) async {
+    DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+    );
+    if (pickedDate != null) {
+      String formattedDate = DateFormat('dd-MM-yyyy').format(pickedDate);
+      setState(() {
+        controllers["Tanggal Lahir"]?.text = formattedDate;
+      });
+    }
+  }
+
+  final List<String> instansiList = [
+    "Kebun Jember",
+    "Kebun Lumajang I",
+    "Kebun Lumajang II",
+    "Kebun Doho",
+    "Kebun Banyuwangi",
+    "Kebun Madiun"
+  ];
+  String? selectedInstansi;
+
+  final List<String> statusKeluargaList = [
+    "Istri",
+    "Suami",
+    "Anak",
+    "Kakak",
+    "Adik"
+  ];
+  String? selectedStatusKeluarga;
+
+  Widget buildTextField(String key, String label, String hint,
+      {TextInputType? keyboardType, Widget? prefix, bool isDate = false}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 16)),
+        const SizedBox(height: 3),
+        SizedBox(
+          width: MediaQuery.of(context).size.width,
+          child: TextField(
+            controller: controllers[key],
+            keyboardType: keyboardType,
+            readOnly: isDate,
+            onTap: isDate ? () => selectDate(context) : null,
+            decoration: InputDecoration(
+              hintText: hint,
+              prefixIcon: prefix,
+              border: const OutlineInputBorder(),
+              contentPadding:
+                  const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              suffixIcon: isDate ? const Icon(Icons.calendar_today) : null,
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+      ],
+    );
+  }
+
+  @override
+  void dispose() {
+    for (var controller in controllers.values) {
+      controller.dispose();
+    }
+  }
+
+  void handleSubmit() {
+    print("Nama: ${controllers["Nama"]?.text}");
+    print("Email: ${controllers["Email"]?.text}");
+    print("Alamat: ${controllers["Alamat"]?.text}");
+    print("Tanggal lahir: ${controllers["Tanggal lahir"]?.text}");
+    print("Nomor HP: ${controllers["Nomor HP"]?.text}");
+    print("PG/Unit Terakhir Dinas: $selectedInstansi");
+    print("NIK: ${controllers["NIK"]?.text}");
+    print("Nomor Pensiunan: ${controllers["Nomor Pensiunan"]?.text}");
+    print("Status Hubungan Keluarga: $selectedStatusKeluarga");
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
-      body: SingleChildScrollView(
-        child: SignUpForm1(),
-      ),
-    );
-  }
-}
-
-class SignUpForm1 extends StatefulWidget {
-  @override
-  State<SignUpForm1> createState() => _SignUpFormState();
-}
-
-class _SignUpFormState extends State<SignUpForm1> {
-  String? errorMessage;
-
-  TextEditingController firstnamecontroller = TextEditingController();
-  TextEditingController lastnamecontroller = TextEditingController();
-  TextEditingController passwordcontroller = TextEditingController();
-  TextEditingController emailcontroller = TextEditingController();
-  TextEditingController confirmcontroller = TextEditingController();
-  TextEditingController findcontroller = TextEditingController();
-  TextEditingController campuscontroller = TextEditingController();
-  TextEditingController majorcontroller = TextEditingController();
-
-  final _formKey = GlobalKey<FormState>();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 414,
-      height: 932,
-      color: Colors.white,
-      child: Stack(children: [
-        Positioned(
-          left: 32,
-          top: 5,
-          child: Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                SizedBox(
-                  width: 370,
-                  height: 40,
+        resizeToAvoidBottomInset: true,
+        appBar: AppBar(
+          title: const Text(
+            "Pendaftaran",
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+          ),
+          backgroundColor: Colors.white,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.black),
+            onPressed: () {},
+          ),
+        ),
+        body: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Padding(
+                  padding: EdgeInsets.only(left: 20.0, right: 16.0),
                   child: Text(
-                    'Pendaftaran',
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 25,
-                      fontWeight: FontWeight.bold,
+                      "Lengkapi form pendaftaran berikut untuk masuk kedalam sistem",
+                      style: TextStyle(fontSize: 16, color: Colors.black))),
+              const SizedBox(height: 10),
+              Divider(color: Colors.grey[300], thickness: 8, height: 20),
+              Padding(
+                padding: EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Data Penerima",
+                      style:
+                          TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                     ),
-                  ),
-                ),
-                SizedBox(
-                    width: 370,
-                    height: 50,
-                    child: Text(
-                        'Lengkapi form pendaftaran berikut untuk masuk kedalam sistem',
-                        style: TextStyle(color: Colors.black, fontSize: 15)))
-              ],
-            ),
-          ),
-        ),
-        Positioned(
-            top: 130,
-            left: 32,
-            child: SizedBox(
-                width: 290,
-                child: Text(
-                  'Data Penerima',
-                  style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700),
-                ))),
-        Positioned(
-          left: 32,
-          top: 102,
-          child: SizedBox(
-            width: 290,
-            child: Text(
-              'Nama Pendaftar',
-              style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700),
-            ),
-          ),
-        ),
-        Positioned(
-          left: 32,
-          top: 133,
-          child: Container(
-            width: 343,
-            height: 45,
-            decoration: BoxDecoration(
-              border: Border.all(width: 0.50, color: Color(0xFF828282)),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.only(left: 16),
-              child: TextFormField(),
-            ),
-          ),
-        ),
-        Positioned(
-          left: 32,
-          top: 214,
-          child: SizedBox(
-            width: 290,
-            child: Text(
-              'Email',
-              style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700),
-            ),
-          ),
-        ),
-        Positioned(
-          left: 32,
-          top: 245,
-          child: Container(
-            width: 343,
-            height: 45,
-            decoration: BoxDecoration(
-              border: Border.all(width: 0.50, color: Color(0xFF828282)),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.only(left: 16),
-              child: TextFormField(
-                onSaved: (value) {
-                  firstnamecontroller.text = value!;
-                },
-                controller: firstnamecontroller,
-                showCursor: true,
-                textAlign: TextAlign.start,
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 20,
-                ),
-                decoration: InputDecoration(border: InputBorder.none),
-              ),
-            ),
-          ),
-        ),
-        Positioned(
-          left: 32,
-          top: 326,
-          child: SizedBox(
-            width: 290,
-            child: Text(
-              'Alamat',
-              style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700),
-            ),
-          ),
-        ),
-        Positioned(
-          left: 32,
-          top: 357,
-          child: Container(
-            width: 343,
-            height: 45,
-            decoration: BoxDecoration(
-              border: Border.all(width: 0.50, color: Color(0xFF828282)),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.only(left: 16),
-              child: TextFormField(
-                onSaved: (value) {
-                  lastnamecontroller.text = value!;
-                },
-                controller: lastnamecontroller,
-                showCursor: true,
-                textAlign: TextAlign.start,
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 20,
-                ),
-                decoration: InputDecoration(border: InputBorder.none),
-              ),
-            ),
-          ),
-        ),
-        Positioned(
-          left: 32,
-          top: 438,
-          child: SizedBox(
-            width: 290,
-            child: Text(
-              'Tanggal lahir',
-              style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700),
-            ),
-          ),
-        ),
-        Positioned(
-          left: 32,
-          top: 469,
-          child: Container(
-            width: 343,
-            height: 45,
-            decoration: BoxDecoration(
-              border: Border.all(width: 0.50, color: Color(0xFF828282)),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.only(left: 16),
-              child: TextFormField(
-                onSaved: (value) {
-                  passwordcontroller.text = value!;
-                },
-                controller: passwordcontroller,
-                showCursor: true,
-                textAlign: TextAlign.start,
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 20,
-                ),
-                decoration: InputDecoration(border: InputBorder.none),
-                obscureText: true,
-              ),
-            ),
-          ),
-        ),
-        Positioned(
-          left: 32,
-          top: 550,
-          child: SizedBox(
-            width: 290,
-            child: Text(
-              'Nomor HP',
-              style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700),
-            ),
-          ),
-        ),
-        Positioned(
-          left: 32,
-          top: 581,
-          child: Container(
-            width: 343,
-            height: 45,
-            decoration: BoxDecoration(
-              border: Border.all(width: 0.50, color: Color(0xFF828282)),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.only(left: 16),
-              child: TextFormField(
-                onSaved: (value) {
-                  confirmcontroller.text = value!;
-                },
-                controller: confirmcontroller,
-                showCursor: true,
-                textAlign: TextAlign.start,
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 20,
-                ),
-                decoration: InputDecoration(border: InputBorder.none),
-                obscureText: true,
-              ),
-            ),
-          ),
-        ),
-        Positioned(
-          left: 32,
-          top: 662,
-          child: SizedBox(
-            width: 290,
-            child: Text(
-              'PG/Unit Terakhir Dinas',
-              style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700),
-            ),
-          ),
-        ),
-        Positioned(
-          left: 32,
-          top: 717,
-          child: Container(
-            width: 343,
-            height: 45,
-            decoration: BoxDecoration(
-              border: Border.all(width: 0.50, color: Color(0xFF828282)),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.only(left: 16),
-              child: TextFormField(
-                validator: (value) {
-                  if (_formKey.currentState!.validate()) {
-                    return ("This cannot be Empty");
-                  }
-                  return null;
-                },
-                onSaved: (value) {
-                  findcontroller.text = value!;
-                },
-                controller: findcontroller,
-                showCursor: true,
-                textAlign: TextAlign.start,
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 20,
-                ),
-                decoration: InputDecoration(border: InputBorder.none),
-              ),
-            ),
-          ),
-        ),
-        Positioned(
-          left: 332,
-          top: 845,
-          child: SizedBox(
-            width: 112,
-            child: Text(
-              'Step 1 of 2',
-              style: TextStyle(
-                color: Color(0xFF828282),
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
-                height: 0,
-              ),
-            ),
-          ),
-        ),
-        Positioned(
-          left: 207,
-          top: 868,
-          child: Container(
-            width: 196,
-            decoration: ShapeDecoration(
-              shape: RoundedRectangleBorder(
-                side: BorderSide(
-                  width: 2,
-                  strokeAlign: BorderSide.strokeAlignCenter,
-                  color: Color(0xFF828282),
-                ),
-              ),
-            ),
-          ),
-        ),
-        Positioned(
-          left: 10,
-          top: 868,
-          child: Container(
-            width: 197,
-            decoration: ShapeDecoration(
-              shape: RoundedRectangleBorder(
-                side: BorderSide(
-                  width: 2,
-                  strokeAlign: BorderSide.strokeAlignCenter,
-                  color: Color(0xFFF6AF1F),
-                ),
-              ),
-            ),
-          ),
-        ),
-        Positioned(
-          left: 287,
-          top: 877,
-          child: GestureDetector(
-            // onTap: () {
-            //   uploadData();
-            // },
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Container(
-                  width: 94.95,
-                  height: 37,
-                  decoration: ShapeDecoration(
-                    color: Color(0xFF0B1F56),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
+                    Divider(color: Colors.grey[300], thickness: 3),
+                    buildTextField("Nama", "Nama Pendaftar", "Nama Penerima"),
+                    buildTextField("Email", "Email", "example@gmail.com"),
+                    buildTextField("Alamat", "Alamat", "Alamat Penerima"),
+                    buildTextField(
+                        "Tanggal Lahir", "Tanggal Lahir", "Pilih tanggal lahir",
+                        isDate: true),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text("Nomor HP", style: TextStyle(fontSize: 16)),
+                        const SizedBox(height: 5),
+                        TextField(
+                          controller: controllers["Nomor HP"],
+                          keyboardType: TextInputType.phone,
+                          style: const TextStyle(fontSize: 14),
+                          decoration: const InputDecoration(
+                            hintText: "Nomor HP Penerima",
+                            border: OutlineInputBorder(),
+                            contentPadding: EdgeInsets.symmetric(
+                                vertical: 8, horizontal: 12),
+                            prefixIcon: Padding(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 12),
+                              child: Text(
+                                "+62",
+                                style: TextStyle(
+                                    fontSize: 14, color: Colors.black),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                      ],
                     ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      'Next',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
+                  ],
+                ),
+              ),
+              const SizedBox(height: 5),
+              Divider(color: Colors.grey[300], thickness: 8, height: 20),
+              Padding(
+                padding: EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("Data Bersangkutan",
+                        style: TextStyle(
+                            fontSize: 22, fontWeight: FontWeight.bold)),
+                    const Divider(color: Colors.grey, thickness: 3, height: 16),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text("PG / Unit Terakhir Dinas",
+                            style: TextStyle(fontSize: 16)),
+                        const SizedBox(height: 5),
+                        DropdownSearch<String>(
+                          items: instansiList,
+                          selectedItem: selectedInstansi,
+                          popupProps: PopupProps.menu(
+                            showSearchBox: true,
+                            fit: FlexFit
+                                .loose,
+                            searchFieldProps: TextFieldProps(
+                              decoration: InputDecoration(
+                                hintText: "Search",
+                                prefixIcon:
+                                    Icon(Icons.search),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            ),
+                          ),
+                          dropdownDecoratorProps: DropDownDecoratorProps(
+                            dropdownSearchDecoration: InputDecoration(
+                              hintText: "PG/Unit Terakhir",
+                              border: OutlineInputBorder(),
+                              contentPadding: EdgeInsets.symmetric(
+                                  vertical: 8, horizontal: 12),
+                            ),
+                          ),
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              selectedInstansi = newValue;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 10),
+                      ],
+                    ),
+                    buildTextField("No Pensiun", "Nomor Pensiunan",
+                        "12 digit nomor pensiunan"),
+                    buildTextField("NIK", "NIK", "12 digit NIK"),
+                    buildTextField(
+                        "Nama Bersangkutan", "Nama", "Nama bersangkutan"),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text("Status Hubungan Keluarga",
+                            style: TextStyle(fontSize: 16)),
+                        const SizedBox(height: 5),
+                        DropdownButtonFormField<String>(
+                          value: selectedStatusKeluarga,
+                          decoration: const InputDecoration(
+                            hintText: "Status Hubungan",
+                            border: OutlineInputBorder(),
+                            contentPadding: EdgeInsets.symmetric(
+                                vertical: 8, horizontal: 10),
+                            isDense: true,
+                          ),
+                          items: statusKeluargaList.map((String status) {
+                            return DropdownMenuItem<String>(
+                              value: status,
+                              child: Text(status),
+                            );
+                          }).toList(),
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              selectedStatusKeluarga = newValue;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 10),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: Color(0xFF2F2F9D),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8))),
+                        onPressed: handleSubmit,
+                        child: const Text(
+                          "Daftar",
+                          style: TextStyle(fontSize: 16, color: Colors.white),
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ),
-      ]),
-    );
+        ));
   }
 }

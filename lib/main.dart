@@ -1,6 +1,6 @@
 import 'package:etuntas/home.dart';
 import 'package:etuntas/splashScreen.dart';
-import 'package:etuntas/pendaftaran.dart';
+import 'pendaftaran.dart';
 import 'package:flutter/material.dart';
 // import 'package:google_fonts/google_fonts.dart';
 
@@ -9,13 +9,13 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: Home(),
+      home: Pendaftaran(),
     );
   }
 }
