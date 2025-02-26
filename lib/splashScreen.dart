@@ -1,3 +1,4 @@
+import 'package:etuntas/pendaftaran.dart';
 import 'package:flutter/material.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -100,7 +101,12 @@ class _SplashScreenState extends State<SplashScreen> {
           ),
           const SizedBox(height: 30),
           ElevatedButton(
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => Pendaftaran()),
+              );
+            },
             style: ElevatedButton.styleFrom(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 140, vertical: 15),
