@@ -1,16 +1,14 @@
-import 'package:etuntas/navbar.dart';
-import 'package:etuntas/home.dart';
-import 'package:etuntas/profile.dart';
+import 'package:etuntas/profile/profile.dart';
 import 'package:flutter/material.dart';
 
-class EditBerhasil extends StatefulWidget {
-  const EditBerhasil({super.key});
+class UbahBerhasil extends StatefulWidget {
+  const UbahBerhasil({super.key});
 
   @override
-  State<EditBerhasil> createState() => _EditBerhasilState();
+  State<UbahBerhasil> createState() => _UbahBerhasilState();
 }
 
-class _EditBerhasilState extends State<EditBerhasil> {
+class _UbahBerhasilState extends State<UbahBerhasil> {
   @override
   void initState() {
     super.initState();
@@ -53,7 +51,7 @@ class _EditBerhasilState extends State<EditBerhasil> {
                       width: 300, height: 300)),
               const Center(
                   child: Text(
-                'Berhasil Menyimpan Perubahan!',
+                'Kata Sandi Berhasil Diperbarui!',
                 style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w500,
@@ -62,7 +60,7 @@ class _EditBerhasilState extends State<EditBerhasil> {
               const SizedBox(height: 10),
               const Center(
                 child: Text(
-                  'Profile Anda Berhasil Diperbarui',
+                  'Kata Sandi Anda Berhasil Diperbarui',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w400,
