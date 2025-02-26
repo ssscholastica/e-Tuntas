@@ -1,5 +1,6 @@
 import 'package:etuntas/profile/editProfile.dart';
 import 'package:etuntas/navbar.dart';
+import 'package:etuntas/profile/profile.dart';
 import 'package:etuntas/profile/ubahSandi.dart';
 import 'package:flutter/material.dart';
 
@@ -90,21 +91,43 @@ class _ProfileBersangkutanState extends State<ProfileBersangkutan> {
         children: [
           Center(
             child: Container(
-                margin: const EdgeInsets.only(top: 80),
-                child: const Text(
-                  "Akun Pengguna",
-                  style: TextStyle(
+              margin: const EdgeInsets.only(top: 80, left: 20, right: 20, bottom: 10),
+              child: Row(
+                children: [
+                  InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const Profile()),
+                      );
+                    },
+                    child: Image.asset(
+                      'assets/simbol back.png',
+                      width: 28,
+                      height: 28,
+                    ),
+                  ),
+                  const Spacer(),
+                  const Text(
+                    "Profile Bersangkutan",
+                    style: TextStyle(
                       fontSize: 18,
                       color: Color(0XFF000000),
-                      fontWeight: FontWeight.bold),
-                )),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const Spacer(flex: 1),
+                ],
+              ),
+            ),
           ),
           SizedBox(
             height: MediaQuery.of(context).size.height - 510,
             child: Stack(
               children: [
                 Image.asset(
-                  "assets/background profile.png",
+                  "assets/background data bersangkutan.png",
                   width: MediaQuery.of(context).size.width,
                   fit: BoxFit.cover,
                 ),
@@ -126,46 +149,26 @@ class _ProfileBersangkutanState extends State<ProfileBersangkutan> {
                     ),
                     child: Column(
                       children: [
-                        Padding(
-                          padding: const EdgeInsets.only(
-                              top: 40, left: 20, right: 20),
-                          child: Row(
-                            children: [
-                              const Text(
-                                "Profile",
-                                style: TextStyle(
-                                    fontSize: 16,
-                                    color: Color(0XFF000000),
-                                    fontWeight: FontWeight.bold),
-                              ),
-                              const Spacer(),
-                              InkWell(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            const EditProfile()),
-                                  );
-                                },
-                                child: const Text(
-                                  "Edit",
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      color: Color(0XFF2F2F9D),
-                                      fontWeight: FontWeight.bold),
-                                ),
-                              )
-                            ],
+                        const Padding(
+                          padding: EdgeInsets.only(
+                              top: 20, left: 20, right: 20),
+                          child: Center(
+                            child: Text(
+                              "Informasi Data Bersangkutan",
+                              style: TextStyle(
+                                  fontSize: 16,
+                                  color: Color(0XFF000000),
+                                  fontWeight: FontWeight.bold),
+                            ),
                           ),
                         ),
                         Column(
                           children: [
-                            buildTemplate('Nama Lengkap', "Sri Indah"),
-                            buildTemplate('Email', "sriindah@gmail.com"),
-                            buildTemplate('Nomor HP', "+6281234567891"),
-                            buildTemplate('Tanggal Lahir', "2 Februari 2002"),
-                            buildTemplate('Alamat', "Jl. Merak 1"),
+                            buildTemplate('Nama Lengkap', "Suyitno"),
+                            buildTemplate('Unit Terakhir Dinas', "Kebun Banyuwangi"),
+                            buildTemplate('NIK', "3578012350010001"),
+                            buildTemplate('Nomor Pensiunan', "342518910019910"),
+                            buildTemplate('Status', "Istri"),
                             const SizedBox(
                               height: 20,
                             )
@@ -175,58 +178,9 @@ class _ProfileBersangkutanState extends State<ProfileBersangkutan> {
                     ),
                   ),
                 ),
-                const Positioned(
-                    top: 40,
-                    left: 0,
-                    right: 0,
-                    child: Center(
-                      child: CircleAvatar(
-                        radius: 40,
-                        backgroundImage: AssetImage("assets/profile.png"),
-                      ),
-                    ))
               ],
             ),
           ),
-          Container(
-            alignment: Alignment.topLeft,
-            margin: const EdgeInsets.only(top: 15, left: 20, bottom: 20),
-            child: const Text(
-              'Lainnya',
-              style: TextStyle(
-                  fontSize: 16,
-                  color: Color(0XFF000000),
-                  fontWeight: FontWeight.w600),
-            ),
-          ),
-          Center(
-            child: Container(
-              height: 150,
-              width: 330,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF9FAFD),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Column(
-                children: [
-                  InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const UbahSandi()),
-                      );
-                    },
-                    child: buildTemplateBawah('assets/logo sandi.png',
-                        'Ganti Kata Sandi', 'assets/simbol next.png'),
-                  ),
-                  buildTemplateBawah('assets/logo informasi.png',
-                      'Informasi Data Bersangkutan', 'assets/simbol next.png'),
-                  buildTemplateBawah('assets/logo logout.png', 'Keluar', null)
-                ],
-              ),
-            ),
-          )
         ],
       ),
       bottomNavigationBar: const NavbarWidget(),
