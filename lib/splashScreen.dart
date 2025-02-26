@@ -1,5 +1,5 @@
-import 'package:etuntas/pendaftaran.dart';
 import 'package:flutter/material.dart';
+import 'login-signup/pendaftaran.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});

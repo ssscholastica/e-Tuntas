@@ -1,5 +1,5 @@
 import 'package:etuntas/home.dart';
-import 'package:etuntas/pendaftaran.dart';
+import 'package:etuntas/login-signup/pendaftaran.dart';
 import 'package:flutter/material.dart';
 
 class Login extends StatelessWidget {
