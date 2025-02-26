@@ -1,4 +1,6 @@
 import 'package:dropdown_search/dropdown_search.dart';
+import 'package:etuntas/login-signup/daftarBerhasil.dart';
+import 'package:etuntas/splashScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -116,7 +118,12 @@ class _PendaftaranState extends State<Pendaftaran> {
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.black),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => SplashScreen()),
+              );
+            },
           ),
         ),
         body: SingleChildScrollView(
@@ -200,13 +207,11 @@ class _PendaftaranState extends State<Pendaftaran> {
                           selectedItem: selectedInstansi,
                           popupProps: PopupProps.menu(
                             showSearchBox: true,
-                            fit: FlexFit
-                                .loose,
+                            fit: FlexFit.loose,
                             searchFieldProps: TextFieldProps(
                               decoration: InputDecoration(
                                 hintText: "Search",
-                                prefixIcon:
-                                    Icon(Icons.search),
+                                prefixIcon: Icon(Icons.search),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
@@ -270,10 +275,18 @@ class _PendaftaranState extends State<Pendaftaran> {
                       width: double.infinity,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                            backgroundColor: Color(0xFF2F2F9D),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8))),
-                        onPressed: handleSubmit,
+                          backgroundColor: Color(0xFF2F2F9D),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => DaftarBerhasil()),
+                          );
+                        },
                         child: const Text(
                           "Daftar",
                           style: TextStyle(fontSize: 16, color: Colors.white),
