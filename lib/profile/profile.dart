@@ -1,5 +1,8 @@
-import 'package:etuntas/editProfile.dart';
+import 'package:etuntas/profile/editProfile.dart';
 import 'package:etuntas/navbar.dart';
+import 'package:etuntas/profile/profileBersangkutan.dart';
+import 'package:etuntas/profile/ubahSandi.dart';
+import 'package:etuntas/splashScreen.dart';
 import 'package:flutter/material.dart';
 
 class Profile extends StatefulWidget {
@@ -126,8 +129,8 @@ class _ProfileState extends State<Profile> {
                     child: Column(
                       children: [
                         Padding(
-                          padding:
-                              const EdgeInsets.only(top: 40, left: 20, right: 20),
+                          padding: const EdgeInsets.only(
+                              top: 40, left: 20, right: 20),
                           child: Row(
                             children: [
                               const Text(
@@ -139,7 +142,7 @@ class _ProfileState extends State<Profile> {
                               ),
                               const Spacer(),
                               InkWell(
-                                 onTap: () {
+                                onTap: () {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
@@ -208,11 +211,40 @@ class _ProfileState extends State<Profile> {
               ),
               child: Column(
                 children: [
-                  buildTemplateBawah('assets/logo sandi.png',
-                      'Ganti Kata Sandi', 'assets/simbol next.png'),
-                  buildTemplateBawah('assets/logo informasi.png',
-                      'Informasi Data Bersangkutan', 'assets/simbol next.png'),
-                  buildTemplateBawah('assets/logo logout.png', 'Keluar', null)
+                  InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const UbahSandi()),
+                      );
+                    },
+                    child: buildTemplateBawah('assets/logo sandi.png',
+                        'Ganti Kata Sandi', 'assets/simbol next.png'),
+                  ),
+                  InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const ProfileBersangkutan()),
+                      );
+                    },
+                    child: buildTemplateBawah(
+                        'assets/logo informasi.png',
+                        'Informasi Data Bersangkutan',
+                        'assets/simbol next.png'),
+                  ),
+                  InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const SplashScreen()),
+                        );
+                      },
+                      child: buildTemplateBawah(
+                          'assets/logo logout.png', 'Keluar', null))
                 ],
               ),
             ),

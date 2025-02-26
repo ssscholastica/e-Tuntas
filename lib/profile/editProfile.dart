@@ -1,6 +1,6 @@
-import 'package:etuntas/editBerhasil.dart';
+import 'package:etuntas/profile/editBerhasil.dart';
 import 'package:etuntas/navbar.dart';
-import 'package:etuntas/profile.dart';
+import 'package:etuntas/profile/profile.dart';
 import 'package:flutter/material.dart';
 
 class EditProfile extends StatefulWidget {

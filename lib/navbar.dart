@@ -1,5 +1,5 @@
 import 'package:etuntas/home.dart';
-import 'package:etuntas/profile.dart';
+import 'package:etuntas/profile/profile.dart';
 import 'package:flutter/material.dart';
 
 class NavbarWidget extends StatelessWidget {
