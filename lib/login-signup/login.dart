@@ -1,14 +1,22 @@
 import 'package:etuntas/home.dart';
+import 'package:etuntas/login-signup/forgotPassword.dart';
 import 'package:etuntas/login-signup/pendaftaran.dart';
 import 'package:flutter/material.dart';
 
-class Login extends StatelessWidget {
+class Login extends StatefulWidget {
   const Login({super.key});
 
+  @override
+  State<Login> createState() => _LoginState();
+}
+
+class _LoginState extends State<Login> {
   final LinearGradient _gradient = const LinearGradient(
       colors: <Color>[Color(0xFF26267E), Color(0xFF2F2F9D), Color(0xFF6F6FB9)],
       begin: Alignment.centerLeft,
       end: Alignment.centerRight);
+
+  bool _obscureText = true;
 
   @override
   Widget build(BuildContext context) {
@@ -84,8 +92,18 @@ class Login extends StatelessWidget {
               ),
               const SizedBox(height: 5),
               TextField(
-                obscureText: true,
+                obscureText: _obscureText,
                 decoration: InputDecoration(
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureText ? Icons.visibility_off : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscureText = !_obscureText;
+                      });
+                    },
+                  ),
                   hintText: "Kata Sandi",
                   contentPadding:
                       const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
@@ -99,7 +117,7 @@ class Login extends StatelessWidget {
                 child: TextButton(
                   onPressed: () {
                     Navigator.push(context,
-                        MaterialPageRoute(builder: (context) => const Home()));
+                        MaterialPageRoute(builder: (context) => const ForgotPassword()));
                   },
                   child: const Text("Lupa Kata Sandi?"),
                 ),
@@ -117,7 +135,7 @@ class Login extends StatelessWidget {
                   ),
                   onPressed: () {
                     Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => const Home()));
+                        MaterialPageRoute(builder: (context) => const Home()));
                   },
                   child: const Text(
                     "Login",
@@ -127,11 +145,11 @@ class Login extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               Column(mainAxisAlignment: MainAxisAlignment.start, children: [
-                const Text("Belum memiliki akun? "),
+                const Text("Belum memiliki akun?"),
                 GestureDetector(
                   onTap: () {
                     Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => Pendaftaran()));
+                        MaterialPageRoute(builder: (context) => Pendaftaran()));
                   },
                   child: const Text(
                     "Daftar",
