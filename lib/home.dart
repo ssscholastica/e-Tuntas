@@ -1,4 +1,6 @@
+import 'package:etuntas/cara-pangajuan/caraPengajuan.dart';
 import 'package:etuntas/navbar.dart';
+import 'package:etuntas/pertanyaan-umum/pertanyaan-umum.dart';
 import 'package:flutter/material.dart';
 
 class Home extends StatefulWidget {
@@ -121,11 +123,27 @@ Widget buildImageBox(String imagePath, String label) {
             padding: const EdgeInsets.only(left: 30),
             child: Row(
               children: [
-                buildImageBox("assets/cara pengajuan.png", "Cara \nPengajuan"),
+                InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const CaraPengajuan()),
+                      );
+                    },
+                    child: buildImageBox("assets/cara pengajuan.png", "Cara \nPengajuan")),
                 const SizedBox(width: 35),
                 buildImageBox("assets/persyaratan.png", "Persyaratan \n"),
                 const SizedBox(width: 35),
-                buildImageBox("assets/faq.png", "Pertanyaan \nUmum / FAQ"),
+                InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const PertanyaanUmum()),
+                      );
+                    },
+                    child: buildImageBox("assets/faq.png", "Pertanyaan \nUmum / FAQ")),
               ],
             ),
           ),
