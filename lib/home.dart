@@ -1,5 +1,7 @@
 import 'package:etuntas/cara-pangajuan/caraPengajuan.dart';
 import 'package:etuntas/navbar.dart';
+import 'package:etuntas/persyaratan/persyaratan.dart';
+import 'package:etuntas/rekening/addBank.dart';
 import 'package:etuntas/pertanyaan-umum/pertanyaan-umum.dart';
 import 'package:flutter/material.dart';
 
@@ -21,7 +23,7 @@ class _HomeState extends State<Home> {
       begin: Alignment.centerLeft,
       end: Alignment.centerRight);
 
-Widget buildImageBox(String imagePath, String label) {
+  Widget buildImageBox(String imagePath, String label) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -62,7 +64,7 @@ Widget buildImageBox(String imagePath, String label) {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 80),
+          const SizedBox(height: 50),
           ShaderMask(
             blendMode: BlendMode.srcIn,
             shaderCallback: (Rect rect) {
@@ -72,7 +74,7 @@ Widget buildImageBox(String imagePath, String label) {
               child: Text(
                 "E-Tuntas",
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 22,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -133,7 +135,15 @@ Widget buildImageBox(String imagePath, String label) {
                     },
                     child: buildImageBox("assets/cara pengajuan.png", "Cara \nPengajuan")),
                 const SizedBox(width: 35),
-                buildImageBox("assets/persyaratan.png", "Persyaratan \n"),
+                InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => Persyaratan()),
+                      );
+                    },
+                    child: buildImageBox(
+                        "assets/persyaratan.png", "Persyaratan \n")),
                 const SizedBox(width: 35),
                 InkWell(
                     onTap: () {
@@ -162,10 +172,20 @@ Widget buildImageBox(String imagePath, String label) {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              buildImageBox("assets/pengajuan santunan.png", "Pengajuan \nSantunan"),
+              buildImageBox(
+                  "assets/pengajuan santunan.png", "Pengajuan \nSantunan"),
               buildImageBox("assets/pengajuan bpjs.png", "Pengaduan \nBPJS"),
-              buildImageBox("assets/cek status pengajuan.png", "Cek Status \nPengajuan"),
-              buildImageBox("assets/rekening bank.png", "Rekening \nBank"),
+              buildImageBox(
+                  "assets/cek status pengajuan.png", "Cek Status \nPengajuan"),
+              InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => addBank()),
+                    );
+                  },
+                  child: buildImageBox(
+                      "assets/rekening bank.png", "Rekening \nBank")),
             ],
           ),
         ],

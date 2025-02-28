@@ -1,4 +1,6 @@
+import 'package:etuntas/login-signup/login.dart';
 import 'package:flutter/material.dart';
+
 import 'login-signup/pendaftaran.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -122,7 +124,12 @@ class _SplashScreenState extends State<SplashScreen> {
               style: TextStyle(fontSize: 14, color: Colors.grey)),
           const SizedBox(height: 20),
           OutlinedButton(
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => Login()),
+              );
+            },
             style: OutlinedButton.styleFrom(
               padding:
                   const EdgeInsets.symmetric(horizontal: 150, vertical: 15),
