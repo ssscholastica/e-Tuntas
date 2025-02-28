@@ -209,43 +209,45 @@ class _ProfileState extends State<Profile> {
                 color: const Color(0xFFF9FAFD),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Column(
-                children: [
-                  InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const UbahSandi()),
-                      );
-                    },
-                    child: buildTemplateBawah('assets/logo sandi.png',
-                        'Ganti Kata Sandi', 'assets/simbol next.png'),
-                  ),
-                  InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const ProfileBersangkutan()),
-                      );
-                    },
-                    child: buildTemplateBawah(
-                        'assets/logo informasi.png',
-                        'Informasi Data Bersangkutan',
-                        'assets/simbol next.png'),
-                  ),
-                  InkWell(
+              child: Material(
+                child: Column(
+                  children: [
+                    InkWell(
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => const SplashScreen()),
+                              builder: (context) => const UbahSandi()),
+                        );
+                      },
+                      child: buildTemplateBawah('assets/logo sandi.png',
+                          'Ganti Kata Sandi', 'assets/simbol next.png'),
+                    ),
+                    InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const ProfileBersangkutan()),
                         );
                       },
                       child: buildTemplateBawah(
-                          'assets/logo logout.png', 'Keluar', null))
-                ],
+                          'assets/logo informasi.png',
+                          'Informasi Data Bersangkutan',
+                          'assets/simbol next.png'),
+                    ),
+                    InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const SplashScreen()),
+                          );
+                        },
+                        child: buildTemplateBawah(
+                            'assets/logo logout.png', 'Keluar', null))
+                  ],
+                ),
               ),
             ),
           )
