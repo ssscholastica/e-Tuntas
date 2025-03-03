@@ -1,12 +1,113 @@
 
+import 'dart:io';
+
 import 'package:etuntas/profile/profile.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:open_file/open_file.dart';
 
 class addBank extends StatefulWidget {
   const addBank({super.key});
 
   @override
   State<addBank> createState() => _addBankState();
+}
+
+Widget uploadDokumen(String label) {
+  return _UploadDokumen(label: label);
+}
+
+class _UploadDokumen extends StatefulWidget {
+  final String label;
+
+  const _UploadDokumen({super.key, required this.label});
+
+  @override
+  State<_UploadDokumen> createState() => _UploadDokumenState();
+}
+
+class _UploadDokumenState extends State<_UploadDokumen> {
+  File? _selectedFile;
+
+  Future<void> _pickFile() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.any,
+    );
+
+    if (result != null) {
+      setState(() {
+        _selectedFile = File(result.files.single.path!);
+      });
+    }
+  }
+
+  void _removeFile() {
+    setState(() {
+      _selectedFile = null;
+    });
+  }
+
+  void _previewFile() {
+    if (_selectedFile != null) {
+      OpenFile.open(_selectedFile!.path);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 20, right: 20, top: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            widget.label,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Container(
+            height: 50,
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey, width: 1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Text(
+                      _selectedFile != null
+                          ? _selectedFile!.path.split('/').last
+                          : "Pilih Dokumen",
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+                if (_selectedFile != null) ...[
+                  IconButton(
+                    icon: const Icon(Icons.visibility, color: Colors.blue),
+                    onPressed: _previewFile,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.red),
+                    onPressed: _removeFile,
+                  ),
+                ],
+                IconButton(
+                  icon: const Icon(Icons.attach_file, color: Colors.grey),
+                  onPressed: _pickFile,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _addBankState extends State<addBank> {
@@ -53,47 +154,47 @@ class _addBankState extends State<addBank> {
     );
   }
 
-  Widget buildUploadDokumen() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          alignment: Alignment.bottomLeft,
-          margin: const EdgeInsets.only(top: 20, left: 20),
-          child: const Text(
-            "Upload Dokumen",
-            style: TextStyle(
-              fontSize: 14,
-              color: Color(0XFF000000),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        Padding(
-          padding:
-              const EdgeInsets.only(left: 20, right: 20, top: 5, bottom: 5),
-          child: InkWell(
-            onTap: () {
-              // Tambahkan fungsi untuk memilih dan mengunggah dokumen
-            },
-            child: Container(
-              height: 50,
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Center(
-                child: Text(
-                  "Pilih Dokumen",
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+  // Widget buildUploadDokumen() {
+  //   return Column(
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //     children: [
+  //       Container(
+  //         alignment: Alignment.bottomLeft,
+  //         margin: const EdgeInsets.only(top: 20, left: 20),
+  //         child: const Text(
+  //           "Upload Dokumen",
+  //           style: TextStyle(
+  //             fontSize: 14,
+  //             color: Color(0XFF000000),
+  //             fontWeight: FontWeight.w600,
+  //           ),
+  //         ),
+  //       ),
+  //       Padding(
+  //         padding:
+  //             const EdgeInsets.only(left: 20, right: 20, top: 5, bottom: 5),
+  //         child: InkWell(
+  //           onTap: () {
+  //             // Tambahkan fungsi untuk memilih dan mengunggah dokumen
+  //           },
+  //           child: Container(
+  //             height: 50,
+  //             decoration: BoxDecoration(
+  //               border: Border.all(color: Colors.grey),
+  //               borderRadius: BorderRadius.circular(10),
+  //             ),
+  //             child: const Center(
+  //               child: Text(
+  //                 "Pilih Dokumen",
+  //                 style: TextStyle(fontSize: 14, color: Colors.grey),
+  //               ),
+  //             ),
+  //           ),
+  //         ),
+  //       ),
+  //     ],
+  //   );
+  // }
   
 
   @override
@@ -136,7 +237,7 @@ class _addBankState extends State<addBank> {
             buildJudul("Nama Bank", 'Nama Bank'),
             buildJudul("Nomor Rekening", 'Nomor Rekening'),
             buildJudul("Nama Pemilik", "Nama Pemilik"),
-            buildUploadDokumen(),
+            uploadDokumen("Buku Tabungan"),
             const SizedBox(height: 30),
             ElevatedButton(
               onPressed: () {
