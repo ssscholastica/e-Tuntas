@@ -12,6 +12,9 @@ dependencies:
   cupertino_icons: ^1.0.2
   intl: ^0.18.0
   dropdown_search: ^5.0.6
+  file_picker: ^8.0.0+1
+  open_file: ^3.3.2
+  fluttertoast: any 
 
 dev_dependencies:
   flutter_test:

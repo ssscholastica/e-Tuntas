@@ -1,5 +1,6 @@
 import 'package:etuntas/cara-pangajuan/caraPengajuan.dart';
 import 'package:etuntas/navbar.dart';
+import 'package:etuntas/pengajuan-santunan/pengajuanSantunan.dart';
 import 'package:etuntas/persyaratan/persyaratan.dart';
 import 'package:etuntas/rekening/addBank.dart';
 import 'package:etuntas/pertanyaan-umum/pertanyaan-umum.dart';
@@ -172,8 +173,17 @@ class _HomeState extends State<Home> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              buildImageBox(
-                  "assets/pengajuan santunan.png", "Pengajuan \nSantunan"),
+              InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => PengajuanSantunan()),
+                  );
+                },
+                child: buildImageBox(
+                    "assets/pengajuan santunan.png", "Pengajuan \nSantunan"),
+              ),
               buildImageBox("assets/pengajuan bpjs.png", "Pengaduan \nBPJS"),
               buildImageBox(
                   "assets/cek status pengajuan.png", "Cek Status \nPengajuan"),
