@@ -1,7 +1,7 @@
 
 import 'dart:io';
 
-import 'package:etuntas/profile/profile.dart';
+import 'package:etuntas/rekening/bank.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:open_file/open_file.dart';
@@ -111,12 +111,24 @@ class _UploadDokumenState extends State<_UploadDokumen> {
 }
 
 class _addBankState extends State<addBank> {
-  @override
   void initState() {
     super.initState();
   }
 
-  Widget buildJudul(String judul, String hint) {
+  final TextEditingController namaBankController = TextEditingController();
+  final TextEditingController noRekController = TextEditingController();
+  final TextEditingController namaPemilikController = TextEditingController();
+  String? _uploadedFileName;
+
+  @override
+  void dispose() {
+    namaBankController.dispose();
+    noRekController.dispose();
+    namaPemilikController.dispose();
+    super.dispose();
+  }
+
+  Widget buildJudul(String judul, String hint, TextEditingController controller) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -154,48 +166,18 @@ class _addBankState extends State<addBank> {
     );
   }
 
-  // Widget buildUploadDokumen() {
-  //   return Column(
-  //     crossAxisAlignment: CrossAxisAlignment.start,
-  //     children: [
-  //       Container(
-  //         alignment: Alignment.bottomLeft,
-  //         margin: const EdgeInsets.only(top: 20, left: 20),
-  //         child: const Text(
-  //           "Upload Dokumen",
-  //           style: TextStyle(
-  //             fontSize: 14,
-  //             color: Color(0XFF000000),
-  //             fontWeight: FontWeight.w600,
-  //           ),
-  //         ),
-  //       ),
-  //       Padding(
-  //         padding:
-  //             const EdgeInsets.only(left: 20, right: 20, top: 5, bottom: 5),
-  //         child: InkWell(
-  //           onTap: () {
-  //             // Tambahkan fungsi untuk memilih dan mengunggah dokumen
-  //           },
-  //           child: Container(
-  //             height: 50,
-  //             decoration: BoxDecoration(
-  //               border: Border.all(color: Colors.grey),
-  //               borderRadius: BorderRadius.circular(10),
-  //             ),
-  //             child: const Center(
-  //               child: Text(
-  //                 "Pilih Dokumen",
-  //                 style: TextStyle(fontSize: 14, color: Colors.grey),
-  //               ),
-  //             ),
-  //           ),
-  //         ),
-  //       ),
-  //     ],
-  //   );
-  // }
-  
+  void _saveBankAccount() {
+    if (namaBankController.text.isNotEmpty &&
+        noRekController.text.isNotEmpty &&
+        namaPemilikController.text.isNotEmpty) {
+      Navigator.pop(context, {
+        'bankName': namaBankController.text,
+        'accountNumber': noRekController.text,
+        'accountOwner': namaPemilikController.text,
+        'file': _uploadedFileName ?? 'No file chosen'
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -213,7 +195,7 @@ class _addBankState extends State<addBank> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => const Profile()),
+                            builder: (context) => const Bank()),
                       );
                     },
                     child: Image.asset(
@@ -234,24 +216,28 @@ class _addBankState extends State<addBank> {
                 ],
               ),
             ),
-            buildJudul("Nama Bank", 'Nama Bank'),
-            buildJudul("Nomor Rekening", 'Nomor Rekening'),
-            buildJudul("Nama Pemilik", "Nama Pemilik"),
+            buildJudul("Nama Bank", 'Nama Bank', namaBankController),
+            buildJudul("Nomor Rekening", 'Nomor Rekening', noRekController),
+            buildJudul("Nama Pemilik", "Nama Pemilik", namaPemilikController),
             uploadDokumen("Buku Tabungan"),
-            const SizedBox(height: 30),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              style: ElevatedButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 160, vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  backgroundColor: const Color(0xFF2F2F9D)),
-              child: const Text("Simpan",
-                  style: TextStyle(color: Color(0xFFFFFFFF), fontSize: 16)),
+            const SizedBox(height: 25),
+            Padding(
+              padding: const EdgeInsets.only(right: 20),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: ElevatedButton(
+                  onPressed: _saveBankAccount,
+                  style: ElevatedButton.styleFrom(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      backgroundColor: const Color(0xFF2F2F9D)),
+                  child: const Text("Simpan",
+                      style: TextStyle(color: Color(0xFFFFFFFF), fontSize: 14)),
+                ),
+              ),
             ),
           ],
         ),

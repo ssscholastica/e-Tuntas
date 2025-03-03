@@ -4,6 +4,7 @@ import 'package:etuntas/pengajuan-santunan/pengajuanSantunan.dart';
 import 'package:etuntas/persyaratan/persyaratan.dart';
 import 'package:etuntas/rekening/addBank.dart';
 import 'package:etuntas/pertanyaan-umum/pertanyaan-umum.dart';
+import 'package:etuntas/rekening/bank.dart';
 import 'package:flutter/material.dart';
 
 class Home extends StatefulWidget {
@@ -191,7 +192,7 @@ class _HomeState extends State<Home> {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => addBank()),
+                      MaterialPageRoute(builder: (context) => Bank()),
                     );
                   },
                   child: buildImageBox(
