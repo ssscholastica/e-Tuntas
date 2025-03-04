@@ -1,5 +1,5 @@
-import 'package:etuntas/profile/profile.dart';
 import 'package:etuntas/rekening/addBank.dart';
+import 'package:etuntas/rekening/editBank.dart';
 import 'package:flutter/material.dart';
 
 class Bank extends StatefulWidget {
@@ -11,7 +11,20 @@ class Bank extends StatefulWidget {
 
 class _BankState extends State<Bank> {
   List<Map<String, String>> bankAccounts = [];
-  
+
+  void _navigateToAddBank() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const addBank()),
+    );
+
+    if (result != null && result is Map<String, String>) {
+      setState(() {
+        bankAccounts.add(result);
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -20,16 +33,12 @@ class _BankState extends State<Bank> {
         child: Column(
           children: [
             Container(
-              margin: const EdgeInsets.only(top: 80, left: 20, right: 20),
+              margin: const EdgeInsets.only(top: 60, left: 20, right: 20),
               child: Row(
                 children: [
                   InkWell(
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const Profile()),
-                      );
+                      Navigator.pop(context);
                     },
                     child: Image.asset(
                       'assets/simbol back.png',
@@ -37,6 +46,7 @@ class _BankState extends State<Bank> {
                       height: 28,
                     ),
                   ),
+                  const SizedBox(width: 10),
                   const Text(
                     "Akun Bank",
                     style: TextStyle(
@@ -48,55 +58,104 @@ class _BankState extends State<Bank> {
                 ],
               ),
             ),
+            const SizedBox(height: 20),
             Container(
-              margin: EdgeInsets.only(left: 50, right: 20),
+              margin: const EdgeInsets.only(left: 30, right: 20),
               child: Column(
                 children: [
                   Row(
                     children: [
-                      const Text("Rekening Saya",
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                          )),
+                      const Text(
+                        "Rekening Saya",
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       const Text(
                         " (Maksimal 3)",
                         style: TextStyle(fontSize: 16, color: Colors.black),
                       ),
-                      const SizedBox(width: 69),
+                      const Spacer(),
                       IconButton(
                         icon: const Icon(Icons.add_circle_outline,
                             color: Colors.black),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => addBank()),
-                          );
-                        },
+                        onPressed: _navigateToAddBank,
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: bankAccounts.length,
-                      itemBuilder: (context, index) {
-                        final bank = bankAccounts[index];
-                        return Card(
-                          elevation: 3,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: ListTile(
-                            leading: const Icon(Icons.account_balance,
-                                color: Colors.blue),
-                            title: Text(bank['bankName'] ?? ''),
-                            subtitle: Text(bank['accountOwner'] ?? ''),
-                          ),
-                        );
-                      },
-                    ),
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: bankAccounts.length,
+                    itemBuilder: (context, index) {
+                      final bank = bankAccounts[index];
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 25),
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              height: 100,
+                              decoration: BoxDecoration(
+                                color: const Color(0xAACFE2FF),
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  GestureDetector(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => const editBank(),
+                                        ),
+                                      );
+                                    },
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          bank['Nama Bank'] ?? '',
+                                          style: const TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.black,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 18),
+                                        Text(
+                                          bank['Nama Pemilik'] ?? '',
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.black87,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Positioned(
+                              right: -2,
+                              top: -25,
+                              child: Image.asset(
+                                'assets/tambahBank.png',
+                                width: 140,
+                                height: 120,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),

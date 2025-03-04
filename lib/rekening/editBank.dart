@@ -1,14 +1,15 @@
+
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:open_file/open_file.dart';
 
-class addBank extends StatefulWidget {
-  const addBank({super.key});
+class editBank extends StatefulWidget {
+  const editBank({super.key});
 
   @override
-  State<addBank> createState() => _addBankState();
+  State<editBank> createState() => _editBankState();
 }
 
 Widget uploadDokumen(String label) {
@@ -108,7 +109,8 @@ class _UploadDokumenState extends State<_UploadDokumen> {
   }
 }
 
-class _addBankState extends State<addBank> {
+class _editBankState extends State<editBank> {
+
   final TextEditingController namaBankController = TextEditingController();
   final TextEditingController noRekController = TextEditingController();
   final TextEditingController namaPemilikController = TextEditingController();
@@ -118,116 +120,16 @@ class _addBankState extends State<addBank> {
     if (namaBankController.text.isNotEmpty &&
         noRekController.text.isNotEmpty &&
         namaPemilikController.text.isNotEmpty) {
-      _showDialog(
-        success: true,
-        title: "Tersimpan!",
-        message: "Data Rekening berhasil ditambahkan",
-        buttonText: "Oke",
-        onPressed: () {
-          Navigator.pop(context);
-          Navigator.pop(context, {
-            "Nama Bank": namaBankController.text,
-            'Nomor Rekening': noRekController.text,
-            'Nama Pemilik': namaPemilikController.text,
-            'Buku Tabungan': _uploadedFileName ?? 'No file chosen'
-          });
-        },
-      );
-    } else {
-      _showDialog(
-        success: false,
-        title: "Gagal!",
-        message: "Terjadi kesalahan...",
-        buttonText: "Reupload",
-        onPressed: () {
-          Navigator.pop(context);
-        },
-      );
+      Navigator.pop(context, {
+        "Nama Bank": namaBankController.text,
+        'Nomor Rekening': noRekController.text,
+        'Nama Pemilik': namaPemilikController.text,
+        'Buku Tabungan': _uploadedFileName ?? 'No file chosen'
+      });
     }
   }
 
-  void _showDialog({
-    required bool success,
-    required String title,
-    required String message,
-    required String buttonText,
-    required VoidCallback onPressed,
-  }) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Image.asset(
-                success ? 'assets/icon berhasil.png' : 'assets/icon gagal.png',
-                width: 50,
-                height: 50,
-              ),
-              const SizedBox(height: 10),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
-              ),
-              const SizedBox(height: 5),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Colors.black54,
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: success
-                    ? MainAxisAlignment.center
-                    : MainAxisAlignment.spaceBetween,
-                children: [
-                  if (!success)
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: TextButton.styleFrom(
-                        backgroundColor: Colors.grey[400],
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text("Kembali",
-                          style: TextStyle(color: Colors.white)),
-                    ),
-                  TextButton(
-                    onPressed: onPressed,
-                    style: TextButton.styleFrom(
-                      backgroundColor: success ?  const Color(0xAA2F2F9D) : const Color(0xAADC3545),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: Text(
-                      buttonText,
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget buildJudul(
-      String judul, String hint, TextEditingController controller) {
+  Widget buildJudul(String judul, String hint, TextEditingController controller) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -276,7 +178,7 @@ class _addBankState extends State<addBank> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                margin: const EdgeInsets.only(top: 30, left: 20, right: 20),
+                margin: const EdgeInsets.only(top:30, left: 20, right: 20),
                 child: Row(
                   children: [
                     InkWell(
@@ -289,9 +191,8 @@ class _addBankState extends State<addBank> {
                         height: 28,
                       ),
                     ),
-                    // const Spacer(),
                     const Text(
-                      "Tambah Rekening",
+                      "Rekening Saya",
                       style: TextStyle(
                         fontSize: 20,
                         color: Color(0XFF000000),
@@ -313,15 +214,14 @@ class _addBankState extends State<addBank> {
                   child: ElevatedButton(
                     onPressed: _saveBankAccount,
                     style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 30, vertical: 10),
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
                         backgroundColor: const Color(0xFF2F2F9D)),
                     child: const Text("Simpan",
-                        style:
-                            TextStyle(color: Color(0xFFFFFFFF), fontSize: 14)),
+                        style: TextStyle(color: Color(0xFFFFFFFF), fontSize: 14)),
                   ),
                 ),
               ),

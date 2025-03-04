@@ -2,7 +2,6 @@ import 'package:etuntas/cara-pangajuan/caraPengajuan.dart';
 import 'package:etuntas/navbar.dart';
 import 'package:etuntas/pengajuan-santunan/pengajuanSantunan.dart';
 import 'package:etuntas/persyaratan/persyaratan.dart';
-import 'package:etuntas/rekening/addBank.dart';
 import 'package:etuntas/pertanyaan-umum/pertanyaan-umum.dart';
 import 'package:etuntas/rekening/bank.dart';
 import 'package:flutter/material.dart';
