@@ -1,9 +1,8 @@
 import 'package:etuntas/pengajuan-santunan/pengajuanSantunan1.dart';
-import 'package:etuntas/persyaratan/persyaratan1.dart';
-import 'package:etuntas/persyaratan/persyaratan2.dart';
-import 'package:etuntas/persyaratan/persyaratan3.dart';
-import 'package:etuntas/persyaratan/persyaratan4.dart';
-import 'package:etuntas/persyaratan/persyaratan5.dart';
+import 'package:etuntas/pengajuan-santunan/pengajuanSantunan2.dart';
+import 'package:etuntas/pengajuan-santunan/pengajuanSantunan3.dart';
+import 'package:etuntas/pengajuan-santunan/pengajuanSantunan4.dart';
+import 'package:etuntas/pengajuan-santunan/pengajuanSantunan5.dart';
 import 'package:flutter/material.dart';
 
 class PengajuanSantunan extends StatelessWidget {
@@ -11,10 +10,10 @@ class PengajuanSantunan extends StatelessWidget {
 
   final List<Widget> pengajuanPages = [
     PengajuanSantunan1(),
-    Persyaratan2(),
-    Persyaratan3(),
-    Persyaratan4(),
-    Persyaratan5(),
+    PengajuanSantunan2(),
+    PengajuanSantunan3(),
+    PengajuanSantunan4(),
+    PengajuanSantunan5()
   ];
 
   final List<Map<String, dynamic>> pengajuanList = [

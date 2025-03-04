@@ -6,14 +6,14 @@ import 'package:file_picker/file_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:open_file/open_file.dart';
 
-class PengajuanSantunan1 extends StatefulWidget {
-  const PengajuanSantunan1({super.key});
+class PengajuanSantunan3 extends StatefulWidget {
+  const PengajuanSantunan3({super.key});
 
   @override
-  State<PengajuanSantunan1> createState() => _PengajuanSantunan1State();
+  State<PengajuanSantunan3> createState() => _PengajuanSantunan3State();
 }
 
-class _PengajuanSantunan1State extends State<PengajuanSantunan1> {
+class _PengajuanSantunan3State extends State<PengajuanSantunan3> {
   @override
   void initState() {
     super.initState();
@@ -44,14 +44,14 @@ class _PengajuanSantunan1State extends State<PengajuanSantunan1> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-            const Text(
-              'Tanggal Meninggal',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
+          const Text(
+            'Tanggal Meninggal',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
             ),
-            const SizedBox(height: 5),
+          ),
+          const SizedBox(height: 5),
           SizedBox(
             width: MediaQuery.of(context).size.width,
             height: 50,
@@ -61,7 +61,8 @@ class _PengajuanSantunan1State extends State<PengajuanSantunan1> {
               onTap: () => _selectDate(context),
               decoration: InputDecoration(
                 hintText: 'Tanggal Meninggal',
-                suffixIcon: const Icon(Icons.calendar_today, color: Colors.black),
+                suffixIcon:
+                    const Icon(Icons.calendar_today, color: Colors.black),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -148,7 +149,7 @@ class _PengajuanSantunan1State extends State<PengajuanSantunan1> {
               alignment: Alignment.bottomLeft,
               margin: const EdgeInsets.only(top: 30, left: 20),
               child: const Text(
-                'Yang Meninggal Pensiunan PTPN XI Kantor Pusat dan Istri Masih Hidup',
+                'Yang Meninggal Pensiunan PTPN XI Kantor Pusat dan Istri Sudah Meninggal, Dalam KK Ada Beberapa Anak',
                 style: TextStyle(
                   fontSize: 16,
                   color: Color(0XFF26267E),
