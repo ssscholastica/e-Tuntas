@@ -1,3 +1,4 @@
+import 'package:etuntas/home.dart';
 import 'package:etuntas/pengajuan-santunan/pengajuanSantunan1.dart';
 import 'package:etuntas/pengajuan-santunan/pengajuanSantunan2.dart';
 import 'package:etuntas/pengajuan-santunan/pengajuanSantunan3.dart';
@@ -65,7 +66,8 @@ class PengajuanSantunan extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
           onPressed: () {
-            Navigator.pop(context);
+            Navigator.push(context, MaterialPageRoute(builder: (context) => Home()),
+            );
           },
         ),
       ),

@@ -76,7 +76,7 @@ class _CaraPengajuanState extends State<CaraPengajuan> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => const Home()),
+                            builder: (context) => Home()),
                       );
                     },
                     child: Image.asset(

@@ -207,7 +207,7 @@ class _addBankState extends State<addBank> {
                   TextButton(
                     onPressed: onPressed,
                     style: TextButton.styleFrom(
-                      backgroundColor: success ?  const Color(0xAA2F2F9D) : const Color(0xAADC3545),
+                      backgroundColor: success ?  Color.fromARGB(255, 18, 18, 162) : Color.fromARGB(170, 231, 0, 23),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),

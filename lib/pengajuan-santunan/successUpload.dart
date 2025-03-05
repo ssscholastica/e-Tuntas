@@ -1,3 +1,4 @@
+import 'package:etuntas/pengajuan-santunan/pengajuanSantunan.dart';
 import 'package:etuntas/profile/profile.dart';
 import 'package:flutter/material.dart';
 
@@ -80,7 +81,7 @@ class _SuccessUploadState extends State<SuccesUpload> {
               ElevatedButton(
                 onPressed: () {
                   Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => const Profile()));
+                      MaterialPageRoute(builder: (context) => PengajuanSantunan()));
                 },
                 style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(
