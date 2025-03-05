@@ -1,9 +1,4 @@
 import 'package:etuntas/cara-pangajuan/caraPengajuan.dart';
-import 'package:etuntas/home.dart';
-import 'package:etuntas/profile/editProfile.dart';
-import 'package:etuntas/navbar.dart';
-import 'package:etuntas/profile/profile.dart';
-import 'package:etuntas/profile/ubahSandi.dart';
 import 'package:flutter/material.dart';
 
 class CaraPengajuanBPJS extends StatefulWidget {
@@ -80,7 +75,6 @@ class _CaraPengajuanBPJSState extends State<CaraPengajuanBPJS> {
           ),
         ],
       ),
-      bottomNavigationBar: const NavbarWidget(),
     );
   }
 }

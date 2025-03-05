@@ -6,6 +6,7 @@ import 'package:etuntas/persyaratan/persyaratan.dart';
 import 'package:etuntas/pertanyaan-umum/pertanyaan-umum.dart';
 import 'package:etuntas/rekening/bank.dart';
 import 'package:flutter/material.dart';
+import 'package:badges/badges.dart' as badges;
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -19,11 +20,6 @@ class _HomeState extends State<Home> {
   void initState() {
     super.initState();
   }
-
-  final LinearGradient _gradient = const LinearGradient(
-      colors: <Color>[Color(0xFF26267E), Color(0xFF2F2F9D), Color(0xFF6F6FB9)],
-      begin: Alignment.centerLeft,
-      end: Alignment.centerRight);
 
   Widget buildImageBox(String imagePath, String label) {
     return Column(
@@ -66,24 +62,29 @@ class _HomeState extends State<Home> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 50),
-          ShaderMask(
-            blendMode: BlendMode.srcIn,
-            shaderCallback: (Rect rect) {
-              return _gradient.createShader(rect);
-            },
-            child: const Center(
-              child: Text(
-                "E-Tuntas",
+          const SizedBox(height: 60),
+          Center(
+            child: ShaderMask(
+              shaderCallback: (bounds) => const LinearGradient(
+                colors: [
+                  Color(0xFF6F6FB9),
+                  Color(0xFF2F2F9D),
+                  Color(0xFF26267E)
+                ],
+              ).createShader(bounds),
+              child: const Text(
+                'E-Tuntas',
                 style: TextStyle(
-                  fontSize: 22,
                   fontWeight: FontWeight.bold,
+                  fontSize: 22.0,
+                  color: Colors.white,
                 ),
               ),
             ),
           ),
           Container(
-            margin: const EdgeInsets.only(left: 16),
+            margin:
+                const EdgeInsets.only(left: 16, right: 20, top: 25, bottom: 25),
             child: Row(
               children: [
                 Container(
@@ -91,8 +92,8 @@ class _HomeState extends State<Home> {
                   child: ClipOval(
                     child: Image.asset(
                       "assets/profile.png",
-                      height: 35,
-                      width: 35,
+                      height: 45,
+                      width: 45,
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -108,7 +109,17 @@ class _HomeState extends State<Home> {
                   ),
                 ),
                 const Spacer(),
-                Image.asset("assets/notifikasi.png", height: 100)
+                badges.Badge(
+                    badgeContent: const Text(
+                      '3',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    position: badges.BadgePosition.topEnd(top: -8, end: -7),
+                    badgeStyle: const badges.BadgeStyle(badgeColor: Colors.red),
+                    child: const Icon(
+                      Icons.notifications_outlined,
+                      size: 28,
+                    ))
               ],
             ),
           ),
@@ -135,7 +146,8 @@ class _HomeState extends State<Home> {
                             builder: (context) => const CaraPengajuan()),
                       );
                     },
-                    child: buildImageBox("assets/cara pengajuan.png", "Cara \nPengajuan")),
+                    child: buildImageBox(
+                        "assets/cara pengajuan.png", "Cara \nPengajuan")),
                 const SizedBox(width: 35),
                 InkWell(
                     onTap: () {
@@ -155,7 +167,8 @@ class _HomeState extends State<Home> {
                             builder: (context) => const PertanyaanUmum()),
                       );
                     },
-                    child: buildImageBox("assets/faq.png", "Pertanyaan \nUmum / FAQ")),
+                    child: buildImageBox(
+                        "assets/faq.png", "Pertanyaan \nUmum / FAQ")),
               ],
             ),
           ),
@@ -190,11 +203,12 @@ class _HomeState extends State<Home> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const TrackingAwal()),
+                    MaterialPageRoute(
+                        builder: (context) => const TrackingAwal()),
                   );
                 },
-                child: buildImageBox(
-                    "assets/cek status pengajuan.png", "Cek Status \nPengajuan"),
+                child: buildImageBox("assets/cek status pengajuan.png",
+                    "Cek Status \nPengajuan"),
               ),
               InkWell(
                   onTap: () {

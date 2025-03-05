@@ -1,10 +1,4 @@
-import 'package:etuntas/cara-pangajuan/caraPengajuanBPJS.dart';
-import 'package:etuntas/cara-pangajuan/caraPengajuanSantunan.dart';
 import 'package:etuntas/home.dart';
-import 'package:etuntas/profile/editProfile.dart';
-import 'package:etuntas/navbar.dart';
-import 'package:etuntas/profile/profile.dart';
-import 'package:etuntas/profile/ubahSandi.dart';
 import 'package:flutter/material.dart';
 
 class PertanyaanUmum extends StatefulWidget {
@@ -20,7 +14,6 @@ class _PertanyaanUmumState extends State<PertanyaanUmum> {
     super.initState();
   }
 
-  bool _isExpanded = false;
   Map<String, bool> _expandedStatus = {};
 
   Widget buildImageBox(String title, String content) {
@@ -153,7 +146,6 @@ class _PertanyaanUmumState extends State<PertanyaanUmum> {
           ),
         ],
       ),
-      bottomNavigationBar: const NavbarWidget(),
     );
   }
 }
