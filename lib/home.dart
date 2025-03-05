@@ -1,4 +1,5 @@
 import 'package:etuntas/cara-pangajuan/caraPengajuan.dart';
+import 'package:etuntas/cek-status-pengajuan/trackingAwal.dart';
 import 'package:etuntas/navbar.dart';
 import 'package:etuntas/pengajuan-santunan/pengajuanSantunan.dart';
 import 'package:etuntas/persyaratan/persyaratan.dart';
@@ -185,8 +186,16 @@ class _HomeState extends State<Home> {
                     "assets/pengajuan santunan.png", "Pengajuan \nSantunan"),
               ),
               buildImageBox("assets/pengajuan bpjs.png", "Pengaduan \nBPJS"),
-              buildImageBox(
-                  "assets/cek status pengajuan.png", "Cek Status \nPengajuan"),
+              InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const TrackingAwal()),
+                  );
+                },
+                child: buildImageBox(
+                    "assets/cek status pengajuan.png", "Cek Status \nPengajuan"),
+              ),
               InkWell(
                   onTap: () {
                     Navigator.push(

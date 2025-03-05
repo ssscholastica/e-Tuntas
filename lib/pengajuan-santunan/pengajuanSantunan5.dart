@@ -1,3 +1,4 @@
+import 'package:dropdown_search/dropdown_search.dart';
 import 'package:etuntas/pengajuan-santunan/pengajuanSantunan.dart';
 import 'package:etuntas/pengajuan-santunan/successUpload.dart';
 import 'package:flutter/material.dart';
@@ -38,6 +39,33 @@ class _PengajuanSantunan5State extends State<PengajuanSantunan5> {
     }
   }
 
+  final List<String> lokasiList = [
+    "Kabupaten Jember",
+    "Kabupaten Lumajang",
+    "Kota Surabaya",
+    "Kota Banyuwangi",
+    "Kabupaten Madiun"
+  ];
+  String? selectedLokasi;
+
+  bool _validateForm() {
+    return tanggalMeninggalController.text.isNotEmpty &&
+        selectedLokasi != null &&
+        _validateFiles();
+  }
+
+  bool _validateFiles() {
+    return fileUploadKeys
+        .every((key) => key.currentState?._selectedFile != null);
+  }
+
+  final List<GlobalKey<_FileUploadFieldState>> fileUploadKeys = [
+    GlobalKey<_FileUploadFieldState>(),
+    GlobalKey<_FileUploadFieldState>(),
+    GlobalKey<_FileUploadFieldState>(),
+    GlobalKey<_FileUploadFieldState>(),
+  ];
+
   Widget buildDatePickerField(String label, TextEditingController controller) {
     return Padding(
       padding: const EdgeInsets.only(left: 20, right: 20, top: 20),
@@ -61,11 +89,14 @@ class _PengajuanSantunan5State extends State<PengajuanSantunan5> {
               onTap: () => _selectDate(context),
               decoration: InputDecoration(
                 hintText: 'Tanggal Meninggal',
+                hintStyle: const TextStyle(fontSize: 15, color: Colors.grey),
+                contentPadding:
+                    const EdgeInsets.only(top: 5, bottom: 5, left: 10),
                 suffixIcon:
                     const Icon(Icons.calendar_today, color: Colors.black),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
+                enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(color: Colors.grey)),
               ),
             ),
           ),
@@ -88,19 +119,38 @@ class _PengajuanSantunan5State extends State<PengajuanSantunan5> {
             ),
           ),
           const SizedBox(height: 5),
-          SizedBox(
-            width: MediaQuery.of(context).size.width,
-            height: 50,
-            child: TextField(
-              controller: controller,
-              readOnly: true,
-              decoration: InputDecoration(
-                hintText: "Lokasi Meninggal",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
+          DropdownSearch<String>(
+            items: lokasiList,
+            selectedItem: selectedLokasi,
+            popupProps: PopupProps.menu(
+              showSearchBox: true,
+              fit: FlexFit.loose,
+              searchFieldProps: TextFieldProps(
+                decoration: InputDecoration(
+                  hintText: "Search",
+                  prefixIcon: const Icon(Icons.search),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
               ),
             ),
+            dropdownDecoratorProps: DropDownDecoratorProps(
+              dropdownSearchDecoration: InputDecoration(
+                hintText: "Lokasi Meninggal",
+                border: const OutlineInputBorder(),
+                contentPadding:
+                    const EdgeInsets.only(top: 5, bottom: 5, left: 10),
+                enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(color: Colors.grey)),
+              ),
+            ),
+            onChanged: (String? newValue) {
+              setState(() {
+                selectedLokasi = newValue;
+              });
+            },
           ),
         ],
       ),
@@ -160,27 +210,46 @@ class _PengajuanSantunan5State extends State<PengajuanSantunan5> {
             buildDatePickerField(
                 "Tanggal Meninggal", tanggalMeninggalController),
             buildJudul("Lokasi Meninggal", lokasiMeninggalController),
-            const FileUploadField(label: "Surat Kematian"),
-            const FileUploadField(label: "Kartu Keluarga"),
-            const FileUploadField(label: "KTP Pensiunan dan Anak"),
-            const FileUploadField(label: "Buku Rekening Anak"),
+            FileUploadField(key: fileUploadKeys[0], label: "Surat Kematian"),
+            FileUploadField(key: fileUploadKeys[1], label: "Kartu Keluarga"),
+            FileUploadField(
+                key: fileUploadKeys[2], label: "KTP Pensiunan dan Anak"),
+            FileUploadField(
+                key: fileUploadKeys[3], label: "Buku Rekening Anak"),
             const SizedBox(height: 30),
             ElevatedButton(
               onPressed: () {
-                Navigator.push(
+                if (_validateForm()) {
+                  Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => const SuccesUpload()));
+                        builder: (context) => const SuccesUpload()),
+                  );
+                } else {
+                  _showDialog(
+                    success: false,
+                    title: "Gagal!",
+                    message: "Terjadi kesalahan...",
+                    buttonText: "Reupload",
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    context: context,
+                  );
+                }
               },
               style: ElevatedButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 160, vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  backgroundColor: const Color(0xFF2F2F9D)),
-              child: const Text("Upload",
-                  style: TextStyle(color: Color(0xFFFFFFFF), fontSize: 16)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 160, vertical: 15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                backgroundColor: const Color(0xFF2F2F9D),
+              ),
+              child: const Text(
+                "Upload",
+                style: TextStyle(color: Color(0xFFFFFFFF), fontSize: 16),
+              ),
             ),
             const SizedBox(height: 30),
           ],
@@ -188,6 +257,89 @@ class _PengajuanSantunan5State extends State<PengajuanSantunan5> {
       ),
     );
   }
+}
+
+void _showDialog({
+  required bool success,
+  required BuildContext context,
+  required String title,
+  required String message,
+  required String buttonText,
+  required VoidCallback onPressed,
+}) {
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              success ? 'assets/icon berhasil.png' : 'assets/icon gagal.png',
+              width: 50,
+              height: 50,
+            ),
+            const SizedBox(height: 10),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.black54,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: success
+                  ? MainAxisAlignment.center
+                  : MainAxisAlignment.spaceBetween,
+              children: [
+                if (!success)
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: TextButton.styleFrom(
+                      backgroundColor: Colors.grey[400],
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text("Kembali",
+                        style: TextStyle(color: Colors.white)),
+                  ),
+                TextButton(
+                  onPressed: onPressed,
+                  style: TextButton.styleFrom(
+                    backgroundColor: success
+                        ? Color.fromARGB(255, 18, 18, 162)
+                        : Color.fromARGB(170, 231, 0, 23),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: Text(
+                    buttonText,
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    },
+  );
 }
 
 class FileUploadField extends StatefulWidget {
@@ -244,7 +396,7 @@ class _FileUploadFieldState extends State<FileUploadField> {
           Container(
             height: 50,
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey, width: 1),
+              border: Border.all(color: Colors.grey),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
@@ -257,6 +409,7 @@ class _FileUploadFieldState extends State<FileUploadField> {
                           ? _selectedFile!.path.split('/').last
                           : "No file chosen",
                       overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 15, color: Colors.grey),
                     ),
                   ),
                 ),
@@ -271,7 +424,7 @@ class _FileUploadFieldState extends State<FileUploadField> {
                   ),
                 ],
                 IconButton(
-                  icon: const Icon(Icons.attach_file, color: Colors.grey),
+                  icon: const Icon(Icons.attach_file, color: Colors.black),
                   onPressed: _pickFile,
                 ),
               ],
