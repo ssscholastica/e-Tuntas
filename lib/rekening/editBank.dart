@@ -214,8 +214,8 @@ class _editBankState extends State<editBank> {
                   child: ElevatedButton(
                     onPressed: _saveBankAccount,
                     style: ElevatedButton.styleFrom(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+                        // padding:
+                        //     const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
