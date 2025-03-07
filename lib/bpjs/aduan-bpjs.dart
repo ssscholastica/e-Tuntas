@@ -1,3 +1,4 @@
+import 'package:etuntas/bpjs/form-aduan.dart';
 import 'package:flutter/material.dart';
 
 class aduanBPJS extends StatelessWidget {
@@ -11,7 +12,6 @@ class aduanBPJS extends StatelessWidget {
         backgroundColor: Colors.white,
         body: Column(
           children: [
-            // Custom Header
             Container(
               margin: const EdgeInsets.only(top: 60, left: 20, right: 20),
               child: Row(
@@ -84,15 +84,23 @@ class AduanBPJSPage extends StatelessWidget {
   ];
 
   @override
-  Widget build(BuildContext context) {
+    Widget build(BuildContext context) {
     return Column(
       children: [
         Container(
-          padding: const EdgeInsets.only(left:30, top: 15, bottom: 10),
+          margin: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.red.shade100,
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(color: Colors.grey.withOpacity(0.5), blurRadius: 5)
+            ],
+          ),
           child: const Row(
             children: [
-              Icon(Icons.error_outline, color: Colors.red),
-              SizedBox(width: 10),
+              Icon(Icons.error, color: Colors.red),
+              SizedBox(width: 8),
               Expanded(
                 child: Text(
                   "Pilih Perihal Aduan Terlebih Dahulu",
@@ -131,7 +139,13 @@ class AduanBPJSPage extends StatelessWidget {
                 leading: Icon(item["icon"], color: item["color"]),
                 title: Text(item["title"]),
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => AduanFormPage(kategori: item["title"])),
+                      );
+                },
               ));
             },
           ),

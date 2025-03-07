@@ -88,6 +88,7 @@ class _PendaftaranState extends State<Pendaftaran> {
 
   @override
   void dispose() {
+    super.dispose();
     for (var controller in controllers.values) {
       controller.dispose();
     }
@@ -121,7 +122,7 @@ class _PendaftaranState extends State<Pendaftaran> {
             onPressed: () {
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => SplashScreen()),
+                MaterialPageRoute(builder: (context) => const SplashScreen()),
               );
             },
           ),
@@ -138,7 +139,7 @@ class _PendaftaranState extends State<Pendaftaran> {
               const SizedBox(height: 10),
               Divider(color: Colors.grey[300], thickness: 8, height: 20),
               Padding(
-                padding: EdgeInsets.all(20.0),
+                padding: const EdgeInsets.all(20.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -188,7 +189,7 @@ class _PendaftaranState extends State<Pendaftaran> {
               const SizedBox(height: 5),
               Divider(color: Colors.grey[300], thickness: 8, height: 20),
               Padding(
-                padding: EdgeInsets.all(20.0),
+                padding: const EdgeInsets.all(20.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -211,14 +212,14 @@ class _PendaftaranState extends State<Pendaftaran> {
                             searchFieldProps: TextFieldProps(
                               decoration: InputDecoration(
                                 hintText: "Search",
-                                prefixIcon: Icon(Icons.search),
+                                prefixIcon: const Icon(Icons.search),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
                             ),
                           ),
-                          dropdownDecoratorProps: DropDownDecoratorProps(
+                          dropdownDecoratorProps: const DropDownDecoratorProps(
                             dropdownSearchDecoration: InputDecoration(
                               hintText: "PG/Unit Terakhir",
                               border: OutlineInputBorder(),
@@ -275,7 +276,7 @@ class _PendaftaranState extends State<Pendaftaran> {
                       width: double.infinity,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Color(0xFF2F2F9D),
+                          backgroundColor: const Color(0xFF2F2F9D),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -284,7 +285,7 @@ class _PendaftaranState extends State<Pendaftaran> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => DaftarBerhasil()),
+                                builder: (context) => const DaftarBerhasil()),
                           );
                         },
                         child: const Text(

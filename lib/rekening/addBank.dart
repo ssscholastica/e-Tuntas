@@ -305,7 +305,6 @@ class _addBankState extends State<addBank> {
                         height: 28,
                       ),
                     ),
-                    // const Spacer(),
                     const Text(
                       "Tambah Rekening",
                       style: TextStyle(
