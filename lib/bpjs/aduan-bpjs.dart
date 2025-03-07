@@ -1,4 +1,5 @@
 import 'package:etuntas/bpjs/form-aduan.dart';
+import 'package:etuntas/bpjs/cekAduanBPJS.dart';
 import 'package:flutter/material.dart';
 
 class aduanBPJS extends StatelessWidget {
@@ -51,6 +52,7 @@ class aduanBPJS extends StatelessWidget {
               child: TabBarView(
                 children: [
                   AduanBPJSPage(),
+                  CekAduanBPJS(),
                 ],
               ),
             ),
