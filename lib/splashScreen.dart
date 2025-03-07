@@ -15,12 +15,7 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
   }
-
-  final LinearGradient _gradient = const LinearGradient(
-      colors: <Color>[Color(0xFF26267E), Color(0xFF2F2F9D), Color(0xFF6F6FB9)],
-      begin: Alignment.centerLeft,
-      end: Alignment.centerRight);
-
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -49,18 +44,18 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
                 const Spacer(),
                 ShaderMask(
-                  blendMode: BlendMode.srcIn,
-                  shaderCallback: (Rect rect) {
-                    return _gradient.createShader(rect);
-                  },
+                  shaderCallback: (bounds) => const LinearGradient(
+                    colors: [Color(0xFF6F6FB9), Color(0xFF2F2F9D), Color(0xFF26267E)],
+                  ).createShader(bounds),
                   child: const Text(
-                    "E-Tuntas",
+                    'E-Tuntas',
                     style: TextStyle(
-                      fontSize: 15,
                       fontWeight: FontWeight.bold,
+                      fontSize: 15.0,
+                      color: Colors.white,
                     ),
                   ),
-                ),
+                )
               ],
             ),
           ),

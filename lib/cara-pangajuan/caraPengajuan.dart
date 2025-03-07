@@ -1,10 +1,6 @@
 import 'package:etuntas/cara-pangajuan/caraPengajuanBPJS.dart';
 import 'package:etuntas/cara-pangajuan/caraPengajuanSantunan.dart';
 import 'package:etuntas/home.dart';
-import 'package:etuntas/profile/editProfile.dart';
-import 'package:etuntas/navbar.dart';
-import 'package:etuntas/profile/profile.dart';
-import 'package:etuntas/profile/ubahSandi.dart';
 import 'package:flutter/material.dart';
 
 class CaraPengajuan extends StatefulWidget {
@@ -76,7 +72,7 @@ class _CaraPengajuanState extends State<CaraPengajuan> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => Home()),
+                            builder: (context) => const Home()),
                       );
                     },
                     child: Image.asset(
@@ -135,7 +131,6 @@ class _CaraPengajuanState extends State<CaraPengajuan> {
           ),
         ],
       ),
-      bottomNavigationBar: const NavbarWidget(),
     );
   }
 }
