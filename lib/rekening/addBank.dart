@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:open_file/open_file.dart';
 
 class addBank extends StatefulWidget {
@@ -11,14 +12,15 @@ class addBank extends StatefulWidget {
   State<addBank> createState() => _addBankState();
 }
 
-Widget uploadDokumen(String label) {
-  return _UploadDokumen(label: label);
+Widget uploadDokumen(String label, Function(File?) onFileSelected) {
+  return _UploadDokumen(label: label, onFileSelected: onFileSelected);
 }
 
 class _UploadDokumen extends StatefulWidget {
   final String label;
+  final Function(File?) onFileSelected;
 
-  const _UploadDokumen({super.key, required this.label});
+  const _UploadDokumen({super.key, required this.label, required this.onFileSelected});
 
   @override
   State<_UploadDokumen> createState() => _UploadDokumenState();
@@ -31,6 +33,12 @@ class _UploadDokumenState extends State<_UploadDokumen> {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.any,
     );
+    if (result != null) {
+      setState(() {
+        _selectedFile = File(result.files.single.path!);
+      });
+      widget.onFileSelected(_selectedFile);
+    }
 
     if (result != null) {
       setState(() {
@@ -117,7 +125,9 @@ class _addBankState extends State<addBank> {
   void _saveBankAccount() {
     if (namaBankController.text.isNotEmpty &&
         noRekController.text.isNotEmpty &&
-        namaPemilikController.text.isNotEmpty) {
+        namaPemilikController.text.isNotEmpty &&
+        _uploadedFileName != null &&
+        _uploadedFileName!.isNotEmpty) {
       _showDialog(
         success: true,
         title: "Tersimpan!",
@@ -207,7 +217,9 @@ class _addBankState extends State<addBank> {
                   TextButton(
                     onPressed: onPressed,
                     style: TextButton.styleFrom(
-                      backgroundColor: success ?  Color.fromARGB(255, 18, 18, 162) : Color.fromARGB(170, 231, 0, 23),
+                      backgroundColor: success
+                          ? const Color.fromARGB(255, 18, 18, 162)
+                          : const Color.fromARGB(170, 231, 0, 23),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -227,7 +239,7 @@ class _addBankState extends State<addBank> {
   }
 
   Widget buildJudul(
-      String judul, String hint, TextEditingController controller) {
+      String judul, String hint, TextEditingController controller, {bool isNumber = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -251,6 +263,10 @@ class _addBankState extends State<addBank> {
             child: TextFormField(
               controller: controller,
               textAlign: TextAlign.left,
+              keyboardType:
+                  isNumber ? TextInputType.number : TextInputType.text,
+              inputFormatters:
+                  isNumber ? [FilteringTextInputFormatter.digitsOnly] : null,
               decoration: InputDecoration(
                 hintText: hint,
                 contentPadding:
@@ -302,9 +318,14 @@ class _addBankState extends State<addBank> {
                 ),
               ),
               buildJudul("Nama Bank", 'Nama Bank', namaBankController),
-              buildJudul("Nomor Rekening", 'Nomor Rekening', noRekController),
+              buildJudul("Nomor Rekening", 'Nomor Rekening', noRekController,
+                  isNumber: true),
               buildJudul("Nama Pemilik", "Nama Pemilik", namaPemilikController),
-              uploadDokumen("Buku Tabungan"),
+              uploadDokumen("Buku Tabungan", (File? selectedFile) {
+                setState(() {
+                  _uploadedFileName = selectedFile?.path.split('/').last;
+                });
+              }),
               const SizedBox(height: 25),
               Padding(
                 padding: const EdgeInsets.only(right: 20),

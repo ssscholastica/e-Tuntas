@@ -1,3 +1,4 @@
+import 'package:etuntas/bpjs/aduan-bpjs.dart';
 import 'package:etuntas/cara-pangajuan/caraPengajuan.dart';
 import 'package:etuntas/cek-status-pengajuan/trackingAwal.dart';
 import 'package:etuntas/navbar.dart';
@@ -185,8 +186,16 @@ class _HomeState extends State<Home> {
                 child: buildImageBox(
                     "assets/pengajuan santunan.png", "Pengajuan \nSantunan"),
               ),
-              buildImageBox("assets/pengajuan bpjs.png", "Pengaduan \nBPJS"),
               InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const aduanBPJS()),
+                  );
+                },
+                child: buildImageBox("assets/pengajuan bpjs.png", "Pengaduan \nBPJS"),
+              ),
+                            InkWell(
                 onTap: () {
                   Navigator.push(
                     context,

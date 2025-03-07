@@ -104,14 +104,23 @@ class _BankState extends State<Bank> {
                                 borderRadius: BorderRadius.circular(15),
                               ),
                               child: InkWell(
-                                onTap: () {
-                                  Navigator.push(
+                                onTap: () async {
+                                  final result = await Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => const editBank(),
+                                      builder: (context) =>
+                                          editBank(bankAccounts: bank),
                                     ),
                                   );
+
+                                  if (result != null &&
+                                      result is Map<String, String>) {
+                                    setState(() {
+                                      bankAccounts[index] = result;
+                                    });
+                                  }
                                 },
+
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
