@@ -1,13 +1,14 @@
+import 'package:badges/badges.dart' as badges;
 import 'package:etuntas/bpjs/aduan-bpjs.dart';
 import 'package:etuntas/cara-pangajuan/caraPengajuan.dart';
 import 'package:etuntas/cek-status-pengajuan/trackingAwal.dart';
 import 'package:etuntas/navbar.dart';
+import 'package:etuntas/notifikasi.dart';
 import 'package:etuntas/pengajuan-santunan/pengajuanSantunan.dart';
 import 'package:etuntas/persyaratan/persyaratan.dart';
 import 'package:etuntas/pertanyaan-umum/pertanyaan-umum.dart';
 import 'package:etuntas/rekening/bank.dart';
 import 'package:flutter/material.dart';
-import 'package:badges/badges.dart' as badges;
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -110,17 +111,26 @@ class _HomeState extends State<Home> {
                   ),
                 ),
                 const Spacer(),
-                badges.Badge(
-                    badgeContent: const Text(
-                      '3',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    position: badges.BadgePosition.topEnd(top: -8, end: -7),
-                    badgeStyle: const badges.BadgeStyle(badgeColor: Colors.red),
-                    child: const Icon(
-                      Icons.notifications_outlined,
-                      size: 28,
-                    ))
+                InkWell(
+                  onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => NotifPage()),
+                      );
+                    },
+                  child: badges.Badge(
+                      badgeContent: const Text(
+                        '3',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      position: badges.BadgePosition.topEnd(top: -8, end: -7),
+                      badgeStyle: const badges.BadgeStyle(badgeColor: Colors.red),
+                      child: const Icon(
+                        Icons.notifications_outlined,
+                        size: 28,
+                      )),
+                )
               ],
             ),
           ),

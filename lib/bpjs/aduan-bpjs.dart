@@ -102,15 +102,21 @@ class AduanBPJSPage extends StatelessWidget {
             ],
           ),
         ),
-        const Expanded(
+        const SizedBox(height: 10),
+        const Padding(
+          padding: EdgeInsets.only(left: 30),
+          child: Align(
+            alignment: Alignment.topLeft,
             child: Text(
-          "Perihal Aduan",
-          style: TextStyle(
-              fontWeight: FontWeight.bold, color: Colors.black, fontSize: 18),
-        )),
+                      "Perihal Aduan",
+                      style: TextStyle(
+              fontWeight: FontWeight.bold, color: Colors.black, fontSize: 20),
+                    ),
+          ),
+        ),
         Expanded(
           child: ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             itemCount: aduanList.length,
             itemBuilder: (context, index) {
               final item = aduanList[index];
