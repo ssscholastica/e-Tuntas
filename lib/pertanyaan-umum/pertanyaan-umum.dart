@@ -17,7 +17,7 @@ class _PertanyaanUmumState extends State<PertanyaanUmum> {
   Map<String, bool> _expandedStatus = {};
 
   Widget buildImageBox(String title, String content) {
-    bool isExpanded = _expandedStatus[title] ?? false; // Cek status ekspansi
+    bool isExpanded = _expandedStatus[title] ?? false; 
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -31,8 +31,8 @@ class _PertanyaanUmumState extends State<PertanyaanUmum> {
           },
           child: Container(
             margin: const EdgeInsets.only(bottom: 10),
-            width: 380,
-            height: 70,
+            width: MediaQuery.of(context).size.width * 0.9,
+            height: MediaQuery.of(context).size.height * 0.09,
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
             decoration: BoxDecoration(
               color: Colors.white,
@@ -68,7 +68,7 @@ class _PertanyaanUmumState extends State<PertanyaanUmum> {
           Container(
             padding: const EdgeInsets.all(10),
             margin: const EdgeInsets.only(top: 5, bottom: 10),
-            width: 380,
+            width: MediaQuery.of(context).size.width * 0.9,
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(8),
