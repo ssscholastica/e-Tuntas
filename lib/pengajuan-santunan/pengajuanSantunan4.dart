@@ -245,7 +245,10 @@ class _PengajuanSantunan4State extends State<PengajuanSantunan4> {
               },
               style: ElevatedButton.styleFrom(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 160, vertical: 15),
+                  EdgeInsets.symmetric(
+                  horizontal: MediaQuery.of(context).size.width * 0.4,
+                  vertical: MediaQuery.of(context).size.height * 0.02,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),

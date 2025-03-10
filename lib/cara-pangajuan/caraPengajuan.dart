@@ -19,8 +19,8 @@ class _CaraPengajuanState extends State<CaraPengajuan> {
   Widget buildImageBox(String nama, String imagePath, int color) {
     return Container(
       margin: const EdgeInsets.only(top: 20),
-      width: 350,
-      height: 90,
+      width: MediaQuery.of(context).size.width *0.9,
+      height: MediaQuery.of(context).size.height * 0.1,
       decoration: BoxDecoration(
         color: Color(color),
         borderRadius: BorderRadius.circular(10),
