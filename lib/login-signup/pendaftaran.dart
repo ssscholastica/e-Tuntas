@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 
 class Pendaftaran extends StatefulWidget {
   @override
-  Pendaftaran({super.key});
+  const Pendaftaran({super.key});
 
   @override
   State<Pendaftaran> createState() => _PendaftaranState();
@@ -40,40 +40,40 @@ class _PendaftaranState extends State<Pendaftaran> {
 
   final List<String> instansiList = [
     "Kantor Pusat eks N10",
-"PG Toelangan",
-"PG Watoetoelis",
-"PG Kremboong",
-"PG Gempolkrep",
-"PG Djombang Baru",
-"PG Tjoekir",
-"PG Lestari",
-"PG Meritjan",
-"PG Pesantren Baru",
-"PG Ngadiredjo",
-"PG Modjopanggoong",
-"Kebun Kertosari",
-"Kebun Adjong Gayasan",
-"Kebun Klaten",
-"PG Sudhono",
-"PG Purwodadie",
-"PG Redjosari",
-"PG Pagottan",
-"PG Kanigoro",
-"Unit Usaha Strategis",
-"PG Kedawung",
-"PG Wonolangan",
-"PG Gending",
-"PG Pajarakan",
-"PG Djatiroto",
-"PG Semboro",
-"PG Wringinanom",
-"PG Olean",
-"PG Pandji",
-"PG Assembagus",
-"PG Pradjekan",
-"PK Rosella Baru",
-"Kantor Pusat EKS N11",
-"Pasa dan Hilirisasi Usaha",
+    "PG Toelangan",
+    "PG Watoetoelis",
+    "PG Kremboong",
+    "PG Gempolkrep",
+    "PG Djombang Baru",
+    "PG Tjoekir",
+    "PG Lestari",
+    "PG Meritjan",
+    "PG Pesantren Baru",
+    "PG Ngadiredjo",
+    "PG Modjopanggoong",
+    "Kebun Kertosari",
+    "Kebun Adjong Gayasan",
+    "Kebun Klaten",
+    "PG Sudhono",
+    "PG Purwodadie",
+    "PG Redjosari",
+    "PG Pagottan",
+    "PG Kanigoro",
+    "Unit Usaha Strategis",
+    "PG Kedawung",
+    "PG Wonolangan",
+    "PG Gending",
+    "PG Pajarakan",
+    "PG Djatiroto",
+    "PG Semboro",
+    "PG Wringinanom",
+    "PG Olean",
+    "PG Pandji",
+    "PG Assembagus",
+    "PG Pradjekan",
+    "PK Rosella Baru",
+    "Kantor Pusat EKS N11",
+    "Pasa dan Hilirisasi Usaha",
   ];
   String? selectedInstansi;
 
@@ -123,17 +123,17 @@ class _PendaftaranState extends State<Pendaftaran> {
     }
   }
 
-  void handleSubmit() {
-    print("Nama: ${controllers["Nama"]?.text}");
-    print("Email: ${controllers["Email"]?.text}");
-    print("Alamat: ${controllers["Alamat"]?.text}");
-    print("Tanggal lahir: ${controllers["Tanggal lahir"]?.text}");
-    print("Nomor HP: ${controllers["Nomor HP"]?.text}");
-    print("PG/Unit Terakhir Dinas: $selectedInstansi");
-    print("NIK: ${controllers["NIK"]?.text}");
-    print("Nomor Pensiunan: ${controllers["Nomor Pensiunan"]?.text}");
-    print("Status Hubungan Keluarga: $selectedStatusKeluarga");
-  }
+  // void handleSubmit() {
+  //   print("Nama: ${controllers["Nama"]?.text}");
+  //   print("Email: ${controllers["Email"]?.text}");
+  //   print("Alamat: ${controllers["Alamat"]?.text}");
+  //   print("Tanggal lahir: ${controllers["Tanggal lahir"]?.text}");
+  //   print("Nomor HP: ${controllers["Nomor HP"]?.text}");
+  //   print("PG/Unit Terakhir Dinas: $selectedInstansi");
+  //   print("NIK: ${controllers["NIK"]?.text}");
+  //   print("Nomor Pensiunan: ${controllers["Nomor Pensiunan"]?.text}");
+  //   print("Status Hubungan Keluarga: $selectedStatusKeluarga");
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -235,9 +235,16 @@ class _PendaftaranState extends State<Pendaftaran> {
                         DropdownSearch<String>(
                           items: instansiList,
                           selectedItem: selectedInstansi,
-                          popupProps: PopupProps.menu(
+                          popupProps: PopupProps.modalBottomSheet(
                             showSearchBox: true,
-                            fit: FlexFit.loose,
+                            title: const Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: Text(
+                                "PG / Unit Terakhir Dinas",
+                                style: TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.bold),
+                              ),
+                            ),
                             searchFieldProps: TextFieldProps(
                               decoration: InputDecoration(
                                 hintText: "Search",
@@ -245,6 +252,12 @@ class _PendaftaranState extends State<Pendaftaran> {
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
+                              ),
+                            ),
+                            modalBottomSheetProps: const ModalBottomSheetProps(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.vertical(
+                                    top: Radius.circular(16)),
                               ),
                             ),
                           ),
@@ -276,21 +289,43 @@ class _PendaftaranState extends State<Pendaftaran> {
                         const Text("Status Hubungan Keluarga",
                             style: TextStyle(fontSize: 16)),
                         const SizedBox(height: 5),
-                        DropdownButtonFormField<String>(
-                          value: selectedStatusKeluarga,
-                          decoration: const InputDecoration(
-                            hintText: "Status Hubungan",
-                            border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(
-                                vertical: 8, horizontal: 10),
-                            isDense: true,
+                        DropdownSearch<String>(
+                          items: statusKeluargaList,
+                          selectedItem: selectedStatusKeluarga,
+                          popupProps: PopupProps.modalBottomSheet(
+                            showSearchBox: true,
+                            title: const Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: Text(
+                                "Status Hubungan Keluarga",
+                                style: TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            searchFieldProps: TextFieldProps(
+                              decoration: InputDecoration(
+                                hintText: "Search",
+                                prefixIcon: const Icon(Icons.search),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            ),
+                            modalBottomSheetProps: const ModalBottomSheetProps(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.vertical(
+                                    top: Radius.circular(16)),
+                              ),
+                            ),
                           ),
-                          items: statusKeluargaList.map((String status) {
-                            return DropdownMenuItem<String>(
-                              value: status,
-                              child: Text(status),
-                            );
-                          }).toList(),
+                          dropdownDecoratorProps: const DropDownDecoratorProps(
+                            dropdownSearchDecoration: InputDecoration(
+                              hintText: "Status Hubungan",
+                              border: OutlineInputBorder(),
+                              contentPadding: EdgeInsets.symmetric(
+                                  vertical: 8, horizontal: 12),
+                            ),
+                          ),
                           onChanged: (String? newValue) {
                             setState(() {
                               selectedStatusKeluarga = newValue;
@@ -302,50 +337,51 @@ class _PendaftaranState extends State<Pendaftaran> {
                     ),
                     const SizedBox(height: 24),
                     SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2F2F9D),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      barrierDismissible: false,
-                      builder: (context) {
-                        return Center(
-                          child: Material(
-                            color: Colors.transparent,
-                            child: Container(
-                              height: 60,
-                              width: 60,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              alignment: Alignment.center,
-                                child: const CircularProgressIndicator(),
-                            ),
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF2F2F9D),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                        );
-                      },
-                    );
-                    Future.delayed(const Duration(seconds: 2), () {
-                      Navigator.pop(context);
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => const DaftarBerhasil()),
-                      );
-                    });
-                  },
-                  child: const Text(
-                    "Daftar",
-                    style: TextStyle(fontSize: 16, color: Colors.white),
-                  ),
-                ),
-              ),
+                        ),
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (context) {
+                              return Center(
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: Container(
+                                    height: 60,
+                                    width: 60,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: const CircularProgressIndicator(),
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                          Future.delayed(const Duration(seconds: 2), () {
+                            Navigator.pop(context);
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const DaftarBerhasil()),
+                            );
+                          });
+                        },
+                        child: const Text(
+                          "Daftar",
+                          style: TextStyle(fontSize: 16, color: Colors.white),
+                        ),
+                      ),
+                    ),
                     // SizedBox(
                     //   width: double.infinity,
                     //   child: ElevatedButton(
