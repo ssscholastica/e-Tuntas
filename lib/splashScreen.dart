@@ -127,7 +127,7 @@ class _SplashScreenState extends State<SplashScreen> {
             },
             style: OutlinedButton.styleFrom(
               padding:
-                  const EdgeInsets.symmetric(horizontal: 150, vertical: 15),
+                  const EdgeInsets.symmetric(horizontal: 165, vertical: 15),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),

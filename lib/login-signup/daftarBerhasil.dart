@@ -77,7 +77,7 @@ class _DaftarBerhasilState extends State<DaftarBerhasil> {
                 },
                 style: ElevatedButton.styleFrom(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 150, vertical: 15),
+                        const EdgeInsets.symmetric(horizontal: 149, vertical: 15),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),

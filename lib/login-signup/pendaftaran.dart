@@ -39,12 +39,41 @@ class _PendaftaranState extends State<Pendaftaran> {
   }
 
   final List<String> instansiList = [
-    "Kebun Jember",
-    "Kebun Lumajang I",
-    "Kebun Lumajang II",
-    "Kebun Doho",
-    "Kebun Banyuwangi",
-    "Kebun Madiun"
+    "Kantor Pusat eks N10",
+"PG Toelangan",
+"PG Watoetoelis",
+"PG Kremboong",
+"PG Gempolkrep",
+"PG Djombang Baru",
+"PG Tjoekir",
+"PG Lestari",
+"PG Meritjan",
+"PG Pesantren Baru",
+"PG Ngadiredjo",
+"PG Modjopanggoong",
+"Kebun Kertosari",
+"Kebun Adjong Gayasan",
+"Kebun Klaten",
+"PG Sudhono",
+"PG Purwodadie",
+"PG Redjosari",
+"PG Pagottan",
+"PG Kanigoro",
+"Unit Usaha Strategis",
+"PG Kedawung",
+"PG Wonolangan",
+"PG Gending",
+"PG Pajarakan",
+"PG Djatiroto",
+"PG Semboro",
+"PG Wringinanom",
+"PG Olean",
+"PG Pandji",
+"PG Assembagus",
+"PG Pradjekan",
+"PK Rosella Baru",
+"Kantor Pusat EKS N11",
+"Pasa dan Hilirisasi Usaha",
   ];
   String? selectedInstansi;
 
@@ -273,27 +302,72 @@ class _PendaftaranState extends State<Pendaftaran> {
                     ),
                     const SizedBox(height: 24),
                     SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF2F2F9D),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const DaftarBerhasil()),
-                          );
-                        },
-                        child: const Text(
-                          "Daftar",
-                          style: TextStyle(fontSize: 16, color: Colors.white),
-                        ),
-                      ),
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2F2F9D),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
+                  ),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (context) {
+                        return Center(
+                          child: Material(
+                            color: Colors.transparent,
+                            child: Container(
+                              height: 60,
+                              width: 60,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              alignment: Alignment.center,
+                                child: const CircularProgressIndicator(),
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                    Future.delayed(const Duration(seconds: 2), () {
+                      Navigator.pop(context);
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (context) => const DaftarBerhasil()),
+                      );
+                    });
+                  },
+                  child: const Text(
+                    "Daftar",
+                    style: TextStyle(fontSize: 16, color: Colors.white),
+                  ),
+                ),
+              ),
+                    // SizedBox(
+                    //   width: double.infinity,
+                    //   child: ElevatedButton(
+                    //     style: ElevatedButton.styleFrom(
+                    //       backgroundColor: const Color(0xFF2F2F9D),
+                    //       shape: RoundedRectangleBorder(
+                    //         borderRadius: BorderRadius.circular(8),
+                    //       ),
+                    //     ),
+                    //     onPressed: () {
+                    //       Navigator.push(
+                    //         context,
+                    //         MaterialPageRoute(
+                    //             builder: (context) => const DaftarBerhasil()),
+                    //       );
+                    //     },
+                    //     child: const Text(
+                    //       "Daftar",
+                    //       style: TextStyle(fontSize: 16, color: Colors.white),
+                    //     ),
+                    //   ),
+                    // ),
                   ],
                 ),
               ),

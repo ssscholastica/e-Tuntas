@@ -121,13 +121,39 @@ class _addBankState extends State<addBank> {
   final TextEditingController noRekController = TextEditingController();
   final TextEditingController namaPemilikController = TextEditingController();
   String? _uploadedFileName;
+  bool isLoading = false;
 
   void _saveBankAccount() {
-    if (namaBankController.text.isNotEmpty &&
-        noRekController.text.isNotEmpty &&
-        namaPemilikController.text.isNotEmpty &&
-        _uploadedFileName != null &&
-        _uploadedFileName!.isNotEmpty) {
+  if (namaBankController.text.isNotEmpty &&
+      noRekController.text.isNotEmpty &&
+      namaPemilikController.text.isNotEmpty &&
+      _uploadedFileName != null &&
+      _uploadedFileName!.isNotEmpty) {
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return Center(
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10)
+              ),
+            alignment: Alignment.center,
+          child: CircularProgressIndicator(),
+            ))
+        );
+      },
+    );
+
+    Future.delayed(const Duration(seconds: 2), () {
+      Navigator.pop(context); 
+
       _showDialog(
         success: true,
         title: "Tersimpan!",
@@ -143,18 +169,21 @@ class _addBankState extends State<addBank> {
           });
         },
       );
-    } else {
-      _showDialog(
-        success: false,
-        title: "Gagal!",
-        message: "Terjadi kesalahan...",
-        buttonText: "Reupload",
-        onPressed: () {
-          Navigator.pop(context);
-        },
-      );
-    }
+    });
+
+  } else {
+    _showDialog(
+      success: false,
+      title: "Gagal!",
+      message: "Terjadi kesalahan...",
+      buttonText: "Reupload",
+      onPressed: () {
+        Navigator.pop(context);
+      },
+    );
   }
+}
+
 
   void _showDialog({
     required bool success,
@@ -330,7 +359,8 @@ class _addBankState extends State<addBank> {
                 padding: const EdgeInsets.only(right: 20),
                 child: Align(
                   alignment: Alignment.centerRight,
-                  child: ElevatedButton(
+                  child: isLoading ? const CircularProgressIndicator()
+                  : ElevatedButton(
                     onPressed: _saveBankAccount,
                     style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(

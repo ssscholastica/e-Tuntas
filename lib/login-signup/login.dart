@@ -116,8 +116,10 @@ class _LoginState extends State<Login> {
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: () {
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (context) => const ForgotPassword()));
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const ForgotPassword()));
                   },
                   child: const Text("Lupa Kata Sandi?"),
                 ),
@@ -128,14 +130,39 @@ class _LoginState extends State<Login> {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF2F2F9D),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
                   onPressed: () {
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (context) => const Home()));
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (context) {
+                        return Center(
+                          child: Material(
+                            color: Colors.transparent,
+                            child: Container(
+                              height: 60,
+                              width: 60,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              alignment: Alignment.center,
+                                child: const CircularProgressIndicator(),
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                    Future.delayed(const Duration(seconds: 2), () {
+                      Navigator.pop(context);
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (context) => const Home()),
+                      );
+                    });
                   },
                   child: const Text(
                     "Login",
