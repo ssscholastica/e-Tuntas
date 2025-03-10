@@ -1,8 +1,29 @@
 import 'package:etuntas/login-signup/login.dart';
+import 'package:etuntas/widgets/loading_widget.dart';
 import 'package:flutter/material.dart';
 
-class ForgotPassword extends StatelessWidget {
+class ForgotPassword extends StatefulWidget {
   const ForgotPassword({super.key});
+
+  @override
+  State<ForgotPassword> createState() => _ForgotPasswordState();
+}
+
+class _ForgotPasswordState extends State<ForgotPassword> {
+  bool isLoading = false;
+
+  void _onBackPressed() {
+    setState(() {
+      isLoading = true;
+    });
+
+    Future.delayed(const Duration(seconds: 2), () {
+      setState(() {
+        isLoading = false;
+      });
+      _showSuccessDialog(context);
+    });
+  }
 
   void _showSuccessDialog(BuildContext context) {
     showDialog(
@@ -81,55 +102,58 @@ class ForgotPassword extends StatelessWidget {
           },
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              "Masukkan email akun Anda di bawah ini. Kami akan mengirimkan pesan email beserta tautan untuk reset kata sandi Anda.",
-              style: TextStyle(fontSize: 14, color: Colors.black87),
-              textAlign: TextAlign.justify,
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              "Email",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(height: 5),
-            TextField(
-              keyboardType: TextInputType.emailAddress,
-              decoration: InputDecoration(
-                hintText: "etuntas@mail.com",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+      body: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Masukkan email akun Anda di bawah ini. Kami akan mengirimkan pesan email beserta tautan untuk reset kata sandi Anda.",
+                  style: TextStyle(fontSize: 14, color: Colors.black87),
+                  textAlign: TextAlign.justify,
                 ),
-                contentPadding:
-                    const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-              ),
-            ),
-            const SizedBox(height: 30),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2F2F9D),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                const SizedBox(height: 20),
+                const Text(
+                  "Email",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 5),
+                TextField(
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: InputDecoration(
+                    hintText: "etuntas@mail.com",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding:
+                        const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                   ),
                 ),
-                onPressed: () {
-                  _showSuccessDialog(context);
-                },
-                child: const Text(
-                  "Kirim",
-                  style: TextStyle(fontSize: 16, color: Colors.white),
+                const SizedBox(height: 30),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2F2F9D),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    onPressed: _onBackPressed,
+                    child: const Text(
+                      "Kirim",
+                      style: TextStyle(fontSize: 16, color: Colors.white),
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+          LoadingWidget(isLoading: isLoading),
+        ],
       ),
     );
   }

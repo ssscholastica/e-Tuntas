@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:etuntas/widgets/loading_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:etuntas/home.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -118,20 +119,40 @@ class _TrackingAwalState extends State<TrackingAwal> {
     }
   }
 
+bool isLoading = false;
+
+  void _onBackPressed() {
+    setState(() {
+      isLoading = true;
+    });
+
+    Future.delayed(const Duration(seconds: 2), () {
+      setState(() {
+        isLoading = false;
+      });
+      _cekTrackingData();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildHeader(),
-            _buildInputField(),
-            _buildCheckButton(),
-            _buildTrackingResult(),
-            const SizedBox(height: 80)
-          ],
-        ),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            child: Column(
+              children: [
+                _buildHeader(),
+                _buildInputField(),
+                _buildCheckButton(),
+                _buildTrackingResult(),
+                const SizedBox(height: 80)
+              ],
+            ),
+          ),
+          LoadingWidget(isLoading: isLoading),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: openWhatsApp,
@@ -200,7 +221,7 @@ class _TrackingAwalState extends State<TrackingAwal> {
       child: Align(
         alignment: Alignment.centerRight,
         child: ElevatedButton(
-          onPressed: _cekTrackingData,
+          onPressed: _onBackPressed,
           style: ElevatedButton.styleFrom(
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
