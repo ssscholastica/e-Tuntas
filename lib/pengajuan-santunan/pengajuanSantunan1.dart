@@ -1,9 +1,10 @@
+import 'dart:io';
+
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:etuntas/pengajuan-santunan/pengajuanSantunan.dart';
 import 'package:etuntas/pengajuan-santunan/successUpload.dart';
-import 'package:flutter/material.dart';
-import 'dart:io';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:open_file/open_file.dart';
 
@@ -181,7 +182,6 @@ class _PengajuanSantunan1State extends State<PengajuanSantunan1> {
                       height: 28,
                     ),
                   ),
-                  const Spacer(),
                   const Text(
                     "Proses Pengajuan Santunan",
                     style: TextStyle(
@@ -196,9 +196,10 @@ class _PengajuanSantunan1State extends State<PengajuanSantunan1> {
             ),
             Container(
               alignment: Alignment.bottomLeft,
-              margin: const EdgeInsets.only(top: 30, left: 20),
+              margin: const EdgeInsets.only(top: 30, left: 20, right: 20),
               child: const Text(
                 'Yang Meninggal Pensiunan PTPN XI Kantor Pusat dan Istri Masih Hidup',
+                textAlign: TextAlign.justify,
                 style: TextStyle(
                   fontSize: 16,
                   color: Color(0XFF26267E),

@@ -1,9 +1,10 @@
+import 'dart:io';
+
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:etuntas/pengajuan-santunan/pengajuanSantunan.dart';
 import 'package:etuntas/pengajuan-santunan/successUpload.dart';
-import 'package:flutter/material.dart';
-import 'dart:io';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:open_file/open_file.dart';
 
@@ -60,6 +61,8 @@ class _PengajuanSantunan4State extends State<PengajuanSantunan4> {
   }
 
   final List<GlobalKey<_FileUploadFieldState>> fileUploadKeys = [
+    GlobalKey<_FileUploadFieldState>(),
+    GlobalKey<_FileUploadFieldState>(),
     GlobalKey<_FileUploadFieldState>(),
     GlobalKey<_FileUploadFieldState>(),
     GlobalKey<_FileUploadFieldState>(),
@@ -182,7 +185,6 @@ class _PengajuanSantunan4State extends State<PengajuanSantunan4> {
                       height: 28,
                     ),
                   ),
-                  const Spacer(),
                   const Text(
                     "Proses Pengajuan Santunan",
                     style: TextStyle(
@@ -197,9 +199,10 @@ class _PengajuanSantunan4State extends State<PengajuanSantunan4> {
             ),
             Container(
               alignment: Alignment.bottomLeft,
-              margin: const EdgeInsets.only(top: 30, left: 20),
+              margin: const EdgeInsets.only(top: 30, left: 20, right: 20),
               child: const Text(
                 'Yang Meninggal Pensiunan PTPN XI Kantor Pusat dan Istri Sudah Meninggal, Dalam KK Hanya Pensiunan Sendiri (Tidak Ada Anak Karena Sudah Pecah KK',
+                textAlign: TextAlign.justify,
                 style: TextStyle(
                   fontSize: 16,
                   color: Color(0XFF26267E),
@@ -211,11 +214,13 @@ class _PengajuanSantunan4State extends State<PengajuanSantunan4> {
                 "Tanggal Meninggal", tanggalMeninggalController),
             buildJudul("Lokasi Meninggal", lokasiMeninggalController),
             FileUploadField(key: fileUploadKeys[0], label: "Surat Kematian"),
-            FileUploadField(key: fileUploadKeys[1], label: "Kartu Keluarga"),
+            FileUploadField(key: fileUploadKeys[1], label: "Surat Keterangan"),
+            FileUploadField(key: fileUploadKeys[2], label: "Surat Kuasa"),
+            FileUploadField(key: fileUploadKeys[3], label: "Kartu Keluarga"),
             FileUploadField(
-                key: fileUploadKeys[2], label: "KTP Pensiunan dan Anak"),
+                key: fileUploadKeys[4], label: "KTP Pensiunan dan Anak"),
             FileUploadField(
-                key: fileUploadKeys[3], label: "Buku Rekening Anak"),
+                key: fileUploadKeys[5], label: "Buku Rekening Anak"),
             const SizedBox(height: 30),
             ElevatedButton(
               onPressed: () {
