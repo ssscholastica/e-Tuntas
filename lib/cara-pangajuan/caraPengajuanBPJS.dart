@@ -68,7 +68,7 @@ class _CaraPengajuanBPJSState extends State<CaraPengajuanBPJS> {
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 10),
-                  Image.asset('assets/alur pengajuan BPJS.png'),
+                  Center(child: Image.asset('assets/alur pengajuan BPJS.png', width: 225,)),
                 ],
               ),
             ],
