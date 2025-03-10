@@ -8,13 +8,13 @@ class LoadingWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!isLoading)
-      return const SizedBox.shrink(); // Jika tidak loading, tidak tampil
+      return const SizedBox.shrink();
 
     return AnimatedOpacity(
       opacity: isLoading ? 1.0 : 0.0,
       duration: const Duration(milliseconds: 300),
       child: Container(
-        color: Colors.black.withOpacity(0.4), // Layar redup
+        color: Colors.black.withOpacity(0.4), 
         child: Center(
           child: Container(
             padding: const EdgeInsets.all(20),
@@ -34,7 +34,7 @@ class LoadingWidget extends StatelessWidget {
               children: [
                 CircularProgressIndicator(
                   valueColor: AlwaysStoppedAnimation<Color>(
-                      Color(0xFF2F2F9D)), // Warna loading
+                      Color(0xFF2F2F9D)), 
                 ),
               ],
             ),
