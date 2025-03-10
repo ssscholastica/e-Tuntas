@@ -26,7 +26,7 @@ class _PertanyaanUmumState extends State<PertanyaanUmum> {
           onTap: () {
             setState(() {
               _expandedStatus[title] =
-                  !isExpanded; // Toggle status hanya untuk item ini
+                  !isExpanded; 
             });
           },
           child: Container(
@@ -98,7 +98,7 @@ class _PertanyaanUmumState extends State<PertanyaanUmum> {
           Center(
             child: Container(
               margin: const EdgeInsets.only(
-                  top: 80, left: 20, right: 20, bottom: 10),
+                  top: 60, left: 20, right: 20, bottom: 10),
               child: Row(
                 children: [
                   InkWell(

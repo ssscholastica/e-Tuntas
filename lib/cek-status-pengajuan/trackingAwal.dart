@@ -148,7 +148,7 @@ class _TrackingAwalState extends State<TrackingAwal> {
 
   Widget _buildHeader() {
     return Container(
-      margin: const EdgeInsets.only(top: 80, left: 20, right: 20),
+      margin: const EdgeInsets.only(top: 60, left: 20, right: 20),
       child: Row(
         children: [
           InkWell(
