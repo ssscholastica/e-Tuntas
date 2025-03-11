@@ -1,9 +1,13 @@
+import 'dart:convert';
+
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:etuntas/login-signup/daftarBerhasil.dart';
+import 'package:etuntas/network/auth_services.dart';
 import 'package:etuntas/splashScreen.dart';
 import 'package:etuntas/widgets/loading_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
 class Pendaftaran extends StatefulWidget {
@@ -16,13 +20,16 @@ class Pendaftaran extends StatefulWidget {
 
 class _PendaftaranState extends State<Pendaftaran> {
   final Map<String, TextEditingController> controllers = {
-    "Nama Pendaftar": TextEditingController(),
+    "Nama": TextEditingController(),
     "Email": TextEditingController(),
     "Alamat": TextEditingController(),
     "Tanggal Lahir": TextEditingController(),
     "Nomor HP": TextEditingController(),
-    "instansi": TextEditingController(),
-    "jabatan": TextEditingController(),
+    "PG Unit": TextEditingController(),
+    "Nomor Pensiunan": TextEditingController(),
+    "NIK": TextEditingController(),
+    "Nama Bersangkutan": TextEditingController(),
+    "Status": TextEditingController(),
   };
 
   Future<void> selectDate(BuildContext context) async {
@@ -141,7 +148,71 @@ class _PendaftaranState extends State<Pendaftaran> {
         MaterialPageRoute(builder: (context) => const DaftarBerhasil()),
       );
     });
+    
   }
+
+ Future<void> createAccountPressed(BuildContext context) async {
+    String _name = controllers["Nama"]?.text ?? '';
+    String _email = controllers["Email"]?.text ?? '';
+    String _alamat = controllers["Alamat"]?.text ?? '';
+    String _tanggalLahir = controllers["Tanggal Lahir"]?.text ?? '';
+    String _nomorHP = controllers["Nomor HP"]?.text ?? '';
+    String _pgUnit = controllers["PG Unit"]?.text ?? '';
+    String _noPensiunan = controllers["Nomor Pensiunan"]?.text ?? '';
+    String _nik = controllers["NIK"]?.text ?? '';
+    String _namaBersangkutan = controllers["Nama Bersangkutan"]?.text ?? '';
+    String _status = controllers["Status"]?.text ?? '';
+
+    bool emailValid = RegExp(
+            r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
+        .hasMatch(_email);
+
+    if (!emailValid) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Email tidak valid')),
+      );
+      return;
+    }
+
+    try {
+      http.Response response = await AuthServices.register(
+          _name,
+          _email,
+          _alamat,
+          _tanggalLahir,
+          _nomorHP,
+          _pgUnit,
+          _noPensiunan,
+          _nik,
+          _namaBersangkutan,
+          _status);
+
+      print("Response Status Code: ${response.statusCode}");
+      print("Raw Response: ${response.body}");
+
+      Map<String, dynamic> responseMap = jsonDecode(response.body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        if (context.mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const DaftarBerhasil()),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(responseMap["message"] ?? "Terjadi kesalahan")),
+        );
+      }
+    } catch (e) {
+      print("Error decoding JSON: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Terjadi kesalahan. Coba lagi.')),
+      );
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -286,13 +357,14 @@ class _PendaftaranState extends State<Pendaftaran> {
                             onChanged: (String? newValue) {
                               setState(() {
                                 selectedInstansi = newValue;
+                                controllers["PG Unit"]?.text = newValue ?? '';
                               });
                             },
                           ),
                           const SizedBox(height: 10),
                         ],
                       ),
-                      buildTextField("No Pensiun", "Nomor Pensiunan", "12 digit nomor pensiunan", isNumber: true),
+                      buildTextField("Nomor Pensiunan", "Nomor Pensiunan", "12 digit nomor pensiunan", isNumber: true),
                       buildTextField("NIK", "NIK", "12 digit NIK", isNumber: true),
                       buildTextField("Nama Bersangkutan", "Nama", "Nama bersangkutan"),
                       Column(
@@ -344,6 +416,7 @@ class _PendaftaranState extends State<Pendaftaran> {
                             onChanged: (String? newValue) {
                               setState(() {
                                 selectedStatusKeluarga = newValue;
+                                controllers["Status"]?.text = newValue ?? '';
                               });
                             },
                           ),
@@ -360,7 +433,7 @@ class _PendaftaranState extends State<Pendaftaran> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          onPressed: _onBackPressed,
+                         onPressed: () => createAccountPressed(context),
                           child: const Text(
                             "Daftar",
                             style: TextStyle(fontSize: 16, color: Colors.white),
