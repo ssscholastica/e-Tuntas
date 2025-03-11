@@ -3,6 +3,7 @@ import 'package:etuntas/login-signup/daftarBerhasil.dart';
 import 'package:etuntas/splashScreen.dart';
 import 'package:etuntas/widgets/loading_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 class Pendaftaran extends StatefulWidget {
@@ -40,41 +41,40 @@ class _PendaftaranState extends State<Pendaftaran> {
   }
 
   final List<String> instansiList = [
+    "Kantor Pusat eks N11",
     "Kantor Pusat eks N10",
-    "PG Toelangan",
-    "PG Watoetoelis",
-    "PG Kremboong",
-    "PG Gempolkrep",
+    "Kebun Adjong Gayasan",
+    "Kebun Kertosari",
+    "Kebun Klaten",
+    "PG Assembagus",
+    "PG Djatiroto",
     "PG Djombang Baru",
-    "PG Tjoekir",
+    "PG Gempolkrep",
+    "PG Gending",
+    "PG Kanigoro",
+    "PG Kedawung",
+    "PG Kremboong",
     "PG Lestari",
     "PG Meritjan",
-    "PG Pesantren Baru",
-    "PG Ngadiredjo",
     "PG Modjopanggoong",
-    "Kebun Kertosari",
-    "Kebun Adjong Gayasan",
-    "Kebun Klaten",
-    "PG Sudhono",
+    "PG Ngadiredjo",
+    "PG Pajarakan",
+    "PG Pagottan",
+    "PG Pandji",
+    "PG Pesantren Baru",
+    "PG Pradjekan",
     "PG Purwodadie",
     "PG Redjosari",
-    "PG Pagottan",
-    "PG Kanigoro",
-    "Unit Usaha Strategis",
-    "PG Kedawung",
-    "PG Wonolangan",
-    "PG Gending",
-    "PG Pajarakan",
-    "PG Djatiroto",
     "PG Semboro",
+    "PG Sudhono",
+    "PG Tjoekir",
+    "PG Toelangan",
+    "PG Watoetoelis",
+    "PG Wonolangan",
     "PG Wringinanom",
-    "PG Olean",
-    "PG Pandji",
-    "PG Assembagus",
-    "PG Pradjekan",
     "PK Rosella Baru",
-    "Kantor Pusat EKS N11",
     "Pasa dan Hilirisasi Usaha",
+    "Unit Usaha Strategis",
   ];
   String? selectedInstansi;
 
@@ -88,7 +88,7 @@ class _PendaftaranState extends State<Pendaftaran> {
   String? selectedStatusKeluarga;
 
   Widget buildTextField(String key, String label, String hint,
-      {TextInputType? keyboardType, Widget? prefix, bool isDate = false}) {
+      {Widget? prefix, bool isDate = false, bool isNumber = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -98,7 +98,8 @@ class _PendaftaranState extends State<Pendaftaran> {
           width: MediaQuery.of(context).size.width,
           child: TextField(
             controller: controllers[key],
-            keyboardType: keyboardType,
+            keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+            inputFormatters: isNumber ? [FilteringTextInputFormatter.digitsOnly] : null,
             readOnly: isDate,
             onTap: isDate ? () => selectDate(context) : null,
             decoration: InputDecoration(
@@ -124,18 +125,6 @@ class _PendaftaranState extends State<Pendaftaran> {
     }
   }
 
-  void handleSubmit() {
-    print("Nama: ${controllers["Nama"]?.text}");
-    print("Email: ${controllers["Email"]?.text}");
-    print("Alamat: ${controllers["Alamat"]?.text}");
-    print("Tanggal lahir: ${controllers["Tanggal lahir"]?.text}");
-    print("Nomor HP: ${controllers["Nomor HP"]?.text}");
-    print("PG/Unit Terakhir Dinas: $selectedInstansi");
-    print("NIK: ${controllers["NIK"]?.text}");
-    print("Nomor Pensiunan: ${controllers["Nomor Pensiunan"]?.text}");
-    print("Status Hubungan Keluarga: $selectedStatusKeluarga");
-  }
-
   bool isLoading = false;
 
   void _onBackPressed() {
@@ -153,17 +142,6 @@ class _PendaftaranState extends State<Pendaftaran> {
       );
     });
   }
-  // void handleSubmit() {
-  //   print("Nama: ${controllers["Nama"]?.text}");
-  //   print("Email: ${controllers["Email"]?.text}");
-  //   print("Alamat: ${controllers["Alamat"]?.text}");
-  //   print("Tanggal lahir: ${controllers["Tanggal lahir"]?.text}");
-  //   print("Nomor HP: ${controllers["Nomor HP"]?.text}");
-  //   print("PG/Unit Terakhir Dinas: $selectedInstansi");
-  //   print("NIK: ${controllers["NIK"]?.text}");
-  //   print("Nomor Pensiunan: ${controllers["Nomor Pensiunan"]?.text}");
-  //   print("Status Hubungan Keluarga: $selectedStatusKeluarga");
-  // }
 
   @override
   Widget build(BuildContext context) {
@@ -219,8 +197,7 @@ class _PendaftaranState extends State<Pendaftaran> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text("Nomor HP",
-                              style: TextStyle(fontSize: 16)),
+                          const Text("Nomor HP", style: TextStyle(fontSize: 16)),
                           const SizedBox(height: 5),
                           TextField(
                             controller: controllers["Nomor HP"],
@@ -315,11 +292,9 @@ class _PendaftaranState extends State<Pendaftaran> {
                           const SizedBox(height: 10),
                         ],
                       ),
-                      buildTextField("No Pensiun", "Nomor Pensiunan",
-                          "12 digit nomor pensiunan"),
-                      buildTextField("NIK", "NIK", "12 digit NIK"),
-                      buildTextField(
-                          "Nama Bersangkutan", "Nama", "Nama bersangkutan"),
+                      buildTextField("No Pensiun", "Nomor Pensiunan", "12 digit nomor pensiunan", isNumber: true),
+                      buildTextField("NIK", "NIK", "12 digit NIK", isNumber: true),
+                      buildTextField("Nama Bersangkutan", "Nama", "Nama bersangkutan"),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [

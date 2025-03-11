@@ -20,31 +20,31 @@ class Persyaratan extends StatelessWidget {
     {
       "image": "assets/img1.png",
       "text":
-          "Yang Meninggal Pensiunan PTPN XI Kantor Pusat dan Istri Masih Hidup",
+          "Yang Meninggal Pensiunan PTPN X atau XI Kantor Pusat dan Istri Masih Hidup",
       "color": const Color(0xFFD1E7D1),
     },
     {
       "image": "assets/img2.png",
       "text":
-          "Yang Meninggal Pensiunan PTPN XI Kantor Pusat dan Istri Sudah Meninggal, Dalam KK Ada 1 Anak",
+          "Yang Meninggal Pensiunan PTPN X atau XI Kantor Pusat dan Istri Sudah Meninggal, Dalam KK Ada 1 Anak",
       "color": const Color(0xFFD0D0F7),
     },
     {
       "image": "assets/img3.png",
       "text":
-          "Yang Meninggal Pensiunan PTPN XI Kantor Pusat dan Istri Sudah Meninggal, Dalam KK Ada Beberapa Anak",
+          "Yang Meninggal Pensiunan PTPN X atau XI Kantor Pusat dan Istri Sudah Meninggal, Dalam KK Ada Beberapa Anak",
       "color": const Color(0xFFCFE3FF),
     },
     {
       "image": "assets/img4.png",
       "text":
-          "Yang Meninggal Pensiunan PTPN XI Kantor Pusat dan Istri Sudah Meninggal, Dalam KK Hanya Pensiunan Sendiri (Tidak Ada Anak Karena Sudah Pecah KK)",
+          "Yang Meninggal Pensiunan PTPN X atau XI Kantor Pusat dan Istri Sudah Meninggal, Dalam KK Hanya Pensiunan Sendiri (Tidak Ada Anak Karena Sudah Pecah KK)",
       "color": const Color(0xFFFFF1C5),
     },
     {
       "image": "assets/img5.png",
       "text":
-          "Yang Meninggal Pensiunan PTPN XI Kantor Pusat dan Istri Sudah Meninggal, Dalam KK Hanya Tercantum Pensiunan Janda Tanpa Batih (Tidak Ada Anak Karena Sudah Pecah KK)",
+          "Yang Meninggal Pensiunan PTPN X atau XI Kantor Pusat dan Istri Sudah Meninggal, Dalam KK Hanya Tercantum Pensiunan Janda Tanpa Batih (Tidak Ada Anak Karena Sudah Pecah KK)",
       "color": const Color(0xFFFFD9E1),
     },
   ];

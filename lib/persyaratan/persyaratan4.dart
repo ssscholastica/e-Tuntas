@@ -5,7 +5,7 @@ class Persyaratan4 extends StatelessWidget {
 
   final List<Map<String, dynamic>> persyaratanList = [
     {
-      "text":"Yang Meninggal Pensiunan PTPN XI Kantor Pusat dan Istri Sudah Meninggal, Dalam KK Hanya Pensiunan Sendiri (Tidak Ada Anak Karena Sudah Pecah KK",
+      "text":"Yang Meninggal Pensiunan PTPN X atau XI Kantor Pusat dan Istri Sudah Meninggal, Dalam KK Hanya Pensiunan Sendiri (Tidak Ada Anak Karena Sudah Pecah KK",
       "color": const Color(0xFFCFE2FF),
     },
     {

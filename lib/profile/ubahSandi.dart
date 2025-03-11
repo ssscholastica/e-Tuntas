@@ -1,4 +1,3 @@
-import 'package:etuntas/navbar.dart';
 import 'package:etuntas/profile/profile.dart';
 import 'package:etuntas/profile/ubahBerhasil.dart';
 import 'package:etuntas/widgets/loading_widget.dart';
@@ -86,7 +85,7 @@ class _UbahSandiState extends State<UbahSandi> {
       });
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => UbahBerhasil()),
+        MaterialPageRoute(builder: (context) => const UbahBerhasil()),
       );
     });
   }
@@ -153,7 +152,7 @@ class _UbahSandiState extends State<UbahSandi> {
                   style: ElevatedButton.styleFrom(
                       padding:
                         EdgeInsets.symmetric(
-                        horizontal: MediaQuery.of(context).size.width * 0.4,
+                        horizontal: MediaQuery.of(context).size.width * 0.37,
                         vertical: MediaQuery.of(context).size.height * 0.02,
                       ),
                       shape: RoundedRectangleBorder(

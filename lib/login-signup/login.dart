@@ -39,130 +39,136 @@ class _LoginState extends State<Login> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      ShaderMask(
-                        blendMode: BlendMode.srcIn,
-                        shaderCallback: (Rect rect) {
-                          return _gradient.createShader(rect);
-                        },
-                        child: const Center(
-                          child: Text(
-                            "E-Tuntas",
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+      body: SingleChildScrollView(
+        child: Stack(
+          children: [
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        ShaderMask(
+                          blendMode: BlendMode.srcIn,
+                          shaderCallback: (Rect rect) {
+                            return _gradient.createShader(rect);
+                          },
+                          child: const Center(
+                            child: Text(
+                              "E-Tuntas",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      Image.asset(
-                        "assets/logo ptpn1.png",
-                        height: 40,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  Image.asset(
-                    "assets/login.png",
-                    height: 280,
-                  ),
-                  const SizedBox(height: 20),
-                  const Text(
-                    "Masuk ke Akun Anda",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 20),
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text("Nama Pengguna",
-                        style:
-                            TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                  ),
-                  const SizedBox(height: 5),
-                  TextField(
-                    decoration: InputDecoration(
-                      hintText: "Nama Pengguna",
-                      contentPadding:
-                          const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 15),
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text("Kata Sandi",
-                        style:
-                            TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                  ),
-                  const SizedBox(height: 5),
-                  TextField(
-                    obscureText: _obscureText,
-                    decoration: InputDecoration(
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscureText ? Icons.visibility_off : Icons.visibility,
+                        Image.asset(
+                          "assets/logo ptpn1.png",
+                          height: 40,
                         ),
-                        onPressed: () {
-                          setState(() {
-                            _obscureText = !_obscureText;
-                          });
-                        },
+                      ],
+                    ),
+                    const SizedBox(height: 30),
+                    Image.asset(
+                      "assets/login.png",
+                      height: 200,
+                      width: double.infinity,
+                      fit: BoxFit.contain,
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      "Masuk ke Akun Anda",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
-                      hintText: "Kata Sandi",
-                      contentPadding:
-                          const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Container(
+                        padding: const EdgeInsets.only(left: 5),
+                        child: const Text("Nama Pengguna",
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                       ),
                     ),
-                  ),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const ForgotPassword()));
-                      },
-                      child: const Text("Lupa Kata Sandi?"),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2F2F9D),
-                        shape: RoundedRectangleBorder(
+                    const SizedBox(height: 5),
+                    TextField(
+                      decoration: InputDecoration(
+                        hintText: "Nama Pengguna",
+                        contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
+                        border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      onPressed: _onBackPressed,
-                      child: const Text(
-                        "Login",
-                        style: TextStyle(fontSize: 16, color: Colors.white),
+                    ),
+                    const SizedBox(height: 15),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Container(
+                        padding: const EdgeInsets.only(left: 5),
+                        child: const Text("Kata Sandi",
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  Column(mainAxisAlignment: MainAxisAlignment.start, children: [
+                    const SizedBox(height: 5),
+                    TextField(
+                      obscureText: _obscureText,
+                      decoration: InputDecoration(
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscureText ? Icons.visibility_off : Icons.visibility,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscureText = !_obscureText;
+                            });
+                          },
+                        ),
+                        hintText: "Kata Sandi",
+                        contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const ForgotPassword()));
+                        },
+                        child: const Text("Lupa Kata Sandi?"),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 15),
+                          backgroundColor: const Color(0xFF2F2F9D),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        onPressed: _onBackPressed,
+                        child: const Text(
+                          "Login",
+                          style: TextStyle(fontSize: 16, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
                     const Text("Belum memiliki akun?"),
                     GestureDetector(
                       onTap: () {
@@ -173,9 +179,11 @@ class _LoginState extends State<Login> {
                         "Daftar",
                         style: TextStyle(
                           color: Color(0xFF2F2F9D),
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
+                    const SizedBox(height: 10),
                     TextButton(
                       onPressed: () {},
                       child: const Text(
@@ -183,13 +191,13 @@ class _LoginState extends State<Login> {
                         style: TextStyle(color: Color(0xFF2F2F9D)),
                       ),
                     ),
-                  ])
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-          LoadingWidget(isLoading: isLoading),
-        ],
+            LoadingWidget(isLoading: isLoading),
+          ],
+        ),
       ),
     );
   }

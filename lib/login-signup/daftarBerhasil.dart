@@ -60,30 +60,33 @@ class _DaftarBerhasilState extends State<DaftarBerhasil> {
               const SizedBox(height: 10),
               const Center(
                 child: Text(
-                  'Silakan periksa email Anda untuk mendapatkan username dan password akun. Cek folder spam jika Anda tidak menemukan email aktivasi dari kami.',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w400,
-                    color: Color(0XFFA3A3A3),
-                  ),
-                  textAlign: TextAlign.center
-                ),
+                    'Silakan periksa email Anda untuk mendapatkan username dan password akun. Cek folder spam jika Anda tidak menemukan email aktivasi dari kami.',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                      color: Color(0XFFA3A3A3),
+                    ),
+                    textAlign: TextAlign.center),
               ),
               const SizedBox(height: 30),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => const Home()));
-                },
-                style: ElevatedButton.styleFrom(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 149, vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    backgroundColor: const Color(0xFF2F2F9D)),
-                child: const Text("Lanjutkan",
-                    style: TextStyle(color: Color(0xFFFFFFFF), fontSize: 16)),
+              Center(
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(context,
+                        MaterialPageRoute(builder: (context) => const Home()));
+                  },
+                  style: ElevatedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: MediaQuery.of(context).size.width * 0.32,
+                        vertical: MediaQuery.of(context).size.height * 0.02,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      backgroundColor: const Color(0xFF2F2F9D)),
+                  child: const Text("Lanjutkan",
+                      style: TextStyle(color: Color(0xFFFFFFFF), fontSize: 16)),
+                ),
               ),
             ],
           ),

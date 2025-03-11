@@ -100,7 +100,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => Pendaftaran()),
+                      MaterialPageRoute(builder: (context) => const Pendaftaran()),
                     );
                   },
                   style: ElevatedButton.styleFrom(
@@ -126,7 +126,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => Login()),
+                      MaterialPageRoute(builder: (context) => const Login()),
                     );
                   },
                   style: OutlinedButton.styleFrom(

@@ -1,5 +1,4 @@
 import 'package:etuntas/pengajuan-santunan/pengajuanSantunan.dart';
-import 'package:etuntas/profile/profile.dart';
 import 'package:flutter/material.dart';
 
 class SuccesUpload extends StatefulWidget {
@@ -25,11 +24,11 @@ class _SuccessUploadState extends State<SuccesUpload> {
     return Scaffold(
         backgroundColor: Colors.white,
         body: Container(
-          margin: EdgeInsets.all(20),
+          margin: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 80),
+              const SizedBox(height: 50),
               ShaderMask(
                 blendMode: BlendMode.srcIn,
                 shaderCallback: (Rect rect) {
@@ -47,7 +46,7 @@ class _SuccessUploadState extends State<SuccesUpload> {
               ),
               Container(
                   alignment: Alignment.bottomCenter,
-                  margin: const EdgeInsets.only(top: 50),
+                  margin: const EdgeInsets.only(top: 10),
                   child: Image.asset('assets/edit berhasil.png',
                       width: 300, height: 300)),
               const Center(
@@ -69,7 +68,7 @@ class _SuccessUploadState extends State<SuccesUpload> {
               )),
               const SizedBox(height: 10),
               const Text(
-                'Silakan periksa email Anda untuk melihat ulang \nnomor pendaftaran.\nCek folder spam jika Anda tidak menemukan \nemail dari kami.',
+                'Silakan periksa email Anda untuk melihat ulang nomor pendaftaran. \nCek folder spam jika Anda tidak menemukan email dari kami.',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w400,
@@ -77,21 +76,27 @@ class _SuccessUploadState extends State<SuccesUpload> {
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 30),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => PengajuanSantunan()));
-                },
-                style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 145, vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    backgroundColor: const Color(0xFF2F2F9D)),
-                child: const Text("Lanjutkan",
-                    style: TextStyle(color: Color(0xFFFFFFFF), fontSize: 16)),
+              const SizedBox(height: 80),
+              Center(
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => PengajuanSantunan(namaPTPN: '', lokasiList: '',)));
+                  },
+                  style: ElevatedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: MediaQuery.of(context).size.width * 0.32,
+                        vertical: MediaQuery.of(context).size.height * 0.02,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      backgroundColor: const Color(0xFF2F2F9D)),
+                  child: const Text("Lanjutkan",
+                      style: TextStyle(color: Color(0xFFFFFFFF), fontSize: 16)),
+                ),
               ),
             ],
           ),

@@ -145,7 +145,7 @@ class _addBankState extends State<addBank> {
                 borderRadius: BorderRadius.circular(10)
               ),
             alignment: Alignment.center,
-          child: CircularProgressIndicator(),
+          child: const CircularProgressIndicator(),
             ))
         );
       },

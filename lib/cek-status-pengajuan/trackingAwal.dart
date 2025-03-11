@@ -194,7 +194,7 @@ bool isLoading = false;
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
+          const SizedBox(
             height: 10,
           ),
           const Text(
@@ -313,11 +313,11 @@ bool isLoading = false;
               Row(
                 children: [
                   Image.asset(item['icon']!,width: 16, height: 16, ),
-                  SizedBox(width: 5,),
+                  const SizedBox(width: 5,),
                   Text(item["status"]!,
                       style: const TextStyle(
                           fontSize: 14, fontWeight: FontWeight.bold)),
-                  Spacer(),
+                  const Spacer(),
                   Text(item["date"]!,
                       style: const TextStyle(fontSize: 12, color: Color(0XFF474747))),
                 ],

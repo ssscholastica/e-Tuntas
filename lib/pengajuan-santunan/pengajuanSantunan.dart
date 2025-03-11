@@ -1,4 +1,3 @@
-import 'package:etuntas/home.dart';
 import 'package:etuntas/pengajuan-santunan/pengajuanSantunan1.dart';
 import 'package:etuntas/pengajuan-santunan/pengajuanSantunan2.dart';
 import 'package:etuntas/pengajuan-santunan/pengajuanSantunan3.dart';
@@ -7,45 +6,39 @@ import 'package:etuntas/pengajuan-santunan/pengajuanSantunan5.dart';
 import 'package:flutter/material.dart';
 
 class PengajuanSantunan extends StatelessWidget {
-  PengajuanSantunan({super.key});
+  final String namaPTPN;
+  final String lokasiList;
+
+  PengajuanSantunan({required this.namaPTPN, required this.lokasiList, super.key});
 
   final List<Widget> pengajuanPages = [
-    PengajuanSantunan1(),
-    PengajuanSantunan2(),
-    PengajuanSantunan3(),
-    PengajuanSantunan4(),
-    PengajuanSantunan5()
+    const PengajuanSantunan1(),
+    const PengajuanSantunan2(),
+    const PengajuanSantunan3(),
+    const PengajuanSantunan4(),
+    const PengajuanSantunan5(),
   ];
 
   final List<Map<String, dynamic>> pengajuanList = [
     {
       "image": "assets/proses-pengajuan1.png",
-      "text":
-          "Yang Meninggal Pensiunan PTPN XI Kantor Pusat dan Istri Masih Hidup",
+      "text": "Yang Meninggal Pensiunan PTPN XI Kantor Pusat dan Istri Masih Hidup",
     },
     {
       "image": "assets/proses-pengajuan2.png",
-      "text":
-          "Yang Meninggal Pensiunan PTPN XI Kantor Pusat dan Istri Sudah Meninggal, Dalam KK Ada 1 Anak",
-      "color": const Color(0xFFD0D0F7),
+      "text": "Yang Meninggal Pensiunan PTPN XI Kantor Pusat dan Istri Sudah Meninggal, Dalam KK Ada 1 Anak",
     },
     {
       "image": "assets/proses-pengajuan3.png",
-      "text":
-          "Yang Meninggal Pensiunan PTPN XI Kantor Pusat dan Istri Sudah Meninggal, Dalam KK Ada Beberapa Anak",
-      "color": const Color(0xFFCFE3FF),
+      "text": "Yang Meninggal Pensiunan PTPN XI Kantor Pusat dan Istri Sudah Meninggal, Dalam KK Ada Beberapa Anak",
     },
     {
       "image": "assets/proses-pengajuan4.png",
-      "text":
-          "Yang Meninggal Pensiunan PTPN XI Kantor Pusat dan Istri Sudah Meninggal, Dalam KK Hanya Pensiunan Sendiri (Tidak Ada Anak Karena Sudah Pecah KK)",
-      "color": const Color(0xFFFFF1C5),
+      "text": "Yang Meninggal Pensiunan PTPN XI Kantor Pusat dan Istri Sudah Meninggal, Dalam KK Hanya Pensiunan Sendiri (Tidak Ada Anak Karena Sudah Pecah KK)",
     },
     {
       "image": "assets/proses-pengajuan5.png",
-      "text":
-          "Yang Meninggal Pensiunan PTPN XI Kantor Pusat dan Istri Sudah Meninggal, Dalam KK Hanya Tercantum Pensiunan Janda Tanpa Batih (Tidak Ada Anak Karena Sudah Pecah KK)",
-      "color": const Color(0xFFFFD9E1),
+      "text": "Yang Meninggal Pensiunan PTPN XI Kantor Pusat dan Istri Sudah Meninggal, Dalam KK Hanya Tercantum Pensiunan Janda Tanpa Batih (Tidak Ada Anak Karena Sudah Pecah KK)",
     },
   ];
 
@@ -66,8 +59,7 @@ class PengajuanSantunan extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
           onPressed: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => Home()),
-            );
+            Navigator.pop(context);
           },
         ),
       ),
@@ -75,9 +67,9 @@ class PengajuanSantunan extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 500,
+            width: double.infinity,
             height: 50,
-            margin: const EdgeInsets.all(20),
+            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             decoration: BoxDecoration(
               color: const Color(0XFFF8D7DA),
               borderRadius: BorderRadius.circular(10),
@@ -91,17 +83,9 @@ class PengajuanSantunan extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const SizedBox(
-                  width: 10,
-                ),
-                Image.asset(
-                  'assets/icon pilih kategori.png',
-                  width: 20,
-                  height: 20,
-                ),
-                const SizedBox(
-                  width: 10,
-                ),
+                const SizedBox(width: 10),
+                Image.asset('assets/icon pilih kategori.png', width: 20, height: 20),
+                const SizedBox(width: 10),
                 const Text(
                   'Pilih Kategori Terlebih Dahulu',
                   style: TextStyle(fontWeight: FontWeight.w400, fontSize: 14),
@@ -109,16 +93,16 @@ class PengajuanSantunan extends StatelessWidget {
               ],
             ),
           ),
-          const Padding(
-            padding: EdgeInsets.only(left: 20, bottom: 5),
+          Padding(
+            padding: const EdgeInsets.only(left: 20, bottom: 5, top: 5),
             child: Text(
-              "Kategori",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              "Kategori ($namaPTPN - $lokasiList)",
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
           ),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.only(left: 20, right: 20, top: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               child: ListView.builder(
                 itemCount: pengajuanList.length,
                 itemBuilder: (context, index) {
@@ -134,7 +118,8 @@ class PengajuanSantunan extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => pengajuanPages[index]),
+                            builder: (context) => pengajuanPages[index],
+                          ),
                         );
                       },
                       borderRadius: BorderRadius.circular(12),

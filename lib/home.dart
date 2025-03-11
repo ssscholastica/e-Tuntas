@@ -4,7 +4,7 @@ import 'package:etuntas/cara-pangajuan/caraPengajuan.dart';
 import 'package:etuntas/cek-status-pengajuan/trackingAwal.dart';
 import 'package:etuntas/navbar.dart';
 import 'package:etuntas/notifikasi.dart';
-import 'package:etuntas/pengajuan-santunan/pengajuanSantunan.dart';
+import 'package:etuntas/pengajuan-santunan/alurPengajuan1.dart';
 import 'package:etuntas/persyaratan/persyaratan.dart';
 import 'package:etuntas/pertanyaan-umum/pertanyaan-umum.dart';
 import 'package:etuntas/rekening/bank.dart';
@@ -203,7 +203,7 @@ class _HomeState extends State<Home> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => PengajuanSantunan()),
+                        builder: (context) => const alurPengajuan1()),
                   );
                 },
                 child: buildImageBox(
@@ -233,7 +233,7 @@ class _HomeState extends State<Home> {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => Bank()),
+                      MaterialPageRoute(builder: (context) => const Bank()),
                     );
                   },
                   child: buildImageBox(
@@ -242,7 +242,7 @@ class _HomeState extends State<Home> {
           ),
         ],
       ),
-      bottomNavigationBar: NavbarWidget(),
+      bottomNavigationBar: const NavbarWidget(),
     );
   }
 }

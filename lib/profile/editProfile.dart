@@ -1,10 +1,10 @@
-import 'package:etuntas/profile/editBerhasil.dart';
 import 'package:etuntas/navbar.dart';
+import 'package:etuntas/profile/editBerhasil.dart';
 import 'package:etuntas/profile/profile.dart';
+import 'package:etuntas/widgets/loading_widget.dart'; // Import LoadingWidget
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:etuntas/widgets/loading_widget.dart'; // Import LoadingWidget
 
 class EditProfile extends StatefulWidget {
   const EditProfile({super.key});
@@ -179,8 +179,9 @@ class _EditProfileState extends State<EditProfile> {
                             builder: (context) => const EditBerhasil()));
                   },
                   style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 160, vertical: 15),
+                      padding:  EdgeInsets.symmetric(
+                          horizontal: MediaQuery.of(context).size.width *0.37,
+                          vertical: MediaQuery.of(context).size.height *0.02),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -188,6 +189,7 @@ class _EditProfileState extends State<EditProfile> {
                   child: const Text("Simpan",
                       style: TextStyle(color: Color(0xFFFFFFFF), fontSize: 16)),
                 ),
+                const SizedBox(height: 10)
               ],
             ),
           ),

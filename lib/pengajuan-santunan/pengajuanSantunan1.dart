@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:dropdown_search/dropdown_search.dart';
-import 'package:etuntas/pengajuan-santunan/pengajuanSantunan.dart';
 import 'package:etuntas/pengajuan-santunan/successUpload.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -170,11 +169,7 @@ class _PengajuanSantunan1State extends State<PengajuanSantunan1> {
                 children: [
                   InkWell(
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => PengajuanSantunan()),
-                      );
+                      Navigator.pop(context);
                     },
                     child: Image.asset(
                       'assets/simbol back.png',
@@ -241,7 +236,7 @@ class _PengajuanSantunan1State extends State<PengajuanSantunan1> {
               style: ElevatedButton.styleFrom(
                 padding:
                   EdgeInsets.symmetric(
-                  horizontal: MediaQuery.of(context).size.width * 0.4,
+                  horizontal: MediaQuery.of(context).size.width * 0.37,
                   vertical: MediaQuery.of(context).size.height * 0.02,
                 ),
                 shape: RoundedRectangleBorder(
@@ -323,7 +318,7 @@ void _showDialog({
                   TextButton(
                     onPressed: onPressed,
                     style: TextButton.styleFrom(
-                      backgroundColor: success ?  Color.fromARGB(255, 18, 18, 162) : Color.fromARGB(170, 231, 0, 23),
+                      backgroundColor: success ?  const Color.fromARGB(255, 18, 18, 162) : const Color.fromARGB(170, 231, 0, 23),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),

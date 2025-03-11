@@ -19,7 +19,7 @@ class _CaraPengajuanState extends State<CaraPengajuan> {
   Widget buildImageBox(String nama, String imagePath, int color) {
     return Container(
       margin: const EdgeInsets.only(top: 20),
-      width: MediaQuery.of(context).size.width *0.9,
+      width: MediaQuery.of(context).size.width * 0.9,
       height: MediaQuery.of(context).size.height * 0.1,
       decoration: BoxDecoration(
         color: Color(color),
@@ -71,8 +71,7 @@ class _CaraPengajuanState extends State<CaraPengajuan> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                            builder: (context) => const Home()),
+                        MaterialPageRoute(builder: (context) => const Home()),
                       );
                     },
                     child: Image.asset(
@@ -95,39 +94,48 @@ class _CaraPengajuanState extends State<CaraPengajuan> {
               ),
             ),
           ),
-          Stack(
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top:200),
-                child: Image.asset('assets/background cara pengajuan.png')),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const CaraPengajuanSantunan()),
-                      );
-                    },
-                    child: buildImageBox("Cara Pengajuan \nSantunan",
-                        "assets/simbol cara pengajuan santunan.png", 0XFFE6AE06),
-                  ),
-                  InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const CaraPengajuanBPJS()),
-                      );
-                    },
-                    child: buildImageBox("Cara Pengaduan \nBPJS ",
-                        "assets/simbol cara pengajuan BPJS.png", 0XFF26267E),
-                  )
-                ],
-              ),
-            ],
+          Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: MediaQuery.of(context).size.width * 0.05,
+              vertical: MediaQuery.of(context).size.height * 0.02,
+            ),
+            child: Stack(
+              children: [
+                Container(
+                    margin: const EdgeInsets.only(top: 200),
+                    child: Image.asset('assets/background cara pengajuan.png')),
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) =>
+                                  const CaraPengajuanSantunan()),
+                        );
+                      },
+                      child: buildImageBox(
+                          "Cara Pengajuan \nSantunan",
+                          "assets/simbol cara pengajuan santunan.png",
+                          0XFFE6AE06),
+                    ),
+                    InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const CaraPengajuanBPJS()),
+                        );
+                      },
+                      child: buildImageBox("Cara Pengaduan \nBPJS ",
+                          "assets/simbol cara pengajuan BPJS.png", 0XFF26267E),
+                    )
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
       ),
