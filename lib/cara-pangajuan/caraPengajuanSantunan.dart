@@ -69,7 +69,7 @@ class _CaraPengajuanSantunanState extends State<CaraPengajuanSantunan> {
                         TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 10),
-                  Image.asset('assets/alur pengajuan dokumen santunan.png'),
+                  Center(child: Image.asset('assets/alur pengajuan dokumen santunan.png', width: 225,)),
                 ],
               ),
             ],
