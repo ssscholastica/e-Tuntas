@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:badges/badges.dart' as badges;
 import 'package:etuntas/bpjs/aduan-bpjs.dart';
 import 'package:etuntas/cara-pangajuan/caraPengajuan.dart';
@@ -9,6 +11,9 @@ import 'package:etuntas/persyaratan/persyaratan.dart';
 import 'package:etuntas/pertanyaan-umum/pertanyaan-umum.dart';
 import 'package:etuntas/rekening/bank.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:etuntas/network/globals.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -18,10 +23,60 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  String name= "Loading...";
+
   @override
   void initState() {
     super.initState();
+    fetchUserName();
   }
+
+   Future<void> fetchUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userEmail = prefs.getString('user_email') ?? '';
+
+    if (userEmail.isEmpty) {
+      debugPrint("No user email found in SharedPreferences.");
+      setState(() {
+        name = "No User Logged In";
+      });
+      return;
+    }
+
+    final url = Uri.parse("${baseURL}user/email/$userEmail");
+    debugPrint("Fetching user data from: $url");
+
+    try {
+      final response = await http.get(url, headers: headers);
+      debugPrint("Response Status: ${response.statusCode}");
+      debugPrint("Response Body: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+
+        if (data.containsKey('name')) {
+          setState(() {
+            name = data['name'];
+          });
+        } else {
+          setState(() {
+            name = "Name field not found";
+          });
+        }
+      } else {
+        setState(() {
+          name = "User Not Found";
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching user data: $e");
+      setState(() {
+        name = "Error Fetching Data";
+      });
+    }
+  }
+
+
 
   Widget buildImageBox(String imagePath, String label) {
     return Column(
@@ -102,8 +157,8 @@ class _HomeState extends State<Home> {
                 ),
                 Container(
                   margin: const EdgeInsets.only(left: 15),
-                  child: const Text(
-                    "Sri Indah",
+                  child: Text(
+                    name,
                     style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,

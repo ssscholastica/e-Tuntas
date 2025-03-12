@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Pendaftaran extends StatefulWidget {
   @override
@@ -194,6 +195,10 @@ class _PendaftaranState extends State<Pendaftaran> {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         if (context.mounted) {
+          final data = json.decode(response.body);
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('user_email', _email);
+
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => const DaftarBerhasil()),

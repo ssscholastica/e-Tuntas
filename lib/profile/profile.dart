@@ -1,9 +1,14 @@
+import 'dart:convert';
+
+import 'package:etuntas/network/globals.dart';
 import 'package:etuntas/profile/editProfile.dart';
 import 'package:etuntas/navbar.dart';
 import 'package:etuntas/profile/profileBersangkutan.dart';
 import 'package:etuntas/profile/ubahSandi.dart';
 import 'package:etuntas/splashScreen.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 
 class Profile extends StatefulWidget {
   const Profile({super.key});
@@ -13,10 +18,73 @@ class Profile extends StatefulWidget {
 }
 
 class _ProfileState extends State<Profile> {
+  String name = "Loading...";
+  String email = "-";
+  String nomorHp = "-";
+  String tanggalLahir = "-";
+  String alamat = "-";
+
   @override
   void initState() {
     super.initState();
+    fetchData();
   }
+
+  Future<void> fetchData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userEmail = prefs.getString('user_email') ?? '';
+
+    if (userEmail.isEmpty) {
+      debugPrint("No user email found in SharedPreferences.");
+      setState(() {
+        name = "No User Logged In";
+        email = "-";
+        nomorHp = "-";
+        tanggalLahir = "-";
+        alamat = "-";
+      });
+      return;
+    }
+
+    final url = Uri.parse("${baseURL}user/email/$userEmail");
+    debugPrint("Fetching user data from: $url");
+
+    try {
+      final response = await http.get(url, headers: headers);
+      debugPrint("Response Status: ${response.statusCode}");
+      debugPrint("Response Body: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+
+        setState(() {
+          name = data['name'] ?? "No Name";
+          email = data['email'] ?? "-";
+          nomorHp = data['nomor_hp'] ?? "-";
+          tanggalLahir = data['tanggal_lahir'] ?? "-";
+          alamat = data['alamat'] ?? "-";
+        });
+      } else {
+        setState(() {
+          name = "User Not Found";
+          email = "-";
+          nomorHp = "-";
+          tanggalLahir = "-";
+          alamat = "-";
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching user data: $e");
+      setState(() {
+        name = "Error Fetching Data";
+        email = "-";
+        nomorHp = "-";
+        tanggalLahir = "-";
+        alamat = "-";
+      });
+    }
+  }
+
 
   Widget buildTemplate(String judul, String isiJudul) {
     return Padding(
@@ -163,11 +231,11 @@ class _ProfileState extends State<Profile> {
                         ),
                         Column(
                           children: [
-                            buildTemplate('Nama Lengkap', "Sri Indah"),
-                            buildTemplate('Email', "sriindah@gmail.com"),
-                            buildTemplate('Nomor HP', "+6281234567891"),
-                            buildTemplate('Tanggal Lahir', "2 Februari 2002"),
-                            buildTemplate('Alamat', "Jl. Merak 1"),
+                            buildTemplate('Nama Lengkap', name),
+                            buildTemplate('Email', email),
+                            buildTemplate('Nomor HP', nomorHp),
+                            buildTemplate('Tanggal Lahir', tanggalLahir),
+                            buildTemplate('Alamat', alamat),
                             const SizedBox(
                               height: 20,
                             )
