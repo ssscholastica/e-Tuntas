@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:etuntas/login-signup/login.dart';
 import 'package:etuntas/network/globals.dart';
 import 'package:http/http.dart' as http;
 
@@ -15,12 +14,16 @@ class AuthServices {
     return response;
   }
 
-  static Future<http.Response> Login(String email, String password) async {
-    Map data = {'email': email, 'password': password};
+  static Future<http.Response> login(String name, String password) async {
+    Map data = {'name': name, 'password': password};
     var body = json.encode(data);
-    var url = Uri.parse(baseURL + 'auth/login ');
-    http.Response response = await http.post(url, headers: headers, body: body);
-    print(response.body);
-    return response;
+    var url = Uri.parse('${baseURL}auth/login');
+    try {
+      http.Response response = await http.post(url, headers: headers, body: body);
+      print(response.body);
+      return response;
+    } catch (e) {
+      throw Exception("Error during login: $e");
+    }
   }
 }
