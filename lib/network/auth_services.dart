@@ -15,10 +15,10 @@ class AuthServices {
     return response;
   }
 
-  static Future<http.Response> Login(String email, String password) async {
-    Map data = {'email': email, 'password': password};
+  static Future<http.Response> Login(String name, String password) async {
+    Map data = {'name': name, 'password': password};
     var body = json.encode(data);
-    var url = Uri.parse(baseURL + 'auth/login ');
+    var url = Uri.parse(baseURL + 'auth/login');
     http.Response response = await http.post(url, headers: headers, body: body);
     print(response.body);
     return response;

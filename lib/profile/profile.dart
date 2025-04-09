@@ -18,7 +18,7 @@ class Profile extends StatefulWidget {
 }
 
 class _ProfileState extends State<Profile> {
-  String name = "Loading...";
+  String name = "-";
   String email = "-";
   String nomorHp = "-";
   String tanggalLahir = "-";

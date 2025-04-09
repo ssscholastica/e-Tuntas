@@ -1,10 +1,15 @@
+import 'dart:convert';
+
 import 'package:etuntas/navbar.dart';
+import 'package:etuntas/network/globals.dart';
 import 'package:etuntas/profile/editBerhasil.dart';
 import 'package:etuntas/profile/profile.dart';
-import 'package:etuntas/widgets/loading_widget.dart'; // Import LoadingWidget
+import 'package:etuntas/widgets/loading_widget.dart'; 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 
 class EditProfile extends StatefulWidget {
   const EditProfile({super.key});
@@ -14,15 +19,17 @@ class EditProfile extends StatefulWidget {
 }
 
 class _EditProfileState extends State<EditProfile> {
-  final TextEditingController _nameController =
-      TextEditingController(text: 'Sri Indah');
-  final TextEditingController _emailController =
-      TextEditingController(text: 'sriindah@gmail.com');
-  final TextEditingController _phoneController =
-      TextEditingController(text: '8214156628');
-  final TextEditingController _addressController =
-      TextEditingController(text: 'Jl. Merak 1');
-  final TextEditingController _dateController = TextEditingController();
+  String name = "-";
+  String email = "-";
+  String nomorHp = "-";
+  String tanggalLahir = "-";
+  String alamat = "-";
+
+  late TextEditingController _nameController;
+  late TextEditingController _emailController;
+  late TextEditingController _phoneController;
+  late TextEditingController _addressController;
+  late TextEditingController _dateController;
 
   DateTime? _selectedDate;
   bool isLoading = false; 
@@ -30,8 +37,77 @@ class _EditProfileState extends State<EditProfile> {
   @override
   void initState() {
     super.initState();
+    _nameController = TextEditingController();
+    _emailController = TextEditingController();
+    _phoneController = TextEditingController();
+    _addressController = TextEditingController();
+    _dateController = TextEditingController();
     _selectedDate = DateTime(2002, 2, 2);
     _dateController.text = DateFormat('dd-MM-yyyy').format(_selectedDate!);
+    fetchData();
+  }
+
+  Future<void> fetchData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userEmail = prefs.getString('user_email') ?? '';
+
+    if (userEmail.isEmpty) {
+      debugPrint("No user email found in SharedPreferences.");
+      setState(() {
+        name = "-";
+        email = "-";
+        nomorHp = "-";
+        tanggalLahir = "-";
+        alamat = "-";
+      });
+      return;
+    }
+
+    final url = Uri.parse("${baseURL}user/email/$userEmail");
+    debugPrint("Fetching user data from: $url");
+
+    try {
+      final response = await http.get(url, headers: headers);
+      debugPrint("Response Status: ${response.statusCode}");
+      debugPrint("Response Body: ${response.body}");
+
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+
+        setState(() {
+          name = data['name'] ?? "No Name";
+          email = data['email'] ?? "-";
+          nomorHp = data['nomor_hp'] ?? "-";
+          tanggalLahir = data['tanggal_lahir'] ?? "-";
+          alamat = data['alamat'] ?? "-";
+        });
+
+         _nameController.text = name;
+        _emailController.text = email;
+        _phoneController.text = nomorHp;
+        _dateController.text = tanggalLahir;
+        _addressController.text = alamat;
+
+      } else {
+        setState(() {
+          name = "User Not Found";
+          email = "-";
+          nomorHp = "-";
+          tanggalLahir = "-";
+          alamat = "-";
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching user data: $e");
+      setState(() {
+        name = "Error Fetching Data";
+        email = "-";
+        nomorHp = "-";
+        tanggalLahir = "-";
+        alamat = "-";
+      });
+    }
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -50,7 +126,7 @@ class _EditProfileState extends State<EditProfile> {
   }
 
   Widget buildTextField(String label, TextEditingController controller,
-      {bool isPhone = false, bool isDate = false, bool readOnly = false}) {
+      {bool isPhone = false, bool isDate = false, bool readOnly = false, void Function(String)? onChanged}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -85,6 +161,7 @@ class _EditProfileState extends State<EditProfile> {
                       _selectDate(context);
                     }
                   : null,
+                  onChanged: onChanged,
               decoration: InputDecoration(
                 prefixText: isPhone ? '+62 ' : null,
                 contentPadding:
@@ -118,6 +195,67 @@ class _EditProfileState extends State<EditProfile> {
       );
     });
   }
+
+  void _saveProfile() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    final prefs = await SharedPreferences.getInstance();
+    final userEmail = prefs.getString('user_email') ?? '';
+
+    if (userEmail.isEmpty) {
+      debugPrint("No user email found in SharedPreferences.");
+      setState(() {
+        isLoading = false;
+      });
+      return;
+    }
+
+    if (_nameController.text.isEmpty || _emailController.text.isEmpty) {
+      debugPrint("Nama dan email harus diisi!");
+      setState(() {
+        isLoading = false;
+      });
+      return;
+    }
+
+    final url = Uri.parse("${baseURL}user/update");
+    final body = jsonEncode({
+      "email": _emailController.text,
+      "name": _nameController.text,
+      "nomor_hp": _phoneController.text,
+      "tanggal_lahir": _dateController.text,
+      "alamat": _addressController.text,
+    });
+
+    try {
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: body, 
+      );
+
+      debugPrint("Response Status: ${response.statusCode}");
+      debugPrint("Response Body: ${response.body}");
+
+      if (response.statusCode == 200) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const EditBerhasil()),
+        );
+      } else {
+        debugPrint("Failed to update profile");
+      }
+    } catch (e) {
+      debugPrint("Error updating profile: $e");
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -165,19 +303,22 @@ class _EditProfileState extends State<EditProfile> {
                     ),
                   ),
                 ),
-                buildTextField('Nama', _nameController),
-                buildTextField("Email", _emailController),
-                buildTextField("Nomor HP", _phoneController, isPhone: true),
-                buildTextField("Tanggal Lahir", _dateController, isDate: true),
-                buildTextField("Alamat", _addressController),
+                buildTextField('Nama', _nameController,
+                    onChanged: (val) => setState(() => name = val)),
+                buildTextField("Email", _emailController,
+                    onChanged: (val) => setState(() => email = val)),
+                buildTextField("Nomor HP", _phoneController,
+                    isPhone: true,
+                    onChanged: (val) => setState(() => nomorHp = val)),
+                buildTextField("Tanggal Lahir", _dateController,
+                    isDate: true,
+                    onChanged: (val) => setState(() => tanggalLahir = val)),
+                buildTextField("Alamat", _addressController,
+                    onChanged: (val) => setState(() => alamat = val)),
+            
                 const SizedBox(height: 30),
                 ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const EditBerhasil()));
-                  },
+                  onPressed: _saveProfile,
                   style: ElevatedButton.styleFrom(
                       padding:  EdgeInsets.symmetric(
                           horizontal: MediaQuery.of(context).size.width *0.37,

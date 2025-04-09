@@ -23,7 +23,7 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  String name= "Loading...";
+  String name= "";
 
   @override
   void initState() {

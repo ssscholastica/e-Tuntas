@@ -1,8 +1,13 @@
+import 'dart:convert';
+
 import 'package:etuntas/home.dart';
 import 'package:etuntas/login-signup/forgotPassword.dart';
 import 'package:etuntas/login-signup/pendaftaran.dart';
+import 'package:etuntas/network/auth_services.dart';
 import 'package:etuntas/widgets/loading_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:etuntas/network/auth_services.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -34,6 +39,57 @@ class _LoginState extends State<Login> {
         MaterialPageRoute(builder: (context) => const Home()),
       );
     });
+  }
+
+  String _name = '';
+  String _password = '';
+
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
+  void loginPressed() async {
+    String name = _nameController.text.trim();
+    String password = _passwordController.text.trim();
+
+    if (name.isNotEmpty && password.isNotEmpty) {
+      setState(() {
+        isLoading = true;
+      });
+
+      print("Mengirim login request:");
+      print("name: $name");
+      print("Password: $password");
+
+      http.Response response = await AuthServices.Login(name, password);
+      Map responseMap = jsonDecode(response.body);
+      print("Response dari server: ${response.body}");
+
+      setState(() {
+        isLoading = false;
+      });
+
+      if (response.statusCode == 200) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (BuildContext context) => const Home()),
+        );
+      } else {
+        errorSnackBar(context, responseMap['message'] ?? "Login failed");
+      }
+    } else {
+      errorSnackBar(context, 'Masukkan semua field!');
+    }
+  }
+
+
+  void errorSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
@@ -100,6 +156,7 @@ class _LoginState extends State<Login> {
                     ),
                     const SizedBox(height: 5),
                     TextField(
+                      controller: _nameController,
                       decoration: InputDecoration(
                         hintText: "Nama Pengguna",
                         contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
@@ -119,6 +176,7 @@ class _LoginState extends State<Login> {
                     ),
                     const SizedBox(height: 5),
                     TextField(
+                      controller: _passwordController,
                       obscureText: _obscureText,
                       decoration: InputDecoration(
                         suffixIcon: IconButton(
@@ -161,7 +219,7 @@ class _LoginState extends State<Login> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        onPressed: _onBackPressed,
+                        onPressed: loginPressed,
                         child: const Text(
                           "Login",
                           style: TextStyle(fontSize: 16, color: Colors.white),
