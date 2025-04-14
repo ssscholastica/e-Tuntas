@@ -50,6 +50,7 @@ class _ProfileState extends State<Profile> {
     debugPrint("Fetching user data from: $url");
 
     try {
+      final headers = await getHeaders();
       final response = await http.get(url, headers: headers);
       debugPrint("Response Status: ${response.statusCode}");
       debugPrint("Response Body: ${response.body}");

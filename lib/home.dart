@@ -34,6 +34,10 @@ class _HomeState extends State<Home> {
    Future<void> fetchUserName() async {
     final prefs = await SharedPreferences.getInstance();
     final userEmail = prefs.getString('user_email') ?? '';
+    final token = prefs.getString('access_token') ?? '';
+
+    debugPrint("Stored email: $userEmail");
+    debugPrint("Stored token: $token");
 
     if (userEmail.isEmpty) {
       debugPrint("No user email found in SharedPreferences.");
@@ -47,6 +51,7 @@ class _HomeState extends State<Home> {
     debugPrint("Fetching user data from: $url");
 
     try {
+      final headers = await getHeaders();
       final response = await http.get(url, headers: headers);
       debugPrint("Response Status: ${response.statusCode}");
       debugPrint("Response Body: ${response.body}");

@@ -47,6 +47,7 @@ class _ProfileBersangkutanState extends State<ProfileBersangkutan> {
     debugPrint("Fetching user data from: $url");
 
     try {
+      final headers = await getHeaders();
       final response = await http.get(url, headers: headers);
       debugPrint("Response Status: ${response.statusCode}");
       debugPrint("Response Body: ${response.body}");

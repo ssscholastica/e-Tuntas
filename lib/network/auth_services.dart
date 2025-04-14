@@ -29,6 +29,7 @@ class AuthServices {
     };
     var body = json.encode(data);
     var url = Uri.parse(baseURL + 'auth/register');
+    final headers = await getHeaders();
     http.Response response = await http.post(url, headers: headers, body: body);
     print(response.body);
     return response;
@@ -37,13 +38,10 @@ class AuthServices {
   static Future<http.Response> login(String name, String password) async {
     Map data = {'name': name, 'password': password};
     var body = json.encode(data);
-    var url = Uri.parse('${baseURL}auth/login');
-    try {
-      http.Response response = await http.post(url, headers: headers, body: body);
-      print(response.body);
-      return response;
-    } catch (e) {
-      throw Exception("Error during login: $e");
-    }
+    var url = Uri.parse(baseURL + 'auth/login');
+    final headers = await getHeaders();
+    http.Response response = await http.post(url, headers: headers, body: body);
+    print(response.body);
+    return response;
   }
 }

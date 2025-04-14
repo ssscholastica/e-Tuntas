@@ -9,36 +9,34 @@ class PengajuanSantunan extends StatelessWidget {
   final String namaPTPN;
   final String lokasiList;
 
-  PengajuanSantunan({required this.namaPTPN, required this.lokasiList, super.key});
-
-  final List<Widget> pengajuanPages = [
-    const PengajuanSantunan1(),
-    const PengajuanSantunan2(),
-    const PengajuanSantunan3(),
-    const PengajuanSantunan4(),
-    const PengajuanSantunan5(),
-  ];
+  PengajuanSantunan(
+      {required this.namaPTPN, required this.lokasiList, super.key});
 
   final List<Map<String, dynamic>> pengajuanList = [
     {
       "image": "assets/proses-pengajuan1.png",
-      "text": "Yang Meninggal Pensiunan PTPN XI Kantor Pusat dan Istri Masih Hidup",
+      "text":
+          "Yang Meninggal Pensiunan PTPN XI Kantor Pusat dan Istri Masih Hidup",
     },
     {
       "image": "assets/proses-pengajuan2.png",
-      "text": "Yang Meninggal Pensiunan PTPN XI Kantor Pusat dan Istri Sudah Meninggal, Dalam KK Ada 1 Anak",
+      "text":
+          "Yang Meninggal Pensiunan PTPN XI Kantor Pusat dan Istri Sudah Meninggal, Dalam KK Ada 1 Anak",
     },
     {
       "image": "assets/proses-pengajuan3.png",
-      "text": "Yang Meninggal Pensiunan PTPN XI Kantor Pusat dan Istri Sudah Meninggal, Dalam KK Ada Beberapa Anak",
+      "text":
+          "Yang Meninggal Pensiunan PTPN XI Kantor Pusat dan Istri Sudah Meninggal, Dalam KK Ada Beberapa Anak",
     },
     {
       "image": "assets/proses-pengajuan4.png",
-      "text": "Yang Meninggal Pensiunan PTPN XI Kantor Pusat dan Istri Sudah Meninggal, Dalam KK Hanya Pensiunan Sendiri (Tidak Ada Anak Karena Sudah Pecah KK)",
+      "text":
+          "Yang Meninggal Pensiunan PTPN XI Kantor Pusat dan Istri Sudah Meninggal, Dalam KK Hanya Pensiunan Sendiri (Tidak Ada Anak Karena Sudah Pecah KK)",
     },
     {
       "image": "assets/proses-pengajuan5.png",
-      "text": "Yang Meninggal Pensiunan PTPN XI Kantor Pusat dan Istri Sudah Meninggal, Dalam KK Hanya Tercantum Pensiunan Janda Tanpa Batih (Tidak Ada Anak Karena Sudah Pecah KK)",
+      "text":
+          "Yang Meninggal Pensiunan PTPN XI Kantor Pusat dan Istri Sudah Meninggal, Dalam KK Hanya Tercantum Pensiunan Janda Tanpa Batih (Tidak Ada Anak Karena Sudah Pecah KK)",
     },
   ];
 
@@ -84,7 +82,8 @@ class PengajuanSantunan extends StatelessWidget {
             child: Row(
               children: [
                 const SizedBox(width: 10),
-                Image.asset('assets/icon pilih kategori.png', width: 20, height: 20),
+                Image.asset('assets/icon pilih kategori.png',
+                    width: 20, height: 20),
                 const SizedBox(width: 10),
                 const Text(
                   'Pilih Kategori Terlebih Dahulu',
@@ -115,10 +114,35 @@ class PengajuanSantunan extends StatelessWidget {
                     margin: const EdgeInsets.only(bottom: 15),
                     child: InkWell(
                       onTap: () {
+                        Widget pageToNavigate;
+
+                        switch (index) {
+                          case 0:
+                            pageToNavigate = PengajuanSantunan1(
+                                namaPTPN: namaPTPN, lokasiList: lokasiList);
+                            break;
+                          case 1:
+                            pageToNavigate = PengajuanSantunan2(
+                                namaPTPN: namaPTPN, lokasiList: lokasiList);
+                            break;
+                          case 2:
+                            pageToNavigate = PengajuanSantunan3(
+                                namaPTPN: namaPTPN, lokasiList: lokasiList);
+                            break;
+                          case 3:
+                            pageToNavigate = PengajuanSantunan4(
+                                namaPTPN: namaPTPN, lokasiList: lokasiList);
+                            break;
+                          default:
+                            pageToNavigate = PengajuanSantunan5(
+                                namaPTPN: namaPTPN, lokasiList: lokasiList);
+                            break;
+                        }
+
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => pengajuanPages[index],
+                            builder: (context) => pageToNavigate,
                           ),
                         );
                       },

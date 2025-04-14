@@ -1,14 +1,20 @@
 import 'dart:io';
 
 import 'package:dropdown_search/dropdown_search.dart';
+import 'package:etuntas/network/wilayah_service.dart';
 import 'package:etuntas/pengajuan-santunan/successUpload.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:open_file/open_file.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PengajuanSantunan4 extends StatefulWidget {
-  const PengajuanSantunan4({super.key});
+  final String namaPTPN;
+  final String lokasiList;
+
+  PengajuanSantunan4({required this.namaPTPN, required this.lokasiList, super.key});
 
   @override
   State<PengajuanSantunan4> createState() => _PengajuanSantunan4State();
@@ -18,10 +24,34 @@ class _PengajuanSantunan4State extends State<PengajuanSantunan4> {
   @override
   void initState() {
     super.initState();
+    fetchKota();
   }
 
   TextEditingController tanggalMeninggalController = TextEditingController();
   TextEditingController lokasiMeninggalController = TextEditingController();
+  TextEditingController ptpnController = TextEditingController();
+  TextEditingController lokasiController = TextEditingController();
+  List<String> lokasiList = [];
+  bool isLoadingKota = true;
+  bool isLoading = false; 
+
+  Future<void> fetchKota() async {
+    try {
+      final kotaList = await WilayahService.fetchKota();
+
+      setState(() {
+        lokasiList = kotaList.whereType<String>().toList();
+        isLoadingKota = false;
+      });
+    } catch (e) {
+      print("Error saat ambil data kota: $e");
+    }
+  }
+
+  Future<String?> getUserEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('user_email');
+  }
 
   Future<void> _selectDate(BuildContext context) async {
     DateTime? pickedDate = await showDatePicker(
@@ -33,19 +63,125 @@ class _PengajuanSantunan4State extends State<PengajuanSantunan4> {
 
     if (pickedDate != null) {
       setState(() {
-        tanggalMeninggalController.text =
-            DateFormat('dd-MM-yyyy').format(pickedDate);
+        String formattedDate = DateFormat('yyyy-MM-dd').format(pickedDate);
+        tanggalMeninggalController.text = formattedDate.trim();
       });
     }
   }
 
-  final List<String> lokasiList = [
-    "Kabupaten Jember",
-    "Kabupaten Lumajang",
-    "Kota Surabaya",
-    "Kota Banyuwangi",
-    "Kabupaten Madiun"
-  ];
+  Future<void> uploadSantunan() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    final prefs = await SharedPreferences.getInstance();
+    final email = await getUserEmail();
+    debugPrint("Retrieved email from SharedPreferences: $email");
+
+    if (email == null || email.isEmpty) {
+      debugPrint("Email tidak ditemukan dalam SharedPreferences.");
+      setState(() {
+        isLoading = false;
+      });
+      // Show error dialog to user
+      _showDialog(
+        success: false,
+        title: "Gagal Upload!",
+        message: "Email pengguna tidak ditemukan. Silakan login kembali.",
+        buttonText: "Kembali",
+        onPressed: () => Navigator.pop(context),
+        context: context,
+      );
+      return;
+    }
+
+    try {
+      final uri = Uri.parse('http://10.0.2.2:8000/api/pengajuan-santunan-4');
+      final request = http.MultipartRequest('POST', uri);
+
+      request.headers.addAll({
+        'Accept': 'application/json',
+      });
+
+      request.fields['email'] = email;
+      debugPrint("Request fields: ${request.fields}");
+
+      request.fields['tanggal_meninggal'] =
+          tanggalMeninggalController.text.trim();
+
+      debugPrint(
+          "Tanggal meninggal yang dikirim: ${request.fields['tanggal_meninggal']}");
+
+      request.fields['lokasi_meninggal'] = selectedLokasi ?? '';
+
+      request.fields['ptpn'] = widget.namaPTPN;
+      request.fields['lokasi'] = widget.lokasiList;
+
+      debugPrint("Request fields: ${request.fields}");
+
+      request.files.add(await http.MultipartFile.fromPath(
+        'surat_kematian',
+        suratKematianKey.currentState!.getSelectedFile()!.path,
+      ));
+      request.files.add(await http.MultipartFile.fromPath(
+        'surat_keterangan',
+        suratKeteranganKey.currentState!.getSelectedFile()!.path,
+      ));
+      request.files.add(await http.MultipartFile.fromPath(
+        'surat_kuasa',
+        suratKuasaKey.currentState!.getSelectedFile()!.path,
+      ));
+      request.files.add(await http.MultipartFile.fromPath(
+        'kartu_keluarga',
+        kartuKeluargaKey.currentState!.getSelectedFile()!.path,
+      ));
+      request.files.add(await http.MultipartFile.fromPath(
+        'ktp_pensiunan_anak',
+        ktpPensiunanAnakKey.currentState!.getSelectedFile()!.path,
+      ));
+      request.files.add(await http.MultipartFile.fromPath(
+        'buku_rekening_anak',
+        bukuRekeningAnakKey.currentState!.getSelectedFile()!.path,
+      ));
+
+      final response = await request.send();
+      final resStr = await response.stream.bytesToString();
+
+      debugPrint("Status Code: ${response.statusCode}");
+      debugPrint("Response Body: $resStr");
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const SuccesUpload()),
+        );
+      } else {
+        _showDialog(
+          success: false,
+          title: "Gagal Upload!",
+          message: "Terjadi kesalahan saat mengupload. Silakan coba lagi.",
+          buttonText: "Coba Lagi",
+          onPressed: () => Navigator.pop(context),
+          context: context,
+        );
+      }
+    } catch (e) {
+      debugPrint("Upload error: $e");
+      _showDialog(
+        success: false,
+        title: "Error!",
+        message: "Terjadi error saat upload: $e",
+        buttonText: "Coba Lagi",
+        onPressed: () => Navigator.pop(context),
+        context: context,
+      );
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
   String? selectedLokasi;
 
   bool _validateForm() {
@@ -55,18 +191,35 @@ class _PengajuanSantunan4State extends State<PengajuanSantunan4> {
   }
 
   bool _validateFiles() {
-    return fileUploadKeys
-        .every((key) => key.currentState?._selectedFile != null);
+    final fields = [
+      suratKematianKey.currentState,
+      suratKeteranganKey.currentState,
+      suratKuasaKey.currentState,
+      kartuKeluargaKey.currentState,
+      ktpPensiunanAnakKey.currentState,
+      bukuRekeningAnakKey.currentState,
+    ];
+
+    for (var field in fields) {
+      if (field == null || field.getSelectedFile() == null) {
+        return false;
+      }
+    }
+    return true;
   }
 
-  final List<GlobalKey<_FileUploadFieldState>> fileUploadKeys = [
-    GlobalKey<_FileUploadFieldState>(),
-    GlobalKey<_FileUploadFieldState>(),
-    GlobalKey<_FileUploadFieldState>(),
-    GlobalKey<_FileUploadFieldState>(),
-    GlobalKey<_FileUploadFieldState>(),
-    GlobalKey<_FileUploadFieldState>(),
-  ];
+  final GlobalKey<_FileUploadFieldState> suratKematianKey =
+      GlobalKey<_FileUploadFieldState>();
+  final GlobalKey<_FileUploadFieldState> suratKeteranganKey=
+      GlobalKey<_FileUploadFieldState>();
+  final GlobalKey<_FileUploadFieldState> suratKuasaKey =
+      GlobalKey<_FileUploadFieldState>();
+  final GlobalKey<_FileUploadFieldState> kartuKeluargaKey = 
+      GlobalKey<_FileUploadFieldState>();
+  final GlobalKey<_FileUploadFieldState> ktpPensiunanAnakKey =
+      GlobalKey<_FileUploadFieldState>();
+    final GlobalKey<_FileUploadFieldState> bukuRekeningAnakKey =
+      GlobalKey<_FileUploadFieldState>();
 
   Widget buildDatePickerField(String label, TextEditingController controller) {
     return Padding(
@@ -208,23 +361,19 @@ class _PengajuanSantunan4State extends State<PengajuanSantunan4> {
             buildDatePickerField(
                 "Tanggal Meninggal", tanggalMeninggalController),
             buildJudul("Lokasi Meninggal", lokasiMeninggalController),
-            FileUploadField(key: fileUploadKeys[0], label: "Surat Kematian"),
-            FileUploadField(key: fileUploadKeys[1], label: "Surat Keterangan"),
-            FileUploadField(key: fileUploadKeys[2], label: "Surat Kuasa"),
-            FileUploadField(key: fileUploadKeys[3], label: "Kartu Keluarga"),
+            FileUploadField(key: suratKematianKey, label: "Surat Kematian"),
+            FileUploadField(key: suratKeteranganKey, label: "Surat Keterangan"),
+            FileUploadField(key: suratKuasaKey, label: "Surat Kuasa"),
+            FileUploadField(key: kartuKeluargaKey, label: "Kartu Keluarga"),
             FileUploadField(
-                key: fileUploadKeys[4], label: "KTP Pensiunan dan Anak"),
+                key: ktpPensiunanAnakKey, label: "KTP Pensiunan & Anak"),
             FileUploadField(
-                key: fileUploadKeys[5], label: "Buku Rekening Anak"),
+                key: bukuRekeningAnakKey, label: "Buku Rekening Anak"),
             const SizedBox(height: 30),
             ElevatedButton(
               onPressed: () {
                 if (_validateForm()) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const SuccesUpload()),
-                  );
+                  uploadSantunan();
                 } else {
                   _showDialog(
                     success: false,
@@ -380,6 +529,8 @@ class _FileUploadFieldState extends State<FileUploadField> {
       OpenFile.open(_selectedFile!.path);
     }
   }
+
+  File? getSelectedFile() => _selectedFile;
 
   @override
   Widget build(BuildContext context) {

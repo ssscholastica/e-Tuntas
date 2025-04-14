@@ -11,7 +11,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 
 class PengajuanSantunan1 extends StatefulWidget {
-  const PengajuanSantunan1({super.key});
+  final String namaPTPN;
+  final String lokasiList;
+
+  PengajuanSantunan1({required this.namaPTPN, required this.lokasiList, super.key});
+  
 
   @override
   State<PengajuanSantunan1> createState() => _PengajuanSantunan1State();
@@ -26,6 +30,8 @@ class _PengajuanSantunan1State extends State<PengajuanSantunan1> {
 
   TextEditingController tanggalMeninggalController = TextEditingController();
   TextEditingController lokasiMeninggalController = TextEditingController();
+  TextEditingController ptpnController = TextEditingController();
+  TextEditingController lokasiController = TextEditingController();
   List<String> lokasiList = [];
   bool isLoadingKota = true;
   bool isLoading = false; 
@@ -109,6 +115,11 @@ class _PengajuanSantunan1State extends State<PengajuanSantunan1> {
           "Tanggal meninggal yang dikirim: ${request.fields['tanggal_meninggal']}");
 
       request.fields['lokasi_meninggal'] = selectedLokasi ?? '';
+
+      request.fields['ptpn'] = widget.namaPTPN;
+      request.fields['lokasi'] = widget.lokasiList;
+
+      debugPrint("Request fields: ${request.fields}");
 
       request.files.add(await http.MultipartFile.fromPath(
         'surat_kematian',
