@@ -25,24 +25,6 @@ class _LoginState extends State<Login> {
   bool _obscureText = true;
   bool isLoading = false;
 
-  void _onBackPressed() {
-    setState(() {
-      isLoading = true;
-    });
-
-    Future.delayed(const Duration(seconds: 2), () {
-      setState(() {
-        isLoading = false;
-      });
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const Home()),
-      );
-    });
-  }
-
-  String _name = '';
-  String _password = '';
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -60,7 +42,7 @@ class _LoginState extends State<Login> {
       print("name: $name");
       print("Password: $password");
 
-      http.Response response = await AuthServices.Login(name, password);
+      http.Response response = await AuthServices.login(name, password);
       Map responseMap = jsonDecode(response.body);
       print("Response dari server: ${response.body}");
 
