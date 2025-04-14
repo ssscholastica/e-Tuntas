@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:etuntas/home.dart';
 import 'package:etuntas/login-signup/forgotPassword.dart';
 import 'package:etuntas/login-signup/pendaftaran.dart';
@@ -17,6 +16,7 @@ class Login extends StatefulWidget {
 }
 
 class _LoginState extends State<Login> {
+
   final LinearGradient _gradient = const LinearGradient(
       colors: <Color>[Color(0xFF26267E), Color(0xFF2F2F9D), Color(0xFF6F6FB9)],
       begin: Alignment.centerLeft,
@@ -24,6 +24,9 @@ class _LoginState extends State<Login> {
 
   bool _obscureText = true;
   bool isLoading = false;
+  String errorMessage = "";
+  String name = '';
+  String password = '';
 
 
   final TextEditingController _nameController = TextEditingController();
@@ -91,7 +94,8 @@ class _LoginState extends State<Login> {
           children: [
             Center(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -137,42 +141,62 @@ class _LoginState extends State<Login> {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 20),
-                    Align(
+                    const Align(
                       alignment: Alignment.centerLeft,
-                      child: Container(
-                        padding: const EdgeInsets.only(left: 5),
-                        child: const Text("Nama Pengguna",
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                      child: Padding(
+                        padding: EdgeInsets.only(left: 5),
+                        child: Text(
+                          "Nama Pengguna",
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 15),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 5),
                     TextField(
+                      onChanged: (value) {
+                        setState(() {
+                          name = value;
+                        });
+                      },
                       controller: _nameController,
                       decoration: InputDecoration(
                         hintText: "Nama Pengguna",
-                        contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
+                        contentPadding: const EdgeInsets.symmetric(
+                            vertical: 12, horizontal: 15),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
                     ),
                     const SizedBox(height: 15),
-                    Align(
+                    const Align(
                       alignment: Alignment.centerLeft,
-                      child: Container(
-                        padding: const EdgeInsets.only(left: 5),
-                        child: const Text("Kata Sandi",
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                      child: Padding(
+                        padding: EdgeInsets.only(left: 5),
+                        child:  Text(
+                          "Kata Sandi",
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 15),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 5),
                     TextField(
                       controller: _passwordController,
                       obscureText: _obscureText,
+                      onChanged: (value) {
+                        setState(() {
+                          password =
+                              value;
+                        });
+                      },
                       decoration: InputDecoration(
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _obscureText ? Icons.visibility_off : Icons.visibility,
+                            _obscureText
+                                ? Icons.visibility_off
+                                : Icons.visibility,
                           ),
                           onPressed: () {
                             setState(() {
@@ -181,7 +205,8 @@ class _LoginState extends State<Login> {
                           },
                         ),
                         hintText: "Kata Sandi",
-                        contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
+                        contentPadding: const EdgeInsets.symmetric(
+                            vertical: 12, horizontal: 15),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -194,7 +219,8 @@ class _LoginState extends State<Login> {
                           Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => const ForgotPassword()));
+                                  builder: (context) =>
+                                      const ForgotPassword()));
                         },
                         child: const Text("Lupa Kata Sandi?"),
                       ),
@@ -221,8 +247,10 @@ class _LoginState extends State<Login> {
                     const Text("Belum memiliki akun?"),
                     GestureDetector(
                       onTap: () {
-                        Navigator.push(context,
-                            MaterialPageRoute(builder: (context) => Pendaftaran()));
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => Pendaftaran()));
                       },
                       child: const Text(
                         "Daftar",

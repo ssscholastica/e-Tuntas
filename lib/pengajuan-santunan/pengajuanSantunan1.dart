@@ -176,7 +176,6 @@ class _PengajuanSantunan1State extends State<PengajuanSantunan1> {
     }
   }
 
-
   String? selectedLokasi;
 
   bool _validateForm() {
@@ -200,8 +199,6 @@ class _PengajuanSantunan1State extends State<PengajuanSantunan1> {
     }
     return true;
   }
-
-
 
   final GlobalKey<_FileUploadFieldState> suratKematianKey =
       GlobalKey<_FileUploadFieldState>();
