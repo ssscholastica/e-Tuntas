@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 import 'package:open_file/open_file.dart';
 
 class addBank extends StatefulWidget {
@@ -20,7 +22,8 @@ class _UploadDokumen extends StatefulWidget {
   final String label;
   final Function(File?) onFileSelected;
 
-  const _UploadDokumen({super.key, required this.label, required this.onFileSelected});
+  const _UploadDokumen(
+      {super.key, required this.label, required this.onFileSelected});
 
   @override
   State<_UploadDokumen> createState() => _UploadDokumenState();
@@ -117,73 +120,87 @@ class _UploadDokumenState extends State<_UploadDokumen> {
 }
 
 class _addBankState extends State<addBank> {
+  void initState() {
+    super.initState();
+    // fetchBankList();
+  }
+
   final TextEditingController namaBankController = TextEditingController();
   final TextEditingController noRekController = TextEditingController();
   final TextEditingController namaPemilikController = TextEditingController();
   String? _uploadedFileName;
   bool isLoading = false;
+  List<Bank> bankList = [];
+  Bank? selectedBank;
+
+  // Future<void> fetchBankList() async {
+  //   final response = await http.get(Uri.parse("http://localhost:8000/api/list-bank"));
+  //   if (response.statusCode == 200) {
+  //     final jsonData = jsonDecode(response.body);
+  //     setState(() {
+  //       bankList = (jsonData['data'] as List)
+  //           .map((item) => Bank.fromJson(item))
+  //           .toList();
+  //     });
+  //   }
+  // }
 
   void _saveBankAccount() {
-  if (namaBankController.text.isNotEmpty &&
-      noRekController.text.isNotEmpty &&
-      namaPemilikController.text.isNotEmpty &&
-      _uploadedFileName != null &&
-      _uploadedFileName!.isNotEmpty) {
-    
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return Center(
-          child: Material(
-            color: Colors.transparent,
-            child: Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10)
-              ),
-            alignment: Alignment.center,
-          child: const CircularProgressIndicator(),
-            ))
-        );
-      },
-    );
-
-    Future.delayed(const Duration(seconds: 2), () {
-      Navigator.pop(context); 
-
-      _showDialog(
-        success: true,
-        title: "Tersimpan!",
-        message: "Data Rekening berhasil ditambahkan",
-        buttonText: "Oke",
-        onPressed: () {
-          Navigator.pop(context);
-          Navigator.pop(context, {
-            "Nama Bank": namaBankController.text,
-            'Nomor Rekening': noRekController.text,
-            'Nama Pemilik': namaPemilikController.text,
-            'Buku Tabungan': _uploadedFileName ?? 'No file chosen'
-          });
+    if (namaBankController.text.isNotEmpty &&
+        noRekController.text.isNotEmpty &&
+        namaPemilikController.text.isNotEmpty &&
+        _uploadedFileName != null &&
+        _uploadedFileName!.isNotEmpty) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) {
+          return Center(
+              child: Material(
+                  color: Colors.transparent,
+                  child: Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10)),
+                    alignment: Alignment.center,
+                    child: const CircularProgressIndicator(),
+                  )));
         },
       );
-    });
 
-  } else {
-    _showDialog(
-      success: false,
-      title: "Gagal!",
-      message: "Terjadi kesalahan...",
-      buttonText: "Reupload",
-      onPressed: () {
+      Future.delayed(const Duration(seconds: 2), () {
         Navigator.pop(context);
-      },
-    );
-  }
-}
 
+        _showDialog(
+          success: true,
+          title: "Tersimpan!",
+          message: "Data Rekening berhasil ditambahkan",
+          buttonText: "Oke",
+          onPressed: () {
+            Navigator.pop(context);
+            Navigator.pop(context, {
+              "Nama Bank": namaBankController.text,
+              'Nomor Rekening': noRekController.text,
+              'Nama Pemilik': namaPemilikController.text,
+              'Buku Tabungan': _uploadedFileName ?? 'No file chosen'
+            });
+          },
+        );
+      });
+    } else {
+      _showDialog(
+        success: false,
+        title: "Gagal!",
+        message: "Terjadi kesalahan...",
+        buttonText: "Reupload",
+        onPressed: () {
+          Navigator.pop(context);
+        },
+      );
+    }
+  }
 
   void _showDialog({
     required bool success,
@@ -267,8 +284,58 @@ class _addBankState extends State<addBank> {
     );
   }
 
-  Widget buildJudul(
-      String judul, String hint, TextEditingController controller, {bool isNumber = false}) {
+  Widget buildBankDropdown(String judul) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Container(
+        alignment: Alignment.bottomLeft,
+        margin: const EdgeInsets.only(top: 20, left: 20),
+        child: Text(
+          judul,
+          style: const TextStyle(
+            fontSize: 14,
+            color: Color(0XFF000000),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+      Padding(
+        padding: const EdgeInsets.only(left: 20, right: 20, top: 5, bottom: 5),
+        child: SizedBox(
+          height: 50,
+          child: DropdownButtonFormField<Bank>(
+            value: selectedBank,
+            items: bankList.map((bank) {
+              return DropdownMenuItem<Bank>(
+                value: bank,
+                child: Text(bank.namaBank),
+              );
+            }).toList(),
+            onChanged: (Bank? newValue) {
+              setState(() {
+                selectedBank = newValue;
+                namaBankController.text = newValue?.namaBank ?? '';
+              });
+            },
+            decoration: InputDecoration(
+              hintText: "Pilih bank",
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ],
+  );
+}
+
+
+  Widget buildJudul(String judul, String hint, TextEditingController controller,
+      {bool isNumber = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -345,7 +412,7 @@ class _addBankState extends State<addBank> {
                   ],
                 ),
               ),
-              buildJudul("Nama Bank", 'Nama Bank', namaBankController),
+              buildBankDropdown("Nama Bank"),
               buildJudul("Nomor Rekening", 'Nomor Rekening', noRekController,
                   isNumber: true),
               buildJudul("Nama Pemilik", "Nama Pemilik", namaPemilikController),
@@ -359,26 +426,47 @@ class _addBankState extends State<addBank> {
                 padding: const EdgeInsets.only(right: 20),
                 child: Align(
                   alignment: Alignment.centerRight,
-                  child: isLoading ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                    onPressed: _saveBankAccount,
-                    style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 30, vertical: 10),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                  child: isLoading
+                      ? const CircularProgressIndicator()
+                      : ElevatedButton(
+                          onPressed: _saveBankAccount,
+                          style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 30, vertical: 10),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              backgroundColor: const Color(0xFF2F2F9D)),
+                          child: const Text("Simpan",
+                              style: TextStyle(
+                                  color: Color(0xFFFFFFFF), fontSize: 14)),
                         ),
-                        backgroundColor: const Color(0xFF2F2F9D)),
-                    child: const Text("Simpan",
-                        style:
-                            TextStyle(color: Color(0xFFFFFFFF), fontSize: 14)),
-                  ),
                 ),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class Bank {
+  final String kodeBank;
+  final String bankId;
+  final String namaBank;
+
+  Bank({
+    required this.kodeBank,
+    required this.bankId,
+    required this.namaBank,
+  });
+
+  factory Bank.fromJson(Map<String, dynamic> json) {
+    return Bank(
+      kodeBank: json['kode_bank'],
+      bankId: json['bank_id'] ?? '',
+      namaBank: json['nama_bank'],
     );
   }
 }

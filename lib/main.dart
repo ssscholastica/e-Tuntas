@@ -1,4 +1,4 @@
-import 'package:etuntas/home.dart';
+import 'package:etuntas/admin/admin-home.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         textTheme: GoogleFonts.dmSansTextTheme(),
       ),
-      home: const Home(),
+      home: const AdminHome(),
     );
   }
 }

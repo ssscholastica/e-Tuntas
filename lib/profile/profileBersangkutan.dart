@@ -1,6 +1,11 @@
+import 'dart:convert';
+
 import 'package:etuntas/navbar.dart';
+import 'package:etuntas/network/globals.dart';
 import 'package:etuntas/profile/profile.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 
 class ProfileBersangkutan extends StatefulWidget {
   const ProfileBersangkutan({super.key});
@@ -10,10 +15,73 @@ class ProfileBersangkutan extends StatefulWidget {
 }
 
 class _ProfileBersangkutanState extends State<ProfileBersangkutan> {
+  String namaBersangkutan = '-';
+  String pgUnit = '-';
+  String nik = '-';
+  String nomorPensiunan = '-';
+  String status = '-';
+
   @override
   void initState() {
     super.initState();
+    fetchData();
   }
+
+  Future<void> fetchData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userEmail = prefs.getString('user_email') ?? '';
+
+    if (userEmail.isEmpty) {
+      debugPrint("No user email found in SharedPreferences.");
+      setState(() {
+        namaBersangkutan = '-';
+        pgUnit = '-';
+        nik = '-';
+        nomorPensiunan = '-';
+        status = '-';
+      });
+      return;
+    }
+
+    final url = Uri.parse("${baseURL}user/email/$userEmail");
+    debugPrint("Fetching user data from: $url");
+
+    try {
+      final response = await http.get(url, headers: headers);
+      debugPrint("Response Status: ${response.statusCode}");
+      debugPrint("Response Body: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+
+        setState(() {
+          namaBersangkutan = data['nama_bersangkutan'] ?? "-";
+          pgUnit = data['pg_unit'] ?? "-";
+          nik = data['nik'] ?? "-";
+          nomorPensiunan = data['nomor_pensiunan'] ?? "-";
+          status = data['status'] ?? "-";
+        });
+      } else {
+        setState(() {
+          namaBersangkutan = '-';
+          pgUnit = '-';
+          nik = '-';
+          nomorPensiunan = '-';
+          status = '-';
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching user data: $e");
+      setState(() {
+        namaBersangkutan = '-';
+        pgUnit = '-';
+        nik = '-';
+        nomorPensiunan = '-';
+        status = '-';
+      });
+    }
+  }
+
 
   Widget buildTemplate(String judul, String isiJudul) {
     return Padding(
@@ -89,7 +157,8 @@ class _ProfileBersangkutanState extends State<ProfileBersangkutan> {
         children: [
           Center(
             child: Container(
-              margin: const EdgeInsets.only(top: 80, left: 20, right: 20, bottom: 10),
+              margin: const EdgeInsets.only(
+                  top: 80, left: 20, right: 20, bottom: 10),
               child: Row(
                 children: [
                   InkWell(
@@ -148,8 +217,8 @@ class _ProfileBersangkutanState extends State<ProfileBersangkutan> {
                     child: Column(
                       children: [
                         const Padding(
-                          padding: EdgeInsets.only(
-                              top: 20, left: 20, right: 20),
+                          padding:
+                              EdgeInsets.only(top: 20, left: 20, right: 20),
                           child: Center(
                             child: Text(
                               "Informasi Data Bersangkutan",
@@ -162,11 +231,12 @@ class _ProfileBersangkutanState extends State<ProfileBersangkutan> {
                         ),
                         Column(
                           children: [
-                            buildTemplate('Nama Lengkap', "Suyitno"),
-                            buildTemplate('Unit Terakhir Dinas', "Kebun Banyuwangi"),
-                            buildTemplate('NIK', "3578012350010001"),
-                            buildTemplate('Nomor Pensiunan', "342518910019910"),
-                            buildTemplate('Status', "Istri"),
+                            buildTemplate('Nama Lengkap', namaBersangkutan),
+                            buildTemplate(
+                                'Unit Terakhir Dinas', pgUnit),
+                            buildTemplate('NIK', nik),
+                            buildTemplate('Nomor Pensiunan', nomorPensiunan),
+                            buildTemplate('Status', status),
                             const SizedBox(
                               height: 20,
                             )

@@ -124,13 +124,20 @@ class _UploadDokumenState extends State<_UploadDokumen> {
 
 class _AduanFormPageState extends State<AduanFormPage> {
   final _formKey = GlobalKey<FormState>();
-  final Map<String, TextEditingController> controllers = {
-    "Tanggal Ajuan": TextEditingController(
-      text: DateFormat('dd-MM-yyyy').format(DateTime.now()),
-    ),
-    "Nomor BPJS/NIK": TextEditingController(),
-    "Deskripsi": TextEditingController(),
-  };
+  bool isLoading = false;
+  final Map<String, TextEditingController> controllers = {};
+
+  @override
+  void initState() {
+    super.initState();
+    controllers["Tanggal Ajuan"] = TextEditingController(
+      text: DateFormat('yyyy-MM-dd').format(DateTime.now()),
+    );
+    controllers["Nomor BPJS/NIK"] = TextEditingController();
+    controllers["Deskripsi"] = TextEditingController();
+    controllers["Kategori"] = TextEditingController(text: widget.kategori);
+  }
+  
   String? _filePath;
   File? _selectedFile;
 
@@ -144,99 +151,103 @@ class _AduanFormPageState extends State<AduanFormPage> {
     if (pickedDate != null) {
       setState(() {
         controllers["Tanggal Ajuan"]?.text =
-            DateFormat('dd-MM-yyyy').format(pickedDate);
+            DateFormat('yyyy-MM-dd').format(pickedDate);
       });
     }
   }
 
   void submitForm() async {
-  String tanggalAjuan = controllers["Tanggal Ajuan"]!.text;
-  String nomorBpjsNik = controllers["Nomor BPJS/NIK"]!.text;
-  String deskripsi = controllers["Deskripsi"]!.text;
+    setState(() {
+      isLoading = true;
+    });
 
-  if (tanggalAjuan.isEmpty ||
-      nomorBpjsNik.isEmpty ||
-      deskripsi.isEmpty ||
-      _filePath == null ||
-      _filePath!.isEmpty) {
-    _showDialog(
-      success: false,
-      title: "Gagal!",
-      message: "Harap lengkapi semua data terlebih dahulu.",
-      buttonText: "Kembali",
-      onPressed: () => Navigator.pop(context),
-    );
-    return;
-  }
+    String tanggalAjuan = controllers["Tanggal Ajuan"]!.text;
+    String nomorBpjsNik = controllers["Nomor BPJS/NIK"]!.text;
+    String deskripsi = controllers["Deskripsi"]!.text;
 
-  try {
-    var uri = Uri.parse("http://10.0.2.2:8000/api/pengaduan-bpjs");
-    var request = http.MultipartRequest("POST", uri);
+    if (tanggalAjuan.isEmpty ||
+        nomorBpjsNik.isEmpty ||
+        deskripsi.isEmpty ||
+        _filePath == null ||
+        _filePath!.isEmpty ||
+        _selectedFile == null) {
+      _showDialog(
+        success: false,
+        title: "Gagal!",
+        message: "Harap lengkapi semua data terlebih dahulu.",
+        buttonText: "Kembali",
+        onPressed: () => Navigator.pop(context),
+      );
+      return;
+    }
 
-    request.fields['tanggal_ajuan'] = tanggalAjuan;
-    request.fields['nomor_bpjs_nik'] = nomorBpjsNik;
-    request.fields['deskripsi'] = deskripsi;
+    try {
+      var uri = Uri.parse('http://10.0.2.2:8000/api/pengaduan-bpjs');
+      var request = http.MultipartRequest('POST', uri);
 
-    if (_selectedFile != null) {
+      request.headers.addAll({'Accept': 'application/json'});
+      request.fields['kategori_bpjs'] = controllers["Kategori"]!.text;
+      request.fields['tanggal_ajuan'] = tanggalAjuan;
+      request.fields['nomor_bpjs_nik'] = nomorBpjsNik;
+      request.fields['deskripsi'] = deskripsi;
       request.files.add(await http.MultipartFile.fromPath(
         'data_pendukung',
         _selectedFile!.path,
       ));
-    }
 
-    var response = await request.send();
-    final respStr = await response.stream.bytesToString();
+      final response = await request.send();
+      final respStr = await response.stream.bytesToString();
 
-    print('Status code: ${response.statusCode}');
-    print('Response body: $respStr');
+      debugPrint('Status code: ${response.statusCode}');
+      debugPrint('Response body: $respStr');
 
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      _showDialog(
-        success: true,
-        title: "Berhasil!",
-        message: "Aduan Anda berhasil dikirim!",
-        buttonText: "Oke",
-        onPressed: () {
-          Navigator.pop(context);
-          Navigator.pop(context, {
-            "Tanggal Ajuan": tanggalAjuan,
-            "Nomor BPJS/NIK": nomorBpjsNik,
-            "Deskripsi": deskripsi,
-            "Data Pendukung": _filePath!,
-          });
-        },
-      );
-    } else {
-      String errorMessage = "Terjadi kesalahan. Coba lagi nanti.";
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        _showDialog(
+          success: true,
+          title: "Berhasil!",
+          message: "Aduan Anda berhasil dikirim!",
+          buttonText: "Oke",
+          onPressed: () {
+            Navigator.pop(context);
+            Navigator.pop(context, {
+              "Tanggal Ajuan": tanggalAjuan,
+              "Nomor BPJS/NIK": nomorBpjsNik,
+              "Deskripsi": deskripsi,
+              "Data Pendukung": _filePath!,
+            });
+          },
+        );
+      } else {
+        String errorMessage = "Terjadi kesalahan. Coba lagi nanti.";
 
-      try {
-        var jsonResp = json.decode(respStr);
-        errorMessage = jsonResp["message"] ?? errorMessage;
-      } catch (e) {
-        print("Gagal decode JSON: $e");
-        if (respStr.contains('<!DOCTYPE html>')) {
-          errorMessage = "Terjadi kesalahan pada server (HTML error page).";
+        try {
+          var jsonResp = json.decode(respStr);
+          errorMessage = jsonResp["message"] ?? errorMessage;
+        } catch (e) {
+          print("Gagal decode JSON: $e");
+          if (respStr.contains('<!DOCTYPE html>')) {
+            errorMessage = "Terjadi kesalahan pada server (HTML error page).";
+          }
         }
-      }
 
+        _showDialog(
+          success: false,
+          title: "Gagal!",
+          message: errorMessage,
+          buttonText: "Reupload",
+          onPressed: () => Navigator.pop(context),
+        );
+      }
+    } catch (e) {
       _showDialog(
         success: false,
-        title: "Gagal!",
-        message: errorMessage,
-        buttonText: "Reupload",
+        title: "Error",
+        message: "Terjadi kesalahan: $e",
+        buttonText: "Kembali",
         onPressed: () => Navigator.pop(context),
       );
     }
-  } catch (e) {
-    _showDialog(
-      success: false,
-      title: "Error",
-      message: "Terjadi kesalahan: $e",
-      buttonText: "Kembali",
-      onPressed: () => Navigator.pop(context),
-    );
   }
-}
 
   void _showDialog({
     required bool success,
@@ -387,6 +398,12 @@ class _AduanFormPageState extends State<AduanFormPage> {
                   child: Column(
                     children: [
                       buildTextField(
+                        label: "Kategori",
+                        hint: "",
+                        controller: controllers["Kategori"]!,
+                        readOnly: true,
+                      ),
+                      buildTextField(
                         label: "Tanggal Ajuan",
                         hint: "",
                         controller: controllers["Tanggal Ajuan"]!,
@@ -405,6 +422,7 @@ class _AduanFormPageState extends State<AduanFormPage> {
                           maxLines: 4),
                       uploadDokumen("Data Pendukung", (File? selectedFile) {
                         setState(() {
+                          _selectedFile = selectedFile;
                           _filePath = selectedFile?.path.split('/').last;
                         });
                       }),
