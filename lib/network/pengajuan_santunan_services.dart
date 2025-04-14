@@ -64,7 +64,6 @@ class PengajuanSantunanService {
       print('Status code: ${response.statusCode}');
       print('Response body: ${responseBody.body}');
 
-      // Check if the request was successful
       if (response.statusCode == 200 || response.statusCode == 201) {
         return true;
       } else {

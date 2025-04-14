@@ -67,6 +67,7 @@ class _EditProfileState extends State<EditProfile> {
     debugPrint("Fetching user data from: $url");
 
     try {
+      final headers = await getHeaders();
       final response = await http.get(url, headers: headers);
       debugPrint("Response Status: ${response.statusCode}");
       debugPrint("Response Body: ${response.body}");
@@ -230,6 +231,7 @@ class _EditProfileState extends State<EditProfile> {
     });
 
     try {
+      final headers = await getHeaders();
       final response = await http.post(
         url,
         headers: headers,

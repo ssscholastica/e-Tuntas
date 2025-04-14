@@ -7,7 +7,7 @@ import 'package:etuntas/network/auth_services.dart';
 import 'package:etuntas/widgets/loading_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:etuntas/network/auth_services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -69,6 +69,15 @@ class _LoginState extends State<Login> {
       });
 
       if (response.statusCode == 200) {
+        Map<String, dynamic> userData = responseMap['user'];
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('user_email', userData['email']);
+
+        // Also store the token
+        final token = responseMap['access_token'];
+        await prefs.setString('access_token', token);
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (BuildContext context) => const Home()),

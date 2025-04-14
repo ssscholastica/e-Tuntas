@@ -1,4 +1,5 @@
-import 'package:etuntas/home.dart'; // Import halaman Home
+import 'package:etuntas/home.dart';
+import 'package:etuntas/pengajuan-santunan/alurPengajuan1.dart'; 
 import 'package:etuntas/pengajuan-santunan/pengajuanSantunan.dart';
 import 'package:flutter/material.dart';
 
@@ -28,7 +29,7 @@ class alurPengajuan2 extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const Home(),
+                          builder: (context) => const alurPengajuan1(),
                         ),
                       );
                     },
