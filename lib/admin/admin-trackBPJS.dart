@@ -15,30 +15,28 @@ class _TrackBPJSState extends State<TrackBPJS> {
   String searchQuery = "";
   String selectedFilterType = "";
 
-final List<Widget> trackBPJSPages = List.generate(
-  5,
-  (index) => Scaffold(
-    appBar: AppBar(
-      title: Text("Detail Pengaduan BPJS ${index + 1}"),
-      backgroundColor: Colors.blue,
+  final List<Widget> trackBPJSPages = List.generate(
+    5,
+    (index) => Scaffold(
+      appBar: AppBar(
+        title: Text("Detail Pengaduan BPJS ${index + 1}"),
+        backgroundColor: Colors.blue,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: formBPJS(pageIndex: index),
+      ),
     ),
-    body: SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: formBPJS(pageIndex: index),
-    ),
-  ),
-);
+  );
 
   final List<Map<String, dynamic>> trackBPJSList = [
     {
-      "image": "assets/images/id_card.png",
       "text": "Nomor BPJS: 0001234567890\nKategori: Kesehatan",
       "id": "0001234567890",
       "category": "Kesehatan",
       "date": DateTime(2023, 5, 15),
     },
     {
-      "image": "assets/images/family_card.png",
       "text": "Nomor NIK: 3578062209990002\nKategori: Ketenagakerjaan",
       "id": "3578062209990002",
       "category": "Ketenagakerjaan",
@@ -52,14 +50,12 @@ final List<Widget> trackBPJSPages = List.generate(
       "date": DateTime(2023, 11, 20),
     },
     {
-      "image": "assets/images/health_card.png",
       "text": "Nomor NIK: 3578064506880001\nKategori: Kesehatan",
       "id": "3578064506880001",
       "category": "Kesehatan",
       "date": DateTime(2024, 2, 5),
     },
     {
-      "image": "assets/images/employment.png",
       "text": "Nomor BPJS: 0005678901234\nKategori: Ketenagakerjaan",
       "id": "0005678901234",
       "category": "Ketenagakerjaan",
@@ -191,14 +187,8 @@ final List<Widget> trackBPJSPages = List.generate(
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                Image.asset(
-                                  item["image"],
-                                  width: 50,
-                                  height: 50,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      Icon(Icons.credit_card,
-                                          size: 50, color: Colors.blue[300]),
-                                ),
+                                const Icon(Icons.credit_card,
+                                    size: 50, color: Colors.blue),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Text(
@@ -267,8 +257,7 @@ final List<Widget> trackBPJSPages = List.generate(
                               onTap: () {
                                 resetFilter();
                               },
-                              behavior: HitTestBehavior
-                                  .opaque,
+                              behavior: HitTestBehavior.opaque,
                               child: const Padding(
                                 padding: EdgeInsets.only(left: 4),
                                 child: Icon(Icons.close,

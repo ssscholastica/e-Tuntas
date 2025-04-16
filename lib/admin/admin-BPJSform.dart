@@ -18,23 +18,20 @@ class _formBPJSState extends State<formBPJS> {
   bool hasError = false;
   String errorMessage = '';
   
-  // Form controllers
   final TextEditingController _kategoriBpjsController = TextEditingController();
   final TextEditingController _tanggalAjuanController = TextEditingController();
   final TextEditingController _nomorBpjsNikController = TextEditingController();
   final TextEditingController _deskripsiController = TextEditingController();
   final TextEditingController _dataPendukungController = TextEditingController();
   
-  String _selectedStatus = 'terkirim'; // Default status
+  String _selectedStatus = 'terkirim';
   List<String> statusOptions = ['terkirim', 'diproses', 'selesai', 'ditolak'];
   
-  // Map pengaduan data
   Map<String, dynamic>? pengaduanData;
 
   @override
   void initState() {
     super.initState();
-    // Fetch data when widget initializes
     fetchPengaduanData();
   }
 
@@ -54,18 +51,14 @@ class _formBPJSState extends State<formBPJS> {
         isLoading = true;
         hasError = false;
       });
-      
-      // Assuming you have the ID or some identifier to fetch specific data
       final response = await http.get(
         Uri.parse('http://10.0.2.2:8000/api/pengaduan-bpjs/${widget.pageIndex + 1}'),
         headers: {'Accept': 'application/json'},
       );
-      
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         setState(() {
           pengaduanData = data;
-          // Populate form fields
           _kategoriBpjsController.text = data['kategori_bpjs'] ?? '';
           _tanggalAjuanController.text = data['tanggal_ajuan'] ?? '';
           _nomorBpjsNikController.text = data['nomor_bpjs_nik'] ?? '';
