@@ -4,6 +4,7 @@ import 'package:badges/badges.dart' as badges;
 import 'package:etuntas/bpjs/aduan-bpjs.dart';
 import 'package:etuntas/cara-pangajuan/caraPengajuan.dart';
 import 'package:etuntas/cek-status-pengajuan/trackingAwal.dart';
+import 'package:etuntas/login-signup/login.dart';
 import 'package:etuntas/navbar.dart';
 import 'package:etuntas/notifikasi.dart';
 import 'package:etuntas/pengajuan-santunan/alurPengajuan1.dart';
@@ -35,14 +36,25 @@ class _HomeState extends State<Home> {
     final prefs = await SharedPreferences.getInstance();
     final userEmail = prefs.getString('user_email') ?? '';
     final token = prefs.getString('access_token') ?? '';
+    final storedName = prefs.getString('user_name') ?? '';
 
     debugPrint("Stored email: $userEmail");
     debugPrint("Stored token: $token");
 
-    if (userEmail.isEmpty) {
-      debugPrint("No user email found in SharedPreferences.");
+    if (storedName.isNotEmpty) {
       setState(() {
-        name = "No User Logged In";
+        name = storedName;
+      });
+    }
+
+    if (userEmail.isEmpty || token.isEmpty) {
+      debugPrint("No user email or token found in SharedPreferences.");
+      setState(() {
+        name = "Please login";
+      });
+      
+      Future.delayed(Duration(seconds: 2), () {
+        navigateToLogin(context);
       });
       return;
     }
@@ -51,6 +63,8 @@ class _HomeState extends State<Home> {
     debugPrint("Fetching user data from: $url");
 
     try {
+      final url = Uri.parse("${baseURL}user/email/$userEmail");
+      debugPrint("Fetching user data from: $url");
       final headers = await getHeaders();
       final response = await http.get(url, headers: headers);
       debugPrint("Response Status: ${response.statusCode}");
@@ -61,24 +75,76 @@ class _HomeState extends State<Home> {
 
         if (data.containsKey('name')) {
           setState(() {
-            name = data['name'];
+            name = data['name'] ?? userEmail;
           });
+          await prefs.setString('user_name', name);
+          
         } else {
           setState(() {
             name = "Name field not found";
           });
         }
+      } else if (response.statusCode == 401 || response.statusCode == 403) {
+        setState(() {
+          name = "Please login again";
+        });
+        // Clear invalid credentials
+        await prefs.remove('access_token');
+
+        // Show a more visible message to the user
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Your session has expired. Please login again."),
+            duration: Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'Login',
+              onPressed: () {
+                navigateToLogin(context);
+              },
+            ),
+          ),
+        );
+
+        // Auto-redirect to login screen after a short delay
+        Future.delayed(Duration(seconds: 3), () {
+          navigateToLogin(context);
+        });
       } else {
         setState(() {
           name = "User Not Found";
         });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                "Error: Could not fetch user data. Status: ${response.statusCode}"),
+            duration: Duration(seconds: 3),
+          ),
+        );
       }
     } catch (e) {
       debugPrint("Error fetching user data: $e");
       setState(() {
         name = "Error Fetching Data";
       });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Network error: $e"),
+          duration: Duration(seconds: 3),
+        ),
+      );
     }
+  }
+
+// Helper function to navigate to login
+  void navigateToLogin(BuildContext context) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+          builder: (context) =>
+              Login()), // Replace with your actual login screen
+    );
   }
 
 

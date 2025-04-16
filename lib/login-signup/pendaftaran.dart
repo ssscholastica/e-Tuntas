@@ -135,86 +135,146 @@ class _PendaftaranState extends State<Pendaftaran> {
 
   bool isLoading = false;
 
-  void _onBackPressed() {
+ Future<void> createAccountPressed(BuildContext context) async {
+    String name = controllers["Nama"]?.text ?? '';
+    String email = controllers["Email"]?.text ?? '';
+    String alamat = controllers["Alamat"]?.text ?? '';
+    String tanggalLahir = controllers["Tanggal Lahir"]?.text ?? '';
+    String nomorHP = controllers["Nomor HP"]?.text ?? '';
+    String pgUnit = controllers["PG Unit"]?.text ?? '';
+    String noPensiunan = controllers["Nomor Pensiunan"]?.text ?? '';
+    String nik = controllers["NIK"]?.text ?? '';
+    String namaBersangkutan = controllers["Nama Bersangkutan"]?.text ?? '';
+    String status = controllers["Status"]?.text ?? '';
+
+    if (name.isEmpty ||
+        email.isEmpty ||
+        alamat.isEmpty ||
+        tanggalLahir.isEmpty ||
+        nomorHP.isEmpty ||
+        pgUnit.isEmpty ||
+        noPensiunan.isEmpty ||
+        nik.isEmpty ||
+        namaBersangkutan.isEmpty ||
+        status.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Semua field harus diisi')));
+      return;
+    }
+
+    bool emailValid = RegExp(
+            r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
+        .hasMatch(email);
+
+    if (!emailValid) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Email tidak valid')));
+      return;
+    }
+
+    if (nomorHP.length < 9) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Nomor HP tidak valid')));
+      return;
+    }
+
+    if (noPensiunan.length != 12) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('No Pensiunan harus 12 digit')));
+      return;
+    }
+
+    if (nik.length != 16) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('NIK harus 16 digit')));
+      return;
+    }
+
     setState(() {
       isLoading = true;
     });
 
-    Future.delayed(const Duration(seconds: 2), () {
-      setState(() {
-        isLoading = false;
-      });
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const DaftarBerhasil()),
-      );
-    });
-    
-  }
-
- Future<void> createAccountPressed(BuildContext context) async {
-    String _name = controllers["Nama"]?.text ?? '';
-    String _email = controllers["Email"]?.text ?? '';
-    String _alamat = controllers["Alamat"]?.text ?? '';
-    String _tanggalLahir = controllers["Tanggal Lahir"]?.text ?? '';
-    String _nomorHP = controllers["Nomor HP"]?.text ?? '';
-    String _pgUnit = controllers["PG Unit"]?.text ?? '';
-    String _noPensiunan = controllers["Nomor Pensiunan"]?.text ?? '';
-    String _nik = controllers["NIK"]?.text ?? '';
-    String _namaBersangkutan = controllers["Nama Bersangkutan"]?.text ?? '';
-    String _status = controllers["Status"]?.text ?? '';
-
-    bool emailValid = RegExp(
-            r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
-        .hasMatch(_email);
-
-    if (!emailValid) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Email tidak valid')),
-      );
-      return;
-    }
-
     try {
       http.Response response = await AuthServices.register(
-          _name,
-          _email,
-          _alamat,
-          _tanggalLahir,
-          _nomorHP,
-          _pgUnit,
-          _noPensiunan,
-          _nik,
-          _namaBersangkutan,
-          _status);
+          name,
+          email,
+          alamat,
+          tanggalLahir,
+          nomorHP,
+          pgUnit,
+          noPensiunan,
+          nik,
+          namaBersangkutan,
+          status);
 
       print("Response Status Code: ${response.statusCode}");
       print("Raw Response: ${response.body}");
 
       Map<String, dynamic> responseMap = jsonDecode(response.body);
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        if (context.mounted) {
-          final data = json.decode(response.body);
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('user_email', _email);
+      setState(() {
+        isLoading = false;
+      });
 
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const DaftarBerhasil()),
-          );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('user_email', email);
+        await prefs.setString('user_name', name);
+
+        http.Response loginResponse =
+            await AuthServices.login(email, 'defaultpassword');
+        if (loginResponse.statusCode == 200) {
+          var loginData = jsonDecode(loginResponse.body);
+          if (loginData.containsKey('access_token')) {
+            await prefs.setString('access_token', loginData['access_token']);
+          }
         }
-      } else {
+
+        if (responseMap.containsKey('access_token')) {
+          final token = responseMap['access_token'];
+          print("Token value: " + token); 
+          await prefs.setString('access_token', token);
+        } else {
+          print(
+              "No access_token key in response. Available keys: ${responseMap.keys.join(', ')}");
+        }
+
+        await prefs.setString('user_phone', nomorHP);
+        await prefs.setString('user_address', alamat);
+
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(responseMap["message"] ?? "Terjadi kesalahan")),
+            const SnackBar(content: Text('Pendaftaran berhasil')));
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+              builder: (BuildContext context) => const DaftarBerhasil()),
         );
+      } else {
+        String errorMessage = responseMap["message"] ?? "Terjadi kesalahan";
+
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(errorMessage)));
+
+        if (response.statusCode == 422) {
+          if (responseMap.containsKey('errors')) {
+            Map<String, dynamic> errors = responseMap['errors'];
+            if (errors.containsKey('email') && errors['email'] is List) {
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(SnackBar(content: Text(errors['email'][0])));
+            }
+          }
+        }
       }
     } catch (e) {
-      print("Error decoding JSON: $e");
+      print("Error during registration: $e");
+
+      setState(() {
+        isLoading = false;
+      });
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Terjadi kesalahan. Coba lagi.')),
-      );
+          const SnackBar(content: Text('Terjadi kesalahan. Coba lagi.')));
     }
   }
 
@@ -370,7 +430,7 @@ class _PendaftaranState extends State<Pendaftaran> {
                         ],
                       ),
                       buildTextField("Nomor Pensiunan", "Nomor Pensiunan", "12 digit nomor pensiunan", isNumber: true),
-                      buildTextField("NIK", "NIK", "12 digit NIK", isNumber: true),
+                      buildTextField("NIK", "NIK", "16 digit NIK", isNumber: true),
                       buildTextField("Nama Bersangkutan", "Nama", "Nama bersangkutan"),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,

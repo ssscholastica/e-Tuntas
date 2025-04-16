@@ -1,13 +1,12 @@
 import 'dart:convert';
+
 import 'package:etuntas/home.dart';
 import 'package:etuntas/login-signup/forgotPassword.dart';
-import 'package:etuntas/login-signup/login.dart';
 import 'package:etuntas/login-signup/pendaftaran.dart';
 import 'package:etuntas/network/auth_services.dart';
 import 'package:etuntas/widgets/loading_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'login.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Login extends StatefulWidget {
@@ -30,42 +29,11 @@ class _LoginState extends State<Login> {
   String name = '';
   String password = '';
 
-  void loginPressed() async {
-    setState(() {
-      isLoading = true;
-      errorMessage = "";
-    });
-    try {
-      var response = await AuthServices.login(name, password);
-      var responseData = json.decode(response.body);
-      if (response.statusCode == 200) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const Home()),
-        );
-      } else {
-        setState(() {
-          errorMessage = responseData['message'] ?? 'Login gagal';
-        });
-      }
-    } catch (e) {
-      setState(() {
-        errorMessage = "Terjadi kesalahan, coba lagi.";
-      });
-    } finally {
-      setState(() {
-        isLoading = false;
-      });
-    }
-  }
-
-  String _name = '';
-  String _password = '';
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  void LoginPressed() async {
+  void loginPressed() async {
     String name = _nameController.text.trim();
     String password = _passwordController.text.trim();
 

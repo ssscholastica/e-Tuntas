@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 const String baseURL = 'http://10.0.2.2:8000/api/';
-// In globals.dart, update your headers to include the token
+
 Future<Map<String, String>> getHeaders() async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('access_token') ?? '';
