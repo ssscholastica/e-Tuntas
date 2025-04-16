@@ -53,7 +53,7 @@ class _HomeState extends State<Home> {
         name = "Please login";
       });
       
-      Future.delayed(Duration(seconds: 2), () {
+      Future.delayed(const Duration(seconds: 2), () {
         navigateToLogin(context);
       });
       return;
@@ -88,14 +88,12 @@ class _HomeState extends State<Home> {
         setState(() {
           name = "Please login again";
         });
-        // Clear invalid credentials
         await prefs.remove('access_token');
 
-        // Show a more visible message to the user
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Your session has expired. Please login again."),
-            duration: Duration(seconds: 5),
+            content: const Text("Your session has expired. Please login again."),
+            duration: const Duration(seconds: 5),
             action: SnackBarAction(
               label: 'Login',
               onPressed: () {
@@ -105,7 +103,6 @@ class _HomeState extends State<Home> {
           ),
         );
 
-        // Auto-redirect to login screen after a short delay
         Future.delayed(Duration(seconds: 3), () {
           navigateToLogin(context);
         });
@@ -118,7 +115,7 @@ class _HomeState extends State<Home> {
           SnackBar(
             content: Text(
                 "Error: Could not fetch user data. Status: ${response.statusCode}"),
-            duration: Duration(seconds: 3),
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -131,19 +128,18 @@ class _HomeState extends State<Home> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Network error: $e"),
-          duration: Duration(seconds: 3),
+          duration: const Duration(seconds: 3),
         ),
       );
     }
   }
 
-// Helper function to navigate to login
   void navigateToLogin(BuildContext context) {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
           builder: (context) =>
-              Login()), // Replace with your actual login screen
+              const Login()), // Replace with your actual login screen
     );
   }
 
@@ -230,7 +226,7 @@ class _HomeState extends State<Home> {
                   margin: const EdgeInsets.only(left: 15),
                   child: Text(
                     name,
-                    style: TextStyle(
+                    style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: Colors.black),
