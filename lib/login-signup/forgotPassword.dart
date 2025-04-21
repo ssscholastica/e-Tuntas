@@ -1,4 +1,5 @@
 import 'package:etuntas/login-signup/login.dart';
+import 'package:etuntas/network/sendResetPasswordEmail.dart';
 import 'package:etuntas/widgets/loading_widget.dart';
 import 'package:flutter/material.dart';
 
@@ -11,17 +12,33 @@ class ForgotPassword extends StatefulWidget {
 
 class _ForgotPasswordState extends State<ForgotPassword> {
   bool isLoading = false;
+  final TextEditingController _emailController = TextEditingController();
+
 
   void _onBackPressed() {
+    if (_emailController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Silakan masukkan email")),
+      );
+      return;
+    }
+
     setState(() {
       isLoading = true;
     });
 
-    Future.delayed(const Duration(seconds: 2), () {
+    sendResetPasswordEmail(_emailController.text).then((_) {
       setState(() {
         isLoading = false;
       });
       _showSuccessDialog(context);
+    }).catchError((error) {
+      setState(() {
+        isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: ${error.toString()}")),
+      );
     });
   }
 
@@ -121,6 +138,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                 ),
                 const SizedBox(height: 5),
                 TextField(
+                  controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
                     hintText: "etuntas@mail.com",

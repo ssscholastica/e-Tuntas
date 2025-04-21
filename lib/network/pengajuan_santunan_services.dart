@@ -1,5 +1,3 @@
-// lib/network/pengajuan_santunan_service.dart
-
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
@@ -33,7 +31,6 @@ class PengajuanSantunanService {
       request.fields['tanggal_meninggal'] = tanggalMeninggal;
       request.fields['lokasi_meninggal'] = lokasiMeninggal;
 
-      // Add file uploads
       request.files.add(await http.MultipartFile.fromPath(
         'surat_kematian',
         suratKematian.path,

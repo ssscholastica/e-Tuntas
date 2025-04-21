@@ -308,6 +308,7 @@ class _EditProfileState extends State<EditProfile> {
                 buildTextField('Nama', _nameController,
                     onChanged: (val) => setState(() => name = val)),
                 buildTextField("Email", _emailController,
+                readOnly: true,
                     onChanged: (val) => setState(() => email = val)),
                 buildTextField("Nomor HP", _phoneController,
                     isPhone: true,

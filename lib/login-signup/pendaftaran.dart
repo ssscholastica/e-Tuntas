@@ -33,6 +33,71 @@ class _PendaftaranState extends State<Pendaftaran> {
     "Status": TextEditingController(),
   };
 
+  bool isLoadingPensiunan = false;
+
+  @override
+  void initState() {
+    super.initState();
+    controllers["Nomor Pensiunan"]!.addListener(_fetchPensionerDetails);
+  }
+
+  Future<void> _fetchPensionerDetails() async {
+    final noPensiunan = controllers["Nomor Pensiunan"]!.text;
+
+    if (noPensiunan.length == 12) {
+      setState(() {
+        isLoadingPensiunan = true;
+      });
+
+      try {
+        final baseUrl = 'http://10.0.2.2:8000';
+
+        final response = await http.get(
+          Uri.parse('$baseUrl/api/pensiunan/$noPensiunan'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        );
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+
+          if (data != null && data.containsKey('nama_pensiunan')) {
+            setState(() {
+              controllers["Nama Bersangkutan"]!.text = data['nama_pensiunan'];
+            });
+          } else {
+            _showErrorMessage('Data pensiunan tidak lengkap');
+            controllers["Nama Bersangkutan"]!.clear();
+          }
+        } else if (response.statusCode == 404) {
+          _showErrorMessage('Nomor Pensiunan tidak ditemukan');
+          controllers["Nama Bersangkutan"]!.clear();
+        } else {
+          print("Error status code: ${response.statusCode}");
+          print("Error response body: ${response.body}");
+          _showErrorMessage('Gagal mengambil data pensiunan');
+          controllers["Nama Bersangkutan"]!.clear();
+        }
+      } catch (e) {
+        print("Error fetching pensioner details: $e");
+        _showErrorMessage('Terjadi kesalahan koneksi');
+        controllers["Nama Bersangkutan"]!.clear();
+      } finally {
+        setState(() {
+          isLoadingPensiunan = false;
+        });
+      }
+    }
+  }
+
+  void _showErrorMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
   Future<void> selectDate(BuildContext context) async {
     DateTime? pickedDate = await showDatePicker(
       context: context,
@@ -96,7 +161,7 @@ class _PendaftaranState extends State<Pendaftaran> {
   String? selectedStatusKeluarga;
 
   Widget buildTextField(String key, String label, String hint,
-      {Widget? prefix, bool isDate = false, bool isNumber = false}) {
+      {Widget? prefix, bool isDate = false, bool isNumber = false, bool readOnly = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -127,6 +192,7 @@ class _PendaftaranState extends State<Pendaftaran> {
 
   @override
   void dispose() {
+    controllers["Nomor Pensiunan"]!.removeListener(_fetchPensionerDetails);
     super.dispose();
     for (var controller in controllers.values) {
       controller.dispose();
@@ -431,7 +497,7 @@ class _PendaftaranState extends State<Pendaftaran> {
                       ),
                       buildTextField("Nomor Pensiunan", "Nomor Pensiunan", "12 digit nomor pensiunan", isNumber: true),
                       buildTextField("NIK", "NIK", "16 digit NIK", isNumber: true),
-                      buildTextField("Nama Bersangkutan", "Nama", "Nama bersangkutan"),
+                      buildTextField("Nama Bersangkutan", "Nama", "Nama bersangkutan", readOnly: true),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
