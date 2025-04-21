@@ -1,8 +1,5 @@
-import 'package:badges/badges.dart' as badges;
-import 'package:etuntas/admin/admin-trackBPJS.dart';
-import 'package:etuntas/cara-pangajuan/caraPengajuan.dart';
-import 'package:etuntas/navbar.dart';
-import 'package:etuntas/notifikasi.dart';
+import 'package:etuntas/admin/admin-BPJStrack.dart';
+import 'package:etuntas/admin/admin-santunanTrack.dart';
 import 'package:flutter/material.dart';
 
 class AdminHome extends StatefulWidget {
@@ -108,27 +105,6 @@ class _AdminHomeState extends State<AdminHome> {
                         color: Colors.black),
                   ),
                 ),
-                const Spacer(),
-                InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => NotifPage()),
-                    );
-                  },
-                  child: badges.Badge(
-                      badgeContent: const Text(
-                        '3',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      position: badges.BadgePosition.topEnd(top: -8, end: -7),
-                      badgeStyle:
-                          const badges.BadgeStyle(badgeColor: Colors.red),
-                      child: const Icon(
-                        Icons.notifications_outlined,
-                        size: 28,
-                      )),
-                )
               ],
             ),
           ),
@@ -152,16 +128,17 @@ class _AdminHomeState extends State<AdminHome> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => const CaraPengajuan()),
+                            builder: (context) => const TrackSantunan()),
                       );
                     },
-                    child: buildImageBox("assets/pengajuan santunan.png", "Tracking \nSantunan")),
+                    child: buildImageBox("assets/pengajuan santunan.png",
+                        "Tracking \nSantunan")),
                 const SizedBox(width: 35),
                 InkWell(
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => TrackBPJS()),
+                        MaterialPageRoute(builder: (context) => const TrackBPJS()),
                       );
                     },
                     child: buildImageBox(
@@ -171,7 +148,45 @@ class _AdminHomeState extends State<AdminHome> {
           ),
         ],
       ),
-      bottomNavigationBar: const NavbarWidget(),
+      bottomNavigationBar: Container(
+        height: 79,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: const Color(0XFF2F2F9D),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  onPressed: () {},
+                  icon: const Icon(
+                    Icons.home_outlined,
+                    color: Color(0xFFFFFFFF),
+                    size: 24,
+                  ),
+                ),
+                const Text(
+                  "Home",
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFFFFFFFF),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

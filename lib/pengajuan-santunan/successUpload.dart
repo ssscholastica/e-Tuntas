@@ -3,7 +3,9 @@ import 'package:etuntas/pengajuan-santunan/pengajuanSantunan.dart';
 import 'package:flutter/material.dart';
 
 class SuccesUpload extends StatefulWidget {
-  const SuccesUpload({super.key});
+  final String noPendaftaran;
+  
+  const SuccesUpload({Key? key, required this.noPendaftaran}) : super(key: key);
 
   @override
   State<SuccesUpload> createState() => _SuccessUploadState();
@@ -59,10 +61,10 @@ class _SuccessUploadState extends State<SuccesUpload> {
                     color: Color(0XFF1E1B15)),
               )),
               const SizedBox(height: 10),
-              const Center(
+              Center(
                   child: Text(
-                'Nomor Pendaftaran Anda :  00110122024',
-                style: TextStyle(
+                'Nomor Pendaftaran Anda: ${widget.noPendaftaran}',
+                style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
                     color: Color(0XFF1E1B15)),

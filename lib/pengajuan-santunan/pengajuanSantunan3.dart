@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:dropdown_search/dropdown_search.dart';
@@ -83,7 +84,6 @@ class _PengajuanSantunan3State extends State<PengajuanSantunan3> {
       setState(() {
         isLoading = false;
       });
-      // Show error dialog to user
       _showDialog(
         success: false,
         title: "Gagal Upload!",
@@ -96,7 +96,7 @@ class _PengajuanSantunan3State extends State<PengajuanSantunan3> {
     }
 
     try {
-      final uri = Uri.parse('http://10.0.2.2:8000/api/pengajuan-santunan-3');
+      final uri = Uri.parse('http://10.0.2.2:8000/api/pengajuan-santunan3');
       final request = http.MultipartRequest('POST', uri);
 
       request.headers.addAll({
@@ -147,9 +147,12 @@ class _PengajuanSantunan3State extends State<PengajuanSantunan3> {
       debugPrint("Response Body: $resStr");
 
       if (response.statusCode == 200 || response.statusCode == 201) {
+        final jsonResponse = json.decode(resStr);
+        final noPendaftaran = jsonResponse['no_pendaftaran'] ?? '';
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const SuccesUpload()),
+          MaterialPageRoute(
+              builder: (context) => SuccesUpload(noPendaftaran: noPendaftaran)),
         );
       } else {
         _showDialog(

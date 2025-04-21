@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:dropdown_search/dropdown_search.dart';
@@ -5,17 +6,17 @@ import 'package:etuntas/network/wilayah_service.dart';
 import 'package:etuntas/pengajuan-santunan/successUpload.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:open_file/open_file.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:http/http.dart' as http;
 
 class PengajuanSantunan1 extends StatefulWidget {
   final String namaPTPN;
   final String lokasiList;
 
-  PengajuanSantunan1({required this.namaPTPN, required this.lokasiList, super.key});
-  
+  PengajuanSantunan1(
+      {required this.namaPTPN, required this.lokasiList, super.key});
 
   @override
   State<PengajuanSantunan1> createState() => _PengajuanSantunan1State();
@@ -34,7 +35,7 @@ class _PengajuanSantunan1State extends State<PengajuanSantunan1> {
   TextEditingController lokasiController = TextEditingController();
   List<String> lokasiList = [];
   bool isLoadingKota = true;
-  bool isLoading = false; 
+  bool isLoading = false;
 
   Future<void> fetchKota() async {
     try {
@@ -48,7 +49,6 @@ class _PengajuanSantunan1State extends State<PengajuanSantunan1> {
       print("Error saat ambil data kota: $e");
     }
   }
-
 
   Future<String?> getUserEmail() async {
     final prefs = await SharedPreferences.getInstance();
@@ -71,7 +71,7 @@ class _PengajuanSantunan1State extends State<PengajuanSantunan1> {
     }
   }
 
- Future<void> uploadSantunan() async {
+  Future<void> uploadSantunan() async {
     setState(() {
       isLoading = true;
     });
@@ -85,7 +85,6 @@ class _PengajuanSantunan1State extends State<PengajuanSantunan1> {
       setState(() {
         isLoading = false;
       });
-      // Show error dialog to user
       _showDialog(
         success: false,
         title: "Gagal Upload!",
@@ -98,7 +97,7 @@ class _PengajuanSantunan1State extends State<PengajuanSantunan1> {
     }
 
     try {
-      final uri = Uri.parse('http://10.0.2.2:8000/api/pengajuan-santunan');
+      final uri = Uri.parse('http://10.0.2.2:8000/api/pengajuan-santunan1');
       final request = http.MultipartRequest('POST', uri);
 
       request.headers.addAll({
@@ -145,9 +144,12 @@ class _PengajuanSantunan1State extends State<PengajuanSantunan1> {
       debugPrint("Response Body: $resStr");
 
       if (response.statusCode == 200 || response.statusCode == 201) {
+        final jsonResponse = json.decode(resStr);
+        final noPendaftaran = jsonResponse['no_pendaftaran'] ?? '';
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const SuccesUpload()),
+          MaterialPageRoute(
+              builder: (context) => SuccesUpload(noPendaftaran: noPendaftaran)),
         );
       } else {
         _showDialog(
@@ -208,7 +210,6 @@ class _PengajuanSantunan1State extends State<PengajuanSantunan1> {
       GlobalKey<_FileUploadFieldState>();
   final GlobalKey<_FileUploadFieldState> bukuRekeningAnakKey =
       GlobalKey<_FileUploadFieldState>();
-
 
   Widget buildDatePickerField(String label, TextEditingController controller) {
     return Padding(
@@ -356,7 +357,6 @@ class _PengajuanSantunan1State extends State<PengajuanSantunan1> {
                 key: ktpPensiunanAnakKey, label: "KTP Pensiunan dan Anak"),
             FileUploadField(
                 key: bukuRekeningAnakKey, label: "Buku Rekening Anak"),
-
             const SizedBox(height: 30),
             ElevatedButton(
               onPressed: () {
@@ -366,7 +366,8 @@ class _PengajuanSantunan1State extends State<PengajuanSantunan1> {
                   _showDialog(
                     success: false,
                     title: "Gagal!",
-                    message: "Mohon lengkapi semua kolom dan dokumen yang diperlukan sebelum mengupload.",
+                    message:
+                        "Mohon lengkapi semua kolom dan dokumen yang diperlukan sebelum mengupload.",
                     buttonText: "Reupload",
                     onPressed: () {
                       Navigator.pop(context);
@@ -516,6 +517,7 @@ class _FileUploadFieldState extends State<FileUploadField> {
       OpenFile.open(_selectedFile!.path);
     }
   }
+
   File? getSelectedFile() => _selectedFile;
 
   @override

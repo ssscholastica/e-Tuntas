@@ -2,12 +2,12 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class formBPJS extends StatefulWidget {
+class formSantunan extends StatefulWidget {
   final String pengaduanId;
   final Map<String, dynamic> pengaduanData;
   final Function onStatusUpdated;
 
-  const formBPJS({
+  const formSantunan({
     Key? key,
     required this.pengaduanId,
     required this.pengaduanData,
@@ -15,15 +15,15 @@ class formBPJS extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<formBPJS> createState() => _formBPJSState();
+  State<formSantunan> createState() => _formSantunanState();
 }
 
-class _formBPJSState extends State<formBPJS> {
+class _formSantunanState extends State<formSantunan> {
   final Dio _dio = Dio();
   bool isLoading = false;
   bool hasError = false;
   String errorMessage = '';
-  bool statusChanged = false; // Track if status was changed
+  bool statusChanged = false;
 
   String? selectedStatus;
   List<String> statusOptions = ['Terkirim', 'Diproses', 'Ditolak', 'Selesai'];
@@ -95,7 +95,7 @@ class _formBPJSState extends State<formBPJS> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Detail Pengaduan BPJS',
+          title: const Text('Detail Pengajuan Santunan',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,

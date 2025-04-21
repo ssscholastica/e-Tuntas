@@ -1,4 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 
 class CekAduanBPJS extends StatefulWidget {
   const CekAduanBPJS({super.key});
@@ -11,63 +15,156 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
   final TextEditingController _controller = TextEditingController();
   bool isTrackingPressed = false;
   bool isTrackingSuccess = false;
+  bool isLoading = false;
   List<Map<String, String>> trackingInfo = [];
   List<Map<String, dynamic>> comments = [];
 
-  void _cekTrackingData() {
-    String nomorPendaftaran = _controller.text.trim();
+  // Status icons mapping
+  final Map<String, String> statusIcons = {
+    'Terkirim': 'assets/icon terkirim.png',
+    'Diproses': 'assets/icon diproses.png',
+    'Ditolak': 'assets/icon ditolak.png',
+    'Selesai': 'assets/icon selesai.png',
+  };
 
-    if (nomorPendaftaran.isEmpty) {
+  // Status colors mapping
+  final Map<String, String> statusColors = {
+    'Terkirim': '#007bff',
+    'Diproses': '#FFA500',
+    'Ditolak': '#DC3545',
+    'Selesai': '#198754',
+  };
+
+  // Status descriptions mapping
+  final Map<String, String> statusDescriptions = {
+    'Terkirim': 'Silakan lakukan pengecekan berkala pada aplikasi untuk memantau proses aduan BPJS Anda.',
+    'Diproses': 'Silakan lakukan pengecekan berkala pada aplikasi dan menunggu informasi selanjutnya terkait aduan yang sedang diproses',
+    'Ditolak': 'Catatan Kesalahan: \n- Dokumen yang anda unggah tidak dapat terbaca dengan baik',
+    'Selesai': '',
+  };
+
+  // Status titles mapping
+  final Map<String, String> statusTitles = {
+    'Terkirim': 'Aduan BPJS berhasil terkirim',
+    'Diproses': 'Aduan BPJS sedang diproses',
+    'Ditolak': 'Pengajuan Santunan gagal',
+    'Selesai': 'Aduan BPJS Berhasil Terselesaikan',
+  };
+
+  Future<void> _cekTrackingData() async {
+    String nomorBPJS = _controller.text.trim();
+
+    if (nomorBPJS.isEmpty) {
       _showFailureDialog("Nomor BPJS tidak boleh kosong!");
       return;
     }
 
     setState(() {
+      isLoading = true;
       isTrackingPressed = true;
-      if (nomorPendaftaran == "123456") {
-        isTrackingSuccess = true;
-        trackingInfo = [
-          {
-            'icon': 'assets/icon terkirim.png',
-            "status": "Terkirim",
-            "date": "12 Des 2024, 10:50",
-            "title": "Aduan BPJS berhasil terkirim",
-            "description":
-                "Silakan lakukan pengecekan berkala pada aplikasi untuk memantau proses aduan BPJS Anda.",
-            "color": "#007bff"
-          },
-          {
-            'icon': 'assets/icon diproses.png',
-            "status": "Diproses",
-            "date": "13 Des 2024, 09:58",
-            "title": "Aduan BPJS sedang diproses",
-            "description":
-                "Silakan lakukan pengecekan berkala pada aplikasi dan menunggu informasi selanjutnya terkait aduan yang sedang diproses",
-            "color": "#FFA500"
-          },
-          {
-            'icon': 'assets/icon ditolak.png',
-            "status": "Ditolak",
-            "date": "14 Des 2024, 09:58",
-            "title": "Pengajuan Santunan gagal",
-            "description":
-                "Catatan Kesalahan: \n- Dokumen yang anda unggah tidak dapat terbaca dengan baik",
-            "color": "#DC3545"
-          },
-          {
-            'icon': 'assets/icon selesai.png',
-            "status": "Selesai",
-            "date": "15 Des 2024, 09:58",
-            "title": "Aduan BPJS Berhasil Terselesaikan",
-            "description": "",
-            "color": "#198754"
-          },
-        ];
-      } else {
-        isTrackingSuccess = false;
-        trackingInfo = [];
-      }
     });
+
+    try {
+      // Panggil API untuk memeriksa nomor BPJS
+      final response = await http.get(
+        Uri.parse('http://10.0.2.2:8000/api/pengaduan-bpjs/'),
+        headers: {'Accept': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonData = json.decode(response.body);
+        
+        // Cari data yang sesuai dengan nomor BPJS yang dimasukkan
+        final matchingData = jsonData.where((item) => 
+          item['nomor_bpjs_nik'].toString() == nomorBPJS
+        ).toList();
+
+        setState(() {
+          isLoading = false;
+          
+          if (matchingData.isNotEmpty) {
+            isTrackingSuccess = true;
+            
+            // Ambil data pengaduan yang ditemukan
+            final pengaduan = matchingData.first;
+            final status = pengaduan['status'] ?? 'Terkirim';
+            final tanggalAjuan = DateTime.parse(pengaduan['tanggal_ajuan']);
+            final kategori = pengaduan['kategori_bpjs'];
+            
+            // Buat alur tracking berdasarkan status
+            trackingInfo = _generateTrackingInfo(status, tanggalAjuan);
+          } else {
+            isTrackingSuccess = false;
+            trackingInfo = [];
+          }
+        });
+      } else {
+        setState(() {
+          isLoading = false;
+          isTrackingSuccess = false;
+          _showFailureDialog("Gagal terhubung ke server. Coba lagi nanti.");
+        });
+      }
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+        isTrackingSuccess = false;
+        _showFailureDialog("Terjadi kesalahan: $e");
+      });
+    }
+  }
+
+  // Fungsi untuk menghasilkan tracking info berdasarkan status
+  List<Map<String, String>> _generateTrackingInfo(String currentStatus, DateTime tanggalAjuan) {
+    List<Map<String, String>> result = [];
+    List<String> allStatus = ['Terkirim', 'Diproses', 'Ditolak', 'Selesai'];
+    
+    // Format tanggal
+    final dateFormatter = DateFormat('dd MMM yyyy, HH:mm');
+    
+    // Tentukan indeks status saat ini
+    final currentStatusIndex = allStatus.indexOf(currentStatus);
+    if (currentStatusIndex == -1) return result; // Status tidak valid
+    
+    // Jika status Ditolak, hanya tampilkan sampai Ditolak
+    if (currentStatus == 'Ditolak') {
+      allStatus = ['Terkirim', 'Diproses', 'Ditolak'];
+    }
+    
+    // Jika status Selesai, jangan tampilkan Ditolak
+    if (currentStatus == 'Selesai') {
+      allStatus = ['Terkirim', 'Diproses', 'Selesai'];
+    }
+    
+    // Buat data tracking untuk setiap status
+    for (int i = 0; i < allStatus.length; i++) {
+      final status = allStatus[i];
+      
+      // Hanya tampilkan status yang sudah dilalui berdasarkan status saat ini
+      if (i <= currentStatusIndex || 
+          (currentStatus == 'Selesai' && status != 'Ditolak')) {
+        
+        // Tambahkan interval hari untuk setiap status
+        DateTime statusDate = tanggalAjuan.add(Duration(days: i));
+        
+        // Jika tanggal di masa depan, gunakan tanggal hari ini
+        final now = DateTime.now();
+        if (statusDate.isAfter(now)) {
+          statusDate = now;
+        }
+        
+        result.add({
+          'icon': statusIcons[status]!,
+          'status': status,
+          'date': dateFormatter.format(statusDate),
+          'title': statusTitles[status]!,
+          'description': statusDescriptions[status]!,
+          'color': statusColors[status]!
+        });
+      }
+    }
+    
+    return result;
   }
 
   void _showFailureDialog(String message) {
@@ -131,7 +228,6 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -139,8 +235,8 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.only(left: 20, top: 20),
+            const Padding(
+              padding: EdgeInsets.only(left: 20, top: 20),
               child: Align(
                   alignment: Alignment.topLeft,
                   child: Text(
@@ -150,7 +246,13 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
             ),
             _buildInputField(),
             _buildCheckButton(),
-            _buildTrackingResult(),
+            if (isLoading)
+              const Padding(
+                padding: EdgeInsets.all(20.0),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else
+              _buildTrackingResult(),
             const SizedBox(height: 80)
           ],
         ),
@@ -164,7 +266,7 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
+          const SizedBox(
             height: 10,
           ),
           const Text(
@@ -179,6 +281,7 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
               border:
                   OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
             ),
+            keyboardType: TextInputType.number,
           ),
         ],
       ),
@@ -191,7 +294,7 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
       child: Align(
         alignment: Alignment.centerRight,
         child: ElevatedButton(
-          onPressed: _cekTrackingData,
+          onPressed: isLoading ? null : _cekTrackingData,
           style: ElevatedButton.styleFrom(
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -208,7 +311,7 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
     if (!isTrackingPressed) {
       return Container(
         padding: const EdgeInsets.only(left: 5, right: 25, top: 10),
-        child: Row(),
+        child: const Row(),
       );
     }
     if (!isTrackingSuccess) {
@@ -262,13 +365,13 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
                     width: 16,
                     height: 16,
                   ),
-                  SizedBox(
+                  const SizedBox(
                     width: 5,
                   ),
                   Text(item["status"]!,
                       style: const TextStyle(
                           fontSize: 14, fontWeight: FontWeight.bold)),
-                  Spacer(),
+                  const Spacer(),
                   Text(item["date"]!,
                       style: const TextStyle(
                           fontSize: 12, color: Color(0XFF474747))),
@@ -422,7 +525,7 @@ class _RejectedStatusWidgetState extends State<RejectedStatusWidget> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF2F2F9D),
                 ),
-                child: Icon(Icons.send, color: Colors.white,),
+                child: const Icon(Icons.send, color: Colors.white,),
               ),
             ],
           ),
@@ -431,4 +534,3 @@ class _RejectedStatusWidgetState extends State<RejectedStatusWidget> {
     );
   }
 }
-

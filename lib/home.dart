@@ -6,6 +6,7 @@ import 'package:etuntas/cara-pangajuan/caraPengajuan.dart';
 import 'package:etuntas/cek-status-pengajuan/trackingAwal.dart';
 import 'package:etuntas/login-signup/login.dart';
 import 'package:etuntas/navbar.dart';
+import 'package:etuntas/network/globals.dart';
 import 'package:etuntas/notifikasi.dart';
 import 'package:etuntas/pengajuan-santunan/alurPengajuan1.dart';
 import 'package:etuntas/persyaratan/persyaratan.dart';
@@ -13,7 +14,6 @@ import 'package:etuntas/pertanyaan-umum/pertanyaan-umum.dart';
 import 'package:etuntas/rekening/bank.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:etuntas/network/globals.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Home extends StatefulWidget {

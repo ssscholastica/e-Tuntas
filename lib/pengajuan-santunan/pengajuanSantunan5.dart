@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:dropdown_search/dropdown_search.dart';
@@ -5,9 +6,9 @@ import 'package:etuntas/network/wilayah_service.dart';
 import 'package:etuntas/pengajuan-santunan/successUpload.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:open_file/open_file.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class PengajuanSantunan5 extends StatefulWidget {
@@ -73,17 +74,14 @@ class _PengajuanSantunan5State extends State<PengajuanSantunan5> {
     setState(() {
       isLoading = true;
     });
-
     final prefs = await SharedPreferences.getInstance();
     final email = await getUserEmail();
     debugPrint("Retrieved email from SharedPreferences: $email");
-
     if (email == null || email.isEmpty) {
       debugPrint("Email tidak ditemukan dalam SharedPreferences.");
       setState(() {
         isLoading = false;
       });
-      // Show error dialog to user
       _showDialog(
         success: false,
         title: "Gagal Upload!",
@@ -94,42 +92,24 @@ class _PengajuanSantunan5State extends State<PengajuanSantunan5> {
       );
       return;
     }
-
     try {
-      final uri = Uri.parse('http://10.0.2.2:8000/api/pengajuan-santunan-5');
+      final uri = Uri.parse('http://10.0.2.2:8000/api/pengajuan-santunan5');
       final request = http.MultipartRequest('POST', uri);
-
       request.headers.addAll({
         'Accept': 'application/json',
       });
-
       request.fields['email'] = email;
       debugPrint("Request fields: ${request.fields}");
-
-      request.fields['tanggal_meninggal'] =
-          tanggalMeninggalController.text.trim();
-
-      debugPrint(
-          "Tanggal meninggal yang dikirim: ${request.fields['tanggal_meninggal']}");
-
+      request.fields['tanggal_meninggal'] = tanggalMeninggalController.text.trim();
+      debugPrint("Tanggal meninggal yang dikirim: ${request.fields['tanggal_meninggal']}");
       request.fields['lokasi_meninggal'] = selectedLokasi ?? '';
-
       request.fields['ptpn'] = widget.namaPTPN;
       request.fields['lokasi'] = widget.lokasiList;
-
       debugPrint("Request fields: ${request.fields}");
 
       request.files.add(await http.MultipartFile.fromPath(
         'surat_kematian',
         suratKematianKey.currentState!.getSelectedFile()!.path,
-      ));
-      request.files.add(await http.MultipartFile.fromPath(
-        'kartu_keluarga',
-        kartuKeluargaKey.currentState!.getSelectedFile()!.path,
-      ));
-      request.files.add(await http.MultipartFile.fromPath(
-        'ktp_pensiunan_anak',
-        ktpPensiunanAnakKey.currentState!.getSelectedFile()!.path,
       ));
       request.files.add(await http.MultipartFile.fromPath(
         'surat_keterangan',
@@ -138,6 +118,14 @@ class _PengajuanSantunan5State extends State<PengajuanSantunan5> {
       request.files.add(await http.MultipartFile.fromPath(
         'surat_kuasa',
         suratKuasaKey.currentState!.getSelectedFile()!.path,
+      ));
+      request.files.add(await http.MultipartFile.fromPath(
+        'kartu_keluarga',
+        kartuKeluargaKey.currentState!.getSelectedFile()!.path,
+      ));
+      request.files.add(await http.MultipartFile.fromPath(
+        'ktp_pensiunan_anak',
+        ktpPensiunanAnakKey.currentState!.getSelectedFile()!.path,
       ));
       request.files.add(await http.MultipartFile.fromPath(
         'buku_rekening_anak',
@@ -149,11 +137,13 @@ class _PengajuanSantunan5State extends State<PengajuanSantunan5> {
 
       debugPrint("Status Code: ${response.statusCode}");
       debugPrint("Response Body: $resStr");
-
       if (response.statusCode == 200 || response.statusCode == 201) {
+        final jsonResponse = json.decode(resStr);
+        final noPendaftaran = jsonResponse['no_pendaftaran'] ?? '';
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const SuccesUpload()),
+          MaterialPageRoute(
+              builder: (context) => SuccesUpload(noPendaftaran: noPendaftaran)),
         );
       } else {
         _showDialog(

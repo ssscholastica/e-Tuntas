@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:dropdown_search/dropdown_search.dart';
@@ -5,10 +6,10 @@ import 'package:etuntas/network/wilayah_service.dart';
 import 'package:etuntas/pengajuan-santunan/successUpload.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:open_file/open_file.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:http/http.dart' as http;
 
 class PengajuanSantunan2 extends StatefulWidget {
   final String namaPTPN;
@@ -68,7 +69,7 @@ class _PengajuanSantunan2State extends State<PengajuanSantunan2> {
       });
     }
   }
-  
+ 
   Future<void> uploadSantunan() async {
     setState(() {
       isLoading = true;
@@ -83,7 +84,6 @@ class _PengajuanSantunan2State extends State<PengajuanSantunan2> {
       setState(() {
         isLoading = false;
       });
-      // Show error dialog to user
       _showDialog(
         success: false,
         title: "Gagal Upload!",
@@ -96,7 +96,7 @@ class _PengajuanSantunan2State extends State<PengajuanSantunan2> {
     }
 
     try {
-      final uri = Uri.parse('http://10.0.2.2:8000/api/pengajuan-santunan-2');
+      final uri = Uri.parse('http://10.0.2.2:8000/api/pengajuan-santunan2');
       final request = http.MultipartRequest('POST', uri);
 
       request.headers.addAll({
@@ -139,7 +139,6 @@ class _PengajuanSantunan2State extends State<PengajuanSantunan2> {
         'buku_rekening_istri',
         bukuRekeningIstriKey.currentState!.getSelectedFile()!.path,
       ));
-
       final response = await request.send();
       final resStr = await response.stream.bytesToString();
 
@@ -147,9 +146,12 @@ class _PengajuanSantunan2State extends State<PengajuanSantunan2> {
       debugPrint("Response Body: $resStr");
 
       if (response.statusCode == 200 || response.statusCode == 201) {
+        final jsonResponse = json.decode(resStr);
+        final noPendaftaran = jsonResponse['no_pendaftaran'] ?? '';
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const SuccesUpload()),
+          MaterialPageRoute(
+              builder: (context) => SuccesUpload(noPendaftaran: noPendaftaran)),
         );
       } else {
         _showDialog(
