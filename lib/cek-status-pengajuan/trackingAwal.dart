@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:etuntas/home.dart';
 import 'package:etuntas/widgets/loading_widget.dart';
 import 'package:flutter/material.dart';
-import 'package:etuntas/home.dart';
+import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 
 class TrackingAwal extends StatefulWidget {
@@ -16,9 +18,39 @@ class _TrackingAwalState extends State<TrackingAwal> {
   final TextEditingController _controller = TextEditingController();
   bool isTrackingPressed = false;
   bool isTrackingSuccess = false;
-  List<Map<String, String>> trackingInfo = [];
+  List<Map<String, dynamic>> trackingInfo = [];
+  bool isLoading = false;
+  String errorMessage = "";
 
-  void _cekTrackingData() {
+  // Map status values to corresponding icons and colors
+  final Map<String, Map<String, String>> statusMappings = {
+    'Terkirim': {
+      'icon': 'assets/icon terkirim.png',
+      'color': '#007bff',
+      'title': 'Pengajuan Santunan berhasil terkirim',
+      'description': 'Silakan lakukan pengecekan berkala pada aplikasi untuk memantau proses pengajuan santunan Anda.'
+    },
+    'Diproses': {
+      'icon': 'assets/icon diproses.png',
+      'color': '#FFA500',
+      'title': 'Pengajuan Santunan sedang diproses',
+      'description': 'Silakan lakukan pengecekan berkala pada aplikasi dan menunggu informasi selanjutnya terkait pengajuan yang sedang diproses'
+    },
+    'Ditolak': {
+      'icon': 'assets/icon ditolak.png',
+      'color': '#DC3545',
+      'title': 'Pengajuan Santunan gagal',
+      'description': 'Catatan Kesalahan: \n- Dokumen yang anda unggah tidak dapat terbaca dengan baik'
+    },
+    'Selesai': {
+      'icon': 'assets/icon selesai.png',
+      'color': '#198754',
+      'title': 'Pengajuan Santunan berhasil terselesaikan',
+      'description': ''
+    },
+  };
+
+  Future<void> _fetchTrackingData() async {
     String nomorPendaftaran = _controller.text.trim();
 
     if (nomorPendaftaran.isEmpty) {
@@ -27,50 +59,94 @@ class _TrackingAwalState extends State<TrackingAwal> {
     }
 
     setState(() {
-      isTrackingPressed = true;
-      if (nomorPendaftaran == "123456") {
-        isTrackingSuccess = true;
-        trackingInfo = [
-          {
-            'icon' : 'assets/icon terkirim.png',
-            "status": "Terkirim",
-            "date": "12 Des 2024, 10:50",
-            "title": "Pengajuan Santunan berhasil terkirim",
-            "description": "Silakan lakukan pengecekan berkala pada aplikasi untuk memantau proses pengajuan santunan Anda.",
-            "color": "#007bff"
-          },
-          {
-            'icon': 'assets/icon diproses.png',
-            "status": "Diproses",
-            "date": "13 Des 2024, 09:58",
-            "title": "Pengajuan Santunan sedang diproses",
-            "description": "Silakan lakukan pengecekan berkala pada aplikasi dan menunggu informasi selanjutnya terkait pengajuan yang sedang diproses",
-            "color": "#FFA500"
-          },
-          {
-            'icon': 'assets/icon ditolak.png',
-            "status": "Ditolak",
-            "date": "14 Des 2024, 09:58",
-            "title": "Pengajuan Santunan gagal",
-            "description":
-                "Catatan Kesalahan: \n- Dokumen yang anda unggah tidak dapat terbaca dengan baik",
-            "color": "#DC3545"
-          },
-          {
-            'icon': 'assets/icon selesai.png',
-            "status": "Selesai",
-            "date": "15 Des 2024, 09:58",
-            "title": "Pengajuan Santunan berhasil terselesaikan",
-            "description":
-                "",
-            "color": "#198754"
-          },
-        ];
-      } else {
-        isTrackingSuccess = false;
-        trackingInfo = [];
-      }
+      isLoading = true;
+      errorMessage = "";
     });
+
+    try {
+      // First try to find in main table
+      bool found = await _tryFetchFromTable(nomorPendaftaran, "");
+      
+      // If not found in main table, check other tables
+      if (!found) {
+        for (int i = 1; i <= 5; i++) {
+          found = await _tryFetchFromTable(nomorPendaftaran, "$i");
+          if (found) break;
+        }
+      }
+
+      // Show appropriate message if not found in any table
+      if (!found) {
+        setState(() {
+          isTrackingPressed = true;
+          isTrackingSuccess = false;
+          trackingInfo = [];
+        });
+      }
+    } catch (e) {
+      print("Error fetching tracking data: $e");
+      setState(() {
+        errorMessage = e.toString();
+        isTrackingPressed = true;
+        isTrackingSuccess = false;
+      });
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  Future<bool> _tryFetchFromTable(String nomorPendaftaran, String tableNumber) async {
+    try {
+      final response = await http.get(
+        Uri.parse('http://10.0.2.2:8000/api/pengajuan-santunan$tableNumber/search?no_pendaftaran=$nomorPendaftaran'),
+        headers: {'Accept': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data != null && data.isNotEmpty) {
+          // Found data, create tracking info
+          setState(() {
+            isTrackingPressed = true;
+            isTrackingSuccess = true;
+            
+            // Create a tracking entry based on the current status
+            String status = data[0]['status'] ?? 'Terkirim';
+            DateTime? updatedAt;
+            if (data[0]['updated_at'] != null && data[0]['updated_at'].toString().isNotEmpty) {
+              try {
+                updatedAt = DateTime.parse(data[0]['updated_at']);
+              } catch (e) {
+                print('Error parsing date: ${e.toString()}');
+              }
+            }
+            
+            final statusMapping = statusMappings[status] ?? statusMappings['Terkirim']!;
+            
+            trackingInfo = [{
+              'icon': statusMapping['icon'],
+              'status': status,
+              'date': updatedAt != null ? "${updatedAt.day} ${_getMonthName(updatedAt.month)} ${updatedAt.year}, ${updatedAt.hour}:${updatedAt.minute.toString().padLeft(2, '0')}" : "-",
+              'title': statusMapping['title'],
+              'description': statusMapping['description'],
+              'color': statusMapping['color'],
+            }];
+          });
+          return true;
+        }
+      }
+      return false;
+    } catch (e) {
+      print("Error in _tryFetchFromTable: $e");
+      return false;
+    }
+  }
+
+  String _getMonthName(int month) {
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    return monthNames[month - 1];
   }
 
   void _showFailureDialog(String message) {
@@ -119,18 +195,14 @@ class _TrackingAwalState extends State<TrackingAwal> {
     }
   }
 
-bool isLoading = false;
-
-  void _onBackPressed() {
+  void _onCheckPressed() {
     setState(() {
       isLoading = true;
     });
 
-    Future.delayed(const Duration(seconds: 2), () {
-      setState(() {
-        isLoading = false;
-      });
-      _cekTrackingData();
+    // Use a short delay to allow the loading indicator to appear
+    Future.delayed(const Duration(milliseconds: 300), () {
+      _fetchTrackingData();
     });
   }
 
@@ -221,7 +293,7 @@ bool isLoading = false;
       child: Align(
         alignment: Alignment.centerRight,
         child: ElevatedButton(
-          onPressed: _onBackPressed,
+          onPressed: _onCheckPressed,
           style: ElevatedButton.styleFrom(
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -269,6 +341,24 @@ bool isLoading = false;
         ),
       );
     }
+    
+    if (errorMessage.isNotEmpty) {
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: Colors.red[100],
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.red),
+        ),
+        child: Text(
+          "Error: $errorMessage",
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+        ),
+      );
+    }
+    
     if (!isTrackingSuccess) {
       return Container(
         margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -312,8 +402,8 @@ bool isLoading = false;
             children: [
               Row(
                 children: [
-                  Image.asset(item['icon']!,width: 16, height: 16, ),
-                  const SizedBox(width: 5,),
+                  Image.asset(item['icon']!, width: 16, height: 16),
+                  const SizedBox(width: 5),
                   Text(item["status"]!,
                       style: const TextStyle(
                           fontSize: 14, fontWeight: FontWeight.bold)),

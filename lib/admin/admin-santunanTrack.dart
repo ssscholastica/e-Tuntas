@@ -18,16 +18,14 @@ class _TrackSantunanState extends State<TrackSantunan> {
   bool isLoading = true;
   String errorMessage = "";
   bool sortByDate = false;
-  List<String> selectedCategories = [];
+  List<String> selectedPTPNs = [];
   List<String> selectedStatus = [];
   DateTime? startDate;
   DateTime? endDate;
 
-  final List<String> categoryOptions = [
-    'BPJS Non Aktif',
-    'Pindah Faskes',
-    'Klaim BPJS Bermasalah',
-    'Lain-lain'
+  final List<String> ptpnOptions = [
+    'PTPN 10',
+    'PTPN 11',
   ];
 
   final List<String> statusOptions = [
@@ -42,6 +40,17 @@ class _TrackSantunanState extends State<TrackSantunan> {
 
   void _navigateToDetailForm(
       BuildContext context, Map<String, dynamic> pengaduanData) async {
+    if (pengaduanData['source_table'] != null &&
+        !pengaduanData['full_data'].containsKey('source_table')) {
+      pengaduanData['full_data']['source_table'] =
+          pengaduanData['source_table'];
+    }
+    if (pengaduanData['table_number'] != null &&
+        !pengaduanData['full_data'].containsKey('table_number')) {
+      pengaduanData['full_data']['table_number'] =
+          pengaduanData['table_number'];
+    }
+
     final bool? statusUpdated = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -56,16 +65,16 @@ class _TrackSantunanState extends State<TrackSantunan> {
     );
     if (statusUpdated == true) {
       print("Status was updated, refreshing data...");
-      fetchPengaduanBPJSData();
+      fetchPengajuanSantunanData();
     }
   }
 
-  List<Map<String, dynamic>> TrackSantunanList = [];
+  List<Map<String, dynamic>> trackSantunanList = [];
 
   @override
   void initState() {
     super.initState();
-    fetchPengaduanBPJSData();
+    fetchPengajuanSantunanData();
   }
 
   @override
@@ -74,40 +83,86 @@ class _TrackSantunanState extends State<TrackSantunan> {
     super.dispose();
   }
 
-  Future<void> fetchPengaduanBPJSData() async {
+  Future<void> fetchPengajuanSantunanData() async {
     setState(() {
       isLoading = true;
       errorMessage = "";
     });
     try {
-      final response = await http.get(
-        Uri.parse('http://10.0.2.2:8000/api/pengaduan-bpjs/'),
+      List<Map<String, dynamic>> allSantunanData = [];
+      final mainResponse = await http.get(
+        Uri.parse('http://10.0.2.2:8000/api/pengajuan-santunan/'),
         headers: {'Accept': 'application/json'},
       );
-      if (response.statusCode == 200) {
-        final List<dynamic> jsonData = json.decode(response.body);
-        setState(() {
-          TrackSantunanList = jsonData.map<Map<String, dynamic>>((item) {
-            return {
-              "text":
-                  "Nomor BPJS/NIK: ${item['nomor_bpjs_nik']}\nKategori: ${item['kategori_bpjs']}",
-              "id": item['id'].toString(),
-              "nomor_bpjs_nik": item['nomor_bpjs_nik'],
-              "category": item['kategori_bpjs'],
-              "date": DateTime.parse(item['tanggal_ajuan']),
-              "status": item['status'] ?? "Terkirim",
-              "full_data": item,
-            };
-          }).toList();
-          isLoading = false;
-        });
-      } else {
-        setState(() {
-          isLoading = false;
-          errorMessage =
-              "Failed to load data. Status code: ${response.statusCode}";
-        });
+
+      if (mainResponse.statusCode == 200) {
+        final List<dynamic> mainData = json.decode(mainResponse.body);
+        for (var item in mainData) {
+          if (item is Map<String, dynamic>) {
+            item['source_table'] =
+                'pengajuan-santunan';
+            item['table_number'] = '';
+          }
+        }
+        allSantunanData.addAll(mainData.cast<Map<String, dynamic>>());
       }
+
+      for (int i = 1; i <= 5; i++) {
+        final additionalResponse = await http.get(
+          Uri.parse('http://10.0.2.2:8000/api/pengajuan-santunan$i/'),
+          headers: {'Accept': 'application/json'},
+        );
+
+        if (additionalResponse.statusCode == 200) {
+          final List<dynamic> additionalData =
+              json.decode(additionalResponse.body);
+          for (var item in additionalData) {
+            if (item is Map<String, dynamic>) {
+              item['source_table'] = 'pengajuan-santunan$i';
+              item['table_number'] = '$i';
+            }
+          }
+          allSantunanData.addAll(additionalData.cast<Map<String, dynamic>>());
+        }
+      }
+
+      setState(() {
+        trackSantunanList = allSantunanData.map<Map<String, dynamic>>((item) {
+          DateTime? tanggalMeninggal;
+          if (item['tanggal_meninggal'] != null &&
+              item['tanggal_meninggal'].toString().isNotEmpty) {
+            try {
+              tanggalMeninggal = DateTime.parse(item['tanggal_meninggal']);
+            } catch (e) {
+              print('Error parsing tanggal_meninggal: ${e.toString()}');
+            }
+          }
+
+          DateTime? updatedAt;
+          if (item['updated_at'] != null &&
+              item['updated_at'].toString().isNotEmpty) {
+            try {
+              updatedAt = DateTime.parse(item['updated_at']);
+            } catch (e) {
+              print('Error parsing updated_at: ${e.toString()}');
+            }
+          }
+
+          return {
+            "id": item['id'].toString(),
+            "no_pendaftaran": item['no_pendaftaran'] ?? '-',
+            "lokasi": item['lokasi'] ?? '-',
+            "ptpn": item['ptpn'] ?? '-',
+            "tanggal_meninggal": tanggalMeninggal,
+            "lokasi_meninggal": item['lokasi_meninggal'] ?? '-',
+            "status": item['status'] ?? "Terkirim",
+            "updated_at": updatedAt,
+            "date": updatedAt ?? DateTime.now(),
+            "full_data": item,
+          };
+        }).toList();
+        isLoading = false;
+      });
     } catch (e) {
       setState(() {
         isLoading = false;
@@ -117,19 +172,27 @@ class _TrackSantunanState extends State<TrackSantunan> {
   }
 
   List<Map<String, dynamic>> getFilteredList() {
-    List<Map<String, dynamic>> result = List.from(TrackSantunanList);
+    List<Map<String, dynamic>> result = List.from(trackSantunanList);
     if (searchQuery.isNotEmpty) {
       result = result
-          .where((item) => item["text"]
-              .toString()
-              .toLowerCase()
-              .contains(searchQuery.toLowerCase()))
+          .where((item) =>
+              item["no_pendaftaran"]
+                  .toString()
+                  .toLowerCase()
+                  .contains(searchQuery.toLowerCase()) ||
+              item["ptpn"]
+                  .toString()
+                  .toLowerCase()
+                  .contains(searchQuery.toLowerCase()) ||
+              item["lokasi"]
+                  .toString()
+                  .toLowerCase()
+                  .contains(searchQuery.toLowerCase()))
           .toList();
     }
-    if (selectedCategories.isNotEmpty) {
-      result = result
-          .where((item) => selectedCategories.contains(item["category"]))
-          .toList();
+    if (selectedPTPNs.isNotEmpty) {
+      result =
+          result.where((item) => selectedPTPNs.contains(item["ptpn"])).toList();
     }
     if (selectedStatus.isNotEmpty) {
       result = result
@@ -139,24 +202,37 @@ class _TrackSantunanState extends State<TrackSantunan> {
     if (startDate != null && endDate != null) {
       result = result
           .where((item) =>
-              (item["date"] as DateTime)
-                  .isAfter(startDate!.subtract(const Duration(days: 1))) &&
-              (item["date"] as DateTime)
-                  .isBefore(endDate!.add(const Duration(days: 1))))
+              (item["date"] as DateTime?)
+                      ?.isAfter(startDate!.subtract(const Duration(days: 1))) ==
+                  true &&
+              (item["date"] as DateTime?)
+                      ?.isBefore(endDate!.add(const Duration(days: 1))) ==
+                  true)
           .toList();
     } else if (startDate != null) {
       result = result
-          .where((item) => (item["date"] as DateTime)
-              .isAfter(startDate!.subtract(const Duration(days: 1))))
+          .where((item) =>
+              (item["date"] as DateTime?)
+                  ?.isAfter(startDate!.subtract(const Duration(days: 1))) ==
+              true)
           .toList();
     } else if (endDate != null) {
       result = result
-          .where((item) => (item["date"] as DateTime)
-              .isBefore(endDate!.add(const Duration(days: 1))))
+          .where((item) =>
+              (item["date"] as DateTime?)
+                  ?.isBefore(endDate!.add(const Duration(days: 1))) ==
+              true)
           .toList();
     }
     if (sortByDate) {
-      result.sort((a, b) => b["date"].compareTo(a["date"]));
+      result.sort((a, b) {
+        final DateTime? dateA = a["date"] as DateTime?;
+        final DateTime? dateB = b["date"] as DateTime?;
+        if (dateA == null && dateB == null) return 0;
+        if (dateA == null) return 1;
+        if (dateB == null) return -1;
+        return dateB.compareTo(dateA);
+      });
     }
     return result;
   }
@@ -208,25 +284,25 @@ class _TrackSantunanState extends State<TrackSantunan> {
                   ),
                   const Divider(),
                   const Text(
-                    "Filter Berdasarkan Kategori:",
+                    "Filter Berdasarkan PTPN:",
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: categoryOptions.map((category) {
+                    children: ptpnOptions.map((ptpn) {
                       return FilterChip(
-                        label: Text(category),
-                        selected: selectedCategories.contains(category),
+                        label: Text(ptpn),
+                        selected: selectedPTPNs.contains(ptpn),
                         onSelected: (selected) {
                           setState(() {
                             if (selected) {
-                              selectedCategories.add(category);
+                              selectedPTPNs.add(ptpn);
                             } else {
-                              selectedCategories.remove(category);
+                              selectedPTPNs.remove(ptpn);
                             }
-                            isFilterApplied = selectedCategories.isNotEmpty ||
+                            isFilterApplied = selectedPTPNs.isNotEmpty ||
                                 selectedStatus.isNotEmpty ||
                                 startDate != null ||
                                 endDate != null ||
@@ -257,7 +333,7 @@ class _TrackSantunanState extends State<TrackSantunan> {
                             } else {
                               selectedStatus.remove(status);
                             }
-                            isFilterApplied = selectedCategories.isNotEmpty ||
+                            isFilterApplied = selectedPTPNs.isNotEmpty ||
                                 selectedStatus.isNotEmpty ||
                                 startDate != null ||
                                 endDate != null ||
@@ -281,7 +357,7 @@ class _TrackSantunanState extends State<TrackSantunan> {
                         onChanged: (value) {
                           setState(() {
                             sortByDate = value;
-                            isFilterApplied = selectedCategories.isNotEmpty ||
+                            isFilterApplied = selectedPTPNs.isNotEmpty ||
                                 selectedStatus.isNotEmpty ||
                                 startDate != null ||
                                 endDate != null ||
@@ -299,7 +375,7 @@ class _TrackSantunanState extends State<TrackSantunan> {
                       TextButton(
                         onPressed: () {
                           setState(() {
-                            selectedCategories = [];
+                            selectedPTPNs = [];
                             selectedStatus = [];
                             startDate = null;
                             endDate = null;
@@ -314,7 +390,7 @@ class _TrackSantunanState extends State<TrackSantunan> {
                         onPressed: () {
                           _removeFilterOverlay();
                           setState(() {
-                            isFilterApplied = selectedCategories.isNotEmpty ||
+                            isFilterApplied = selectedPTPNs.isNotEmpty ||
                                 selectedStatus.isNotEmpty ||
                                 startDate != null ||
                                 endDate != null ||
@@ -346,7 +422,7 @@ class _TrackSantunanState extends State<TrackSantunan> {
     _overlayEntry = null;
   }
 
-  Widget _getDocumentIcon(String category, String status) {
+  Widget _getDocumentIcon(String status) {
     IconData iconData;
     Color iconColor;
     switch (status) {
@@ -371,7 +447,8 @@ class _TrackSantunanState extends State<TrackSantunan> {
     return Icon(iconData, color: iconColor, size: 40);
   }
 
-  String _formatDate(DateTime date) {
+  String _formatDate(DateTime? date) {
+    if (date == null) return '-';
     return "${date.day}/${date.month}/${date.year}";
   }
 
@@ -399,7 +476,7 @@ class _TrackSantunanState extends State<TrackSantunan> {
               Text('Error: $errorMessage'),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: fetchPengaduanBPJSData,
+                onPressed: fetchPengajuanSantunanData,
                 child: const Text('Coba Lagi'),
               ),
             ],
@@ -430,7 +507,8 @@ class _TrackSantunanState extends State<TrackSantunan> {
                     Expanded(
                       child: TextField(
                         decoration: InputDecoration(
-                          hintText: "Cari berdasarkan nomor atau kategori",
+                          hintText:
+                              "Cari berdasarkan No. Pendaftaran atau PTPN",
                           prefixIcon: const Icon(Icons.search),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8.0),
@@ -463,7 +541,7 @@ class _TrackSantunanState extends State<TrackSantunan> {
             child: filteredList.isEmpty
                 ? const Center(child: Text("Tidak ada data ditemukan"))
                 : RefreshIndicator(
-                    onRefresh: fetchPengaduanBPJSData,
+                    onRefresh: fetchPengajuanSantunanData,
                     child: ListView.builder(
                       itemCount: filteredList.length,
                       itemBuilder: (context, index) {
@@ -472,20 +550,19 @@ class _TrackSantunanState extends State<TrackSantunan> {
                           margin: const EdgeInsets.symmetric(
                               vertical: 8, horizontal: 16),
                           child: ListTile(
-                            leading: _getDocumentIcon(
-                                item['category'], item['status']),
+                            leading: _getDocumentIcon(item['status']),
                             title: Text(
-                              "Nomor BPJS/NIK: ${item['nomor_bpjs_nik']}",
+                              "No. Pendaftaran: ${item['no_pendaftaran']}",
                               style:
                                   const TextStyle(fontWeight: FontWeight.bold),
                             ),
                             subtitle: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text("Kategori: ${item['category']}"),
-                                Text(
-                                    "Status: ${(item['status'] ?? 'Terkirim')}"),
-                                Text("Tanggal: ${_formatDate(item['date'])}"),
+                                Text("Status: ${item['status']}"),
+                                if (item['updated_at'] != null)
+                                  Text(
+                                      "Tanggal Pengajuan: ${_formatDate(item['updated_at'])}"),
                               ],
                             ),
                             onTap: () => _navigateToDetailForm(context, item),

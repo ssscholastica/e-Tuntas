@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class formSantunan extends StatefulWidget {
@@ -28,8 +29,6 @@ class _formSantunanState extends State<formSantunan> {
   String? selectedStatus;
   List<String> statusOptions = ['Terkirim', 'Diproses', 'Ditolak', 'Selesai'];
 
-  Map<String, dynamic>? pengaduanData;
-
   @override
   void initState() {
     super.initState();
@@ -57,10 +56,25 @@ class _formSantunanState extends State<formSantunan> {
     try {
       await setAuthToken();
       print('Auth token set');
+      String apiEndpoint;
+      if (widget.pengaduanData.containsKey('source_table')) {
+        apiEndpoint =
+            'http://10.0.2.2:8000/api/${widget.pengaduanData['source_table']}/${widget.pengaduanId}/status';
+      } else {
+        String tableNumber = '';
+        if (widget.pengaduanData.containsKey('table_number')) {
+          tableNumber = widget.pengaduanData['table_number'];
+        }
+        apiEndpoint =
+            'http://10.0.2.2:8000/api/pengajuan-santunan${tableNumber}/${widget.pengaduanId}/status';
+      }
+
+      print('Making request to: $apiEndpoint');
       final response = await _dio.put(
-        'http://10.0.2.2:8000/api/pengaduan-bpjs/${widget.pengaduanId}/status',
+        apiEndpoint,
         data: {'status': selectedStatus},
       );
+
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Status updated successfully')),
@@ -86,6 +100,16 @@ class _formSantunanState extends State<formSantunan> {
     }
   }
 
+  String formatDateTime(String? dateTimeStr) {
+    if (dateTimeStr == null) return '-';
+    try {
+      final dateTime = DateTime.parse(dateTimeStr);
+      return DateFormat('dd/MM/yyyy HH:mm').format(dateTime);
+    } catch (e) {
+      return dateTimeStr;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
@@ -95,12 +119,14 @@ class _formSantunanState extends State<formSantunan> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Detail Pengajuan Santunan',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-          ),),
+          title: const Text(
+            'Detail Pengajuan Santunan',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+          ),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () {
@@ -113,14 +139,16 @@ class _formSantunanState extends State<formSantunan> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              buildInfoField('Nomor BPJS/NIK',
-                  widget.pengaduanData['nomor_bpjs_nik'] ?? '-'),
-              buildInfoField(
-                  'Kategori BPJS', widget.pengaduanData['kategori_bpjs'] ?? '-'),
-              buildInfoField(
-                  'Deskripsi', widget.pengaduanData['deskripsi'] ?? '-'),
-              if (widget.pengaduanData['data_pendukung'] != null)
-                buildDataPendukung(),
+              buildInfoField('No Pendaftaran',
+                  widget.pengaduanData['no_pendaftaran'] ?? '-'),
+              buildInfoField('PTPN', widget.pengaduanData['ptpn'] ?? '-'),
+              buildInfoField('Lokasi', widget.pengaduanData['lokasi'] ?? '-'),
+              buildInfoField('Tanggal Meninggal',
+                  widget.pengaduanData['tanggal_meninggal'] ?? '-'),
+              buildInfoField('Lokasi Meninggal',
+                  widget.pengaduanData['lokasi_meninggal'] ?? '-'),
+              buildInfoField('Tanggal Pengajuan',
+                  formatDateTime(widget.pengaduanData['updated_at'])),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -175,10 +203,12 @@ class _formSantunanState extends State<formSantunan> {
                         const EdgeInsets.symmetric(horizontal: 50, vertical: 8),
                   ),
                   child: isLoading
-                      ? const CircularProgressIndicator(color: Color(0xFF2F2F9D))
+                      ? const CircularProgressIndicator(
+                          color: Color(0xFF2F2F9D))
                       : const Text(
                           'Update Status',
-                          style: TextStyle(color: Color(0xFF2F2F9D), fontSize: 14),
+                          style:
+                              TextStyle(color: Color(0xFF2F2F9D), fontSize: 14),
                         ),
                 ),
               ),
@@ -224,36 +254,5 @@ class _formSantunanState extends State<formSantunan> {
         ),
       ],
     );
-  }
-
-  Widget buildDataPendukung() {
-    if (widget.pengaduanData['data_pendukung'] is String) {
-      return buildInfoField(
-          'Data Pendukung', widget.pengaduanData['data_pendukung']);
-    } else {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Data Pendukung',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            const SizedBox(height: 5),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade300),
-                borderRadius: BorderRadius.circular(5),
-                color: Colors.grey.shade100,
-              ),
-              child: const Text('File Terlampir'),
-            ),
-          ],
-        ),
-      );
-    }
   }
 }
