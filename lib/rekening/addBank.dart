@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:dropdown_search/dropdown_search.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -122,7 +123,7 @@ class _UploadDokumenState extends State<_UploadDokumen> {
 class _addBankState extends State<addBank> {
   void initState() {
     super.initState();
-    // fetchBankList();
+    fetchBankList();
   }
 
   final TextEditingController namaBankController = TextEditingController();
@@ -133,17 +134,27 @@ class _addBankState extends State<addBank> {
   List<Bank> bankList = [];
   Bank? selectedBank;
 
-  // Future<void> fetchBankList() async {
-  //   final response = await http.get(Uri.parse("http://localhost:8000/api/list-bank"));
-  //   if (response.statusCode == 200) {
-  //     final jsonData = jsonDecode(response.body);
-  //     setState(() {
-  //       bankList = (jsonData['data'] as List)
-  //           .map((item) => Bank.fromJson(item))
-  //           .toList();
-  //     });
-  //   }
-  // }
+  Future<void> fetchBankList() async {
+    final response = await http.get(Uri.parse('http://10.0.2.2:8000/api/banks'));
+
+    if (response.statusCode == 200) {
+      List<dynamic> data = json.decode(response.body);
+      setState(() {
+        bankList = data.map((json) => Bank.fromJson(json)).toList();
+        isLoading = false;
+      });
+    } else {
+      // Jika gagal mengambil data
+      setState(() {
+        isLoading = false;
+      });
+      // Tampilkan pesan error jika diperlukan
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to load banks')),
+      );
+    }
+  }
+
 
   void _saveBankAccount() {
     if (namaBankController.text.isNotEmpty &&
@@ -285,53 +296,78 @@ class _addBankState extends State<addBank> {
   }
 
   Widget buildBankDropdown(String judul) {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Container(
-        alignment: Alignment.bottomLeft,
-        margin: const EdgeInsets.only(top: 20, left: 20),
-        child: Text(
-          judul,
-          style: const TextStyle(
-            fontSize: 14,
-            color: Color(0XFF000000),
-            fontWeight: FontWeight.w600,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          alignment: Alignment.bottomLeft,
+          margin: const EdgeInsets.only(top: 20, left: 20),
+          child: Text(
+            judul,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Color(0XFF000000),
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
-      ),
-      Padding(
-        padding: const EdgeInsets.only(left: 20, right: 20, top: 5, bottom: 5),
-        child: SizedBox(
-          height: 50,
-          child: DropdownButtonFormField<Bank>(
-            value: selectedBank,
-            items: bankList.map((bank) {
-              return DropdownMenuItem<Bank>(
-                value: bank,
-                child: Text(bank.namaBank),
-              );
-            }).toList(),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+          child: DropdownSearch<Bank>(
+            items: bankList,
+            selectedItem: selectedBank,
+            itemAsString: (Bank? bank) => bank?.namaBank ?? '',
+            popupProps: PopupProps.modalBottomSheet(
+              showSearchBox: true,
+              title: const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text(
+                  "Pilih Bank",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              searchFieldProps: TextFieldProps(
+                decoration: InputDecoration(
+                  hintText: "Cari nama bank",
+                  prefixIcon: const Icon(Icons.search),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+              modalBottomSheetProps: const ModalBottomSheetProps(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(16),
+                  ),
+                ),
+              ),
+            ),
+            dropdownDecoratorProps: DropDownDecoratorProps(
+              dropdownSearchDecoration: InputDecoration(
+                hintText: "Pilih bank",
+                contentPadding:
+                    EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
             onChanged: (Bank? newValue) {
               setState(() {
                 selectedBank = newValue;
                 namaBankController.text = newValue?.namaBank ?? '';
               });
             },
-            decoration: InputDecoration(
-              hintText: "Pilih bank",
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
           ),
         ),
-      ),
-    ],
-  );
-}
+      ],
+    );
+  }
+
 
 
   Widget buildJudul(String judul, String hint, TextEditingController controller,

@@ -1,5 +1,4 @@
 import 'package:etuntas/home.dart';
-import 'package:etuntas/pengajuan-santunan/pengajuanSantunan.dart';
 import 'package:flutter/material.dart';
 
 class SuccesUpload extends StatefulWidget {

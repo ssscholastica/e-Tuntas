@@ -105,6 +105,7 @@ class _PengajuanSantunan5State extends State<PengajuanSantunan5> {
       request.fields['lokasi_meninggal'] = selectedLokasi ?? '';
       request.fields['ptpn'] = widget.namaPTPN;
       request.fields['lokasi'] = widget.lokasiList;
+      request.fields['send_email'] = 'true';
       debugPrint("Request fields: ${request.fields}");
 
       request.files.add(await http.MultipartFile.fromPath(
@@ -140,6 +141,7 @@ class _PengajuanSantunan5State extends State<PengajuanSantunan5> {
       if (response.statusCode == 200 || response.statusCode == 201) {
         final jsonResponse = json.decode(resStr);
         final noPendaftaran = jsonResponse['no_pendaftaran'] ?? '';
+        await _sendEmailWithRegistrationNumber(email, noPendaftaran);
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -398,6 +400,35 @@ class _PengajuanSantunan5State extends State<PengajuanSantunan5> {
         ),
       ),
     );
+  }
+}
+
+Future<void> _sendEmailWithRegistrationNumber(
+    String email, String noPendaftaran) async {
+  try {
+    final uri = Uri.parse('http://10.0.2.2:8000/api/pengajuan-santunan5');
+    final response = await http.post(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: json.encode({
+        'email': email,
+        'no_pendaftaran': noPendaftaran,
+        'subject': 'Informasi Nomor Pendaftaran',
+        'message':
+            'Terima kasih telah mendaftar. Nomor pendaftaran Anda adalah: $noPendaftaran'
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      debugPrint("Email sent successfully");
+    } else {
+      debugPrint("Failed to send email: ${response.body}");
+    }
+  } catch (e) {
+    debugPrint("Error sending email: $e");
   }
 }
 
