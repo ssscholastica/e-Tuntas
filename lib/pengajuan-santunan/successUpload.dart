@@ -1,5 +1,4 @@
 import 'package:etuntas/home.dart';
-import 'package:etuntas/pengajuan-santunan/pengajuanSantunan.dart';
 import 'package:flutter/material.dart';
 
 class SuccesUpload extends StatefulWidget {
@@ -63,7 +62,8 @@ class _SuccessUploadState extends State<SuccesUpload> {
               const SizedBox(height: 10),
               Center(
                   child: Text(
-                'Nomor Pendaftaran Anda: ${widget.noPendaftaran}',
+                'Nomor Pendaftaran Anda: \n${widget.noPendaftaran}',
+                textAlign: TextAlign.center,
                 style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,

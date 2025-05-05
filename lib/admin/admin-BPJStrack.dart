@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:etuntas/network/globals.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -82,7 +83,7 @@ class _TrackBPJSState extends State<TrackBPJS> {
     });
     try {
       final response = await http.get(
-        Uri.parse('http://10.0.2.2:8000/api/pengaduan-bpjs/'),
+        Uri.parse('${baseURL}pengaduan-bpjs/'),
         headers: {'Accept': 'application/json'},
       );
       if (response.statusCode == 200) {

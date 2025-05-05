@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:etuntas/login-signup/daftarBerhasil.dart';
 import 'package:etuntas/network/auth_services.dart';
+import 'package:etuntas/network/globals.dart';
 import 'package:etuntas/splashScreen.dart';
 import 'package:etuntas/widgets/loading_widget.dart';
 import 'package:flutter/material.dart';
@@ -50,10 +51,9 @@ class _PendaftaranState extends State<Pendaftaran> {
       });
 
       try {
-        final baseUrl = 'http://10.0.2.2:8000';
 
         final response = await http.get(
-          Uri.parse('$baseUrl/api/pensiunan/$noPensiunan'),
+          Uri.parse('${baseURL}pensiunan/$noPensiunan'),
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',

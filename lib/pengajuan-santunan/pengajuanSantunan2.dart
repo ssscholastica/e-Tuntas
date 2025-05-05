@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dropdown_search/dropdown_search.dart';
+import 'package:etuntas/network/globals.dart';
 import 'package:etuntas/network/wilayah_service.dart';
 import 'package:etuntas/pengajuan-santunan/successUpload.dart';
 import 'package:file_picker/file_picker.dart';
@@ -96,7 +97,7 @@ class _PengajuanSantunan2State extends State<PengajuanSantunan2> {
     }
 
     try {
-      final uri = Uri.parse('http://10.0.2.2:8000/api/pengajuan-santunan2');
+      final uri = Uri.parse('${baseURL}pengajuan-santunan2');
       final request = http.MultipartRequest('POST', uri);
 
       request.headers.addAll({

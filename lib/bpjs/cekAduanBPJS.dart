@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:etuntas/network/globals.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
@@ -19,7 +20,6 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
   List<Map<String, String>> trackingInfo = [];
   List<Map<String, dynamic>> comments = [];
 
-  // Status icons mapping
   final Map<String, String> statusIcons = {
     'Terkirim': 'assets/icon terkirim.png',
     'Diproses': 'assets/icon diproses.png',
@@ -27,7 +27,6 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
     'Selesai': 'assets/icon selesai.png',
   };
 
-  // Status colors mapping
   final Map<String, String> statusColors = {
     'Terkirim': '#007bff',
     'Diproses': '#FFA500',
@@ -35,7 +34,6 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
     'Selesai': '#198754',
   };
 
-  // Status descriptions mapping
   final Map<String, String> statusDescriptions = {
     'Terkirim': 'Silakan lakukan pengecekan berkala pada aplikasi untuk memantau proses aduan BPJS Anda.',
     'Diproses': 'Silakan lakukan pengecekan berkala pada aplikasi dan menunggu informasi selanjutnya terkait aduan yang sedang diproses',
@@ -43,7 +41,6 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
     'Selesai': '',
   };
 
-  // Status titles mapping
   final Map<String, String> statusTitles = {
     'Terkirim': 'Aduan BPJS berhasil terkirim',
     'Diproses': 'Aduan BPJS sedang diproses',
@@ -65,16 +62,14 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
     });
 
     try {
-      // Panggil API untuk memeriksa nomor BPJS
       final response = await http.get(
-        Uri.parse('http://10.0.2.2:8000/api/pengaduan-bpjs/'),
+        Uri.parse('${baseURL}pengaduan-bpjs/'),
         headers: {'Accept': 'application/json'},
       );
 
       if (response.statusCode == 200) {
         final List<dynamic> jsonData = json.decode(response.body);
         
-        // Cari data yang sesuai dengan nomor BPJS yang dimasukkan
         final matchingData = jsonData.where((item) => 
           item['nomor_bpjs_nik'].toString() == nomorBPJS
         ).toList();
@@ -84,14 +79,10 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
           
           if (matchingData.isNotEmpty) {
             isTrackingSuccess = true;
-            
-            // Ambil data pengaduan yang ditemukan
             final pengaduan = matchingData.first;
             final status = pengaduan['status'] ?? 'Terkirim';
             final tanggalAjuan = DateTime.parse(pengaduan['tanggal_ajuan']);
             final kategori = pengaduan['kategori_bpjs'];
-            
-            // Buat alur tracking berdasarkan status
             trackingInfo = _generateTrackingInfo(status, tanggalAjuan);
           } else {
             isTrackingSuccess = false;
@@ -114,40 +105,29 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
     }
   }
 
-  // Fungsi untuk menghasilkan tracking info berdasarkan status
   List<Map<String, String>> _generateTrackingInfo(String currentStatus, DateTime tanggalAjuan) {
     List<Map<String, String>> result = [];
     List<String> allStatus = ['Terkirim', 'Diproses', 'Ditolak', 'Selesai'];
-    
-    // Format tanggal
     final dateFormatter = DateFormat('dd MMM yyyy, HH:mm');
-    
-    // Tentukan indeks status saat ini
     final currentStatusIndex = allStatus.indexOf(currentStatus);
-    if (currentStatusIndex == -1) return result; // Status tidak valid
-    
-    // Jika status Ditolak, hanya tampilkan sampai Ditolak
+    if (currentStatusIndex == -1) return result; 
+
     if (currentStatus == 'Ditolak') {
       allStatus = ['Terkirim', 'Diproses', 'Ditolak'];
     }
     
-    // Jika status Selesai, jangan tampilkan Ditolak
     if (currentStatus == 'Selesai') {
       allStatus = ['Terkirim', 'Diproses', 'Selesai'];
     }
     
-    // Buat data tracking untuk setiap status
     for (int i = 0; i < allStatus.length; i++) {
       final status = allStatus[i];
       
-      // Hanya tampilkan status yang sudah dilalui berdasarkan status saat ini
-      if (i <= currentStatusIndex || 
+      if (i <= currentStatusIndex ||
           (currentStatus == 'Selesai' && status != 'Ditolak')) {
         
-        // Tambahkan interval hari untuk setiap status
         DateTime statusDate = tanggalAjuan.add(Duration(days: i));
         
-        // Jika tanggal di masa depan, gunakan tanggal hari ini
         final now = DateTime.now();
         if (statusDate.isAfter(now)) {
           statusDate = now;
@@ -486,7 +466,6 @@ class _RejectedStatusWidgetState extends State<RejectedStatusWidget> {
                       title: Text(comments[index]['author']),
                       subtitle: Text(comments[index]['text']),
                     ),
-                    // Reply Komentar
                     ...comments[index]['replies'].map<Widget>((reply) {
                       return Padding(
                         padding: const EdgeInsets.only(left: 40.0),

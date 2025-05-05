@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:etuntas/admin/admin-santunanForm.dart';
+import 'package:etuntas/network/globals.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -91,7 +92,7 @@ class _TrackSantunanState extends State<TrackSantunan> {
     try {
       List<Map<String, dynamic>> allSantunanData = [];
       final mainResponse = await http.get(
-        Uri.parse('http://10.0.2.2:8000/api/pengajuan-santunan/'),
+        Uri.parse('${baseURL}pengajuan-santunan/'),
         headers: {'Accept': 'application/json'},
       );
 
@@ -109,7 +110,7 @@ class _TrackSantunanState extends State<TrackSantunan> {
 
       for (int i = 1; i <= 5; i++) {
         final additionalResponse = await http.get(
-          Uri.parse('http://10.0.2.2:8000/api/pengajuan-santunan$i/'),
+          Uri.parse('${baseURL}pengajuan-santunan$i/'),
           headers: {'Accept': 'application/json'},
         );
 

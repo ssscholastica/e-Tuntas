@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:etuntas/network/globals.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -23,7 +24,7 @@ class _formBPJSState extends State<formBPJS> {
   bool isLoading = false;
   bool hasError = false;
   String errorMessage = '';
-  bool statusChanged = false; // Track if status was changed
+  bool statusChanged = false;
 
   String? selectedStatus;
   List<String> statusOptions = ['Terkirim', 'Diproses', 'Ditolak', 'Selesai'];
@@ -58,7 +59,7 @@ class _formBPJSState extends State<formBPJS> {
       await setAuthToken();
       print('Auth token set');
       final response = await _dio.put(
-        'http://10.0.2.2:8000/api/pengaduan-bpjs/${widget.pengaduanId}/status',
+        '${baseURL}pengaduan-bpjs/${widget.pengaduanId}/status',
         data: {'status': selectedStatus},
       );
       if (response.statusCode == 200) {

@@ -1,11 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:etuntas/network/globals.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 
 class PengajuanSantunanService {
-  static const String baseUrl =
-      'http://10.0.2.2:8000/api/';
 
   static Future<bool> submitPengajuanSantunan({
     required String email,
@@ -19,7 +18,7 @@ class PengajuanSantunanService {
     try {
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('${baseUrl}pengajuan-santunan'),
+        Uri.parse('${baseURL}pengajuan-santunan'),
       );
 
       request.headers.addAll({

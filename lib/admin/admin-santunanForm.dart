@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:etuntas/network/globals.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -57,17 +58,24 @@ class _formSantunanState extends State<formSantunan> {
       await setAuthToken();
       print('Auth token set');
       String apiEndpoint;
-      if (widget.pengaduanData.containsKey('source_table')) {
-        apiEndpoint =
-            'http://10.0.2.2:8000/api/${widget.pengaduanData['source_table']}/${widget.pengaduanId}/status';
+
+      // Fix URL construction to avoid double slashes
+      if (widget.pengaduanData.containsKey('source_table') &&
+          widget.pengaduanData['source_table'] != null) {
+        String sourceTable = widget.pengaduanData['source_table'];
+        apiEndpoint = '${baseURL}${sourceTable}/${widget.pengaduanId}/status';
       } else {
         String tableNumber = '';
-        if (widget.pengaduanData.containsKey('table_number')) {
+        if (widget.pengaduanData.containsKey('table_number') &&
+            widget.pengaduanData['table_number'] != null) {
           tableNumber = widget.pengaduanData['table_number'];
         }
         apiEndpoint =
-            'http://10.0.2.2:8000/api/pengajuan-santunan${tableNumber}/${widget.pengaduanId}/status';
+            '${baseURL}pengajuan-santunan${tableNumber}/${widget.pengaduanId}/status';
       }
+
+      // Remove any double slashes in the URL (except for http://)
+      apiEndpoint = apiEndpoint.replaceAll(RegExp(r'([^:])//'), r'$1/');
 
       print('Making request to: $apiEndpoint');
       final response = await _dio.put(

@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:etuntas/network/globals.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
@@ -182,7 +183,7 @@ class _AduanFormPageState extends State<AduanFormPage> {
     }
 
     try {
-      var uri = Uri.parse('http://10.0.2.2:8000/api/pengaduan-bpjs');
+      var uri = Uri.parse('${baseURL}pengaduan-bpjs/');
       var request = http.MultipartRequest('POST', uri);
 
       request.headers.addAll({'Accept': 'application/json'});

@@ -56,14 +56,10 @@ class _LoginState extends State<Login> {
 
       if (response.statusCode == 200) {
         Map<String, dynamic> userData = responseMap['user'];
-
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('user_email', userData['email']);
-
-        // Also store the token
         final token = responseMap['access_token'];
         await prefs.setString('access_token', token);
-
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (BuildContext context) => const Home()),
@@ -267,16 +263,16 @@ class _LoginState extends State<Login> {
                       child: const Text(
                         "Informasi Pendaftaran",
                         style: TextStyle(color: Color(0xFF2F2F9D)),
-                      ),
-                    ),
+                      ), //Text
+                    ), //TextButton
                   ],
-                ),
-              ),
-            ),
+                ), //Column
+              ), //Padding
+            ), //Center
             LoadingWidget(isLoading: isLoading),
           ],
-        ),
-      ),
-    );
+        ), //Stack
+      ), //SingleChildScrollView
+    ); //Scaffold
   }
 }

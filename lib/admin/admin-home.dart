@@ -69,7 +69,7 @@ class _AdminHomeState extends State<AdminHome> {
                 ],
               ).createShader(bounds),
               child: const Text(
-                'E-Tuntas',
+                'Admin E-Tuntas',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 22.0,
@@ -97,8 +97,7 @@ class _AdminHomeState extends State<AdminHome> {
                 Container(
                   margin: const EdgeInsets.only(left: 15),
                   child: const Text(
-                    // name,
-                    'Admin',
+                    'Admin 01',
                     style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,

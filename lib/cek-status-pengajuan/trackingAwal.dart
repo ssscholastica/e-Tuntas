@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:etuntas/home.dart';
+import 'package:etuntas/network/globals.dart';
 import 'package:etuntas/widgets/loading_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -21,33 +22,34 @@ class _TrackingAwalState extends State<TrackingAwal> {
   List<Map<String, dynamic>> trackingInfo = [];
   bool isLoading = false;
   String errorMessage = "";
+  
+  // Grouped status mappings
+  final Map<String, String> statusIcons = {
+    'Terkirim': 'assets/icon terkirim.png',
+    'Diproses': 'assets/icon diproses.png',
+    'Ditolak': 'assets/icon ditolak.png',
+    'Selesai': 'assets/icon selesai.png',
+  };
 
-  // Map status values to corresponding icons and colors
-  final Map<String, Map<String, String>> statusMappings = {
-    'Terkirim': {
-      'icon': 'assets/icon terkirim.png',
-      'color': '#007bff',
-      'title': 'Pengajuan Santunan berhasil terkirim',
-      'description': 'Silakan lakukan pengecekan berkala pada aplikasi untuk memantau proses pengajuan santunan Anda.'
-    },
-    'Diproses': {
-      'icon': 'assets/icon diproses.png',
-      'color': '#FFA500',
-      'title': 'Pengajuan Santunan sedang diproses',
-      'description': 'Silakan lakukan pengecekan berkala pada aplikasi dan menunggu informasi selanjutnya terkait pengajuan yang sedang diproses'
-    },
-    'Ditolak': {
-      'icon': 'assets/icon ditolak.png',
-      'color': '#DC3545',
-      'title': 'Pengajuan Santunan gagal',
-      'description': 'Catatan Kesalahan: \n- Dokumen yang anda unggah tidak dapat terbaca dengan baik'
-    },
-    'Selesai': {
-      'icon': 'assets/icon selesai.png',
-      'color': '#198754',
-      'title': 'Pengajuan Santunan berhasil terselesaikan',
-      'description': ''
-    },
+  final Map<String, String> statusColors = {
+    'Terkirim': '#007bff',
+    'Diproses': '#FFA500',
+    'Ditolak': '#DC3545',
+    'Selesai': '#198754',
+  };
+
+  final Map<String, String> statusDescriptions = {
+    'Terkirim': 'Silakan lakukan pengecekan berkala pada aplikasi untuk memantau proses pengajuan santunan Anda.',
+    'Diproses': 'Silakan lakukan pengecekan berkala pada aplikasi dan menunggu informasi selanjutnya terkait pengajuan yang sedang diproses',
+    'Ditolak': 'Catatan Kesalahan: \n- Dokumen yang anda unggah tidak dapat terbaca dengan baik',
+    'Selesai': '',
+  };
+
+  final Map<String, String> statusTitles = {
+    'Terkirim': 'Pengajuan Santunan berhasil terkirim',
+    'Diproses': 'Pengajuan Santunan sedang diproses',
+    'Ditolak': 'Pengajuan Santunan gagal',
+    'Selesai': 'Pengajuan Santunan berhasil terselesaikan',
   };
 
   Future<void> _fetchTrackingData() async {
@@ -64,19 +66,26 @@ class _TrackingAwalState extends State<TrackingAwal> {
     });
 
     try {
-      // First try to find in main table
+      print("Searching for nomor pendaftaran: $nomorPendaftaran");
+      
+      // Try main table first
       bool found = await _tryFetchFromTable(nomorPendaftaran, "");
       
-      // If not found in main table, check other tables
+      // If not found, try numbered tables
       if (!found) {
         for (int i = 1; i <= 5; i++) {
+          print("Trying table $i...");
           found = await _tryFetchFromTable(nomorPendaftaran, "$i");
-          if (found) break;
+          if (found) {
+            print("Found in table $i!");
+            break;
+          }
         }
       }
-
-      // Show appropriate message if not found in any table
+      
+      // If still not found, show not found message
       if (!found) {
+        print("No data found in any table for: $nomorPendaftaran");
         setState(() {
           isTrackingPressed = true;
           isTrackingSuccess = false;
@@ -98,51 +107,83 @@ class _TrackingAwalState extends State<TrackingAwal> {
   }
 
   Future<bool> _tryFetchFromTable(String nomorPendaftaran, String tableNumber) async {
-    try {
-      final response = await http.get(
-        Uri.parse('http://10.0.2.2:8000/api/pengajuan-santunan$tableNumber/search?no_pendaftaran=$nomorPendaftaran'),
+  try {
+    // Try both exact match and a more flexible search
+    final String endpoint = '${baseURL}pengajuan-santunan$tableNumber/search?no_pendaftaran=$nomorPendaftaran';
+    final Uri uri = Uri.parse(endpoint);
+    
+    print('Making request to: ${uri.toString()}');
+    final response = await http.get(
+      uri,
+      headers: {'Accept': 'application/json'},
+    );
+
+    // If exact match fails, try a LIKE search (this requires backend support)
+    if (response.statusCode == 404 || (response.statusCode == 200 && json.decode(response.body).isEmpty)) {
+      final String likeEndpoint = '${baseURL}pengajuan-santunan$tableNumber/search-like?no_pendaftaran=$nomorPendaftaran';
+      final Uri likeUri = Uri.parse(likeEndpoint);
+      
+      print('Trying LIKE search: ${likeUri.toString()}');
+      final likeResponse = await http.get(
+        likeUri,
         headers: {'Accept': 'application/json'},
       );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+      
+      if (likeResponse.statusCode == 200) {
+        final data = json.decode(likeResponse.body);
         if (data != null && data.isNotEmpty) {
-          // Found data, create tracking info
-          setState(() {
-            isTrackingPressed = true;
-            isTrackingSuccess = true;
-            
-            // Create a tracking entry based on the current status
-            String status = data[0]['status'] ?? 'Terkirim';
-            DateTime? updatedAt;
-            if (data[0]['updated_at'] != null && data[0]['updated_at'].toString().isNotEmpty) {
-              try {
-                updatedAt = DateTime.parse(data[0]['updated_at']);
-              } catch (e) {
-                print('Error parsing date: ${e.toString()}');
-              }
-            }
-            
-            final statusMapping = statusMappings[status] ?? statusMappings['Terkirim']!;
-            
-            trackingInfo = [{
-              'icon': statusMapping['icon'],
-              'status': status,
-              'date': updatedAt != null ? "${updatedAt.day} ${_getMonthName(updatedAt.month)} ${updatedAt.year}, ${updatedAt.hour}:${updatedAt.minute.toString().padLeft(2, '0')}" : "-",
-              'title': statusMapping['title'],
-              'description': statusMapping['description'],
-              'color': statusMapping['color'],
-            }];
-          });
+          _processSearchResults(data);
           return true;
         }
       }
       return false;
-    } catch (e) {
-      print("Error in _tryFetchFromTable: $e");
-      return false;
     }
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data != null && data.isNotEmpty) {
+        _processSearchResults(data);
+        return true;
+      }
+    }
+    
+    return false;
+  } catch (e) {
+    print("Error in _tryFetchFromTable: $e");
+    return false;
   }
+}
+
+// Helper method to process the search results
+void _processSearchResults(dynamic data) {
+  setState(() {
+    isTrackingPressed = true;
+    isTrackingSuccess = true;
+    // Make sure we get the status properly, default to 'Terkirim' if missing
+    String status = data[0]['status'] ?? 'Terkirim';
+    
+    DateTime? updatedAt;
+    if (data[0]['updated_at'] != null && data[0]['updated_at'].toString().isNotEmpty) {
+      try {
+        updatedAt = DateTime.parse(data[0]['updated_at']);
+      } catch (e) {
+        print('Error parsing date: ${e.toString()}');
+      }
+    }
+    
+    // Get individual status properties from the maps
+    trackingInfo = [{
+      'icon': statusIcons[status] ?? statusIcons['Terkirim']!,
+      'status': status,
+      'date': updatedAt != null 
+          ? "${updatedAt.day} ${_getMonthName(updatedAt.month)} ${updatedAt.year}, ${updatedAt.hour}:${updatedAt.minute.toString().padLeft(2, '0')}" 
+          : "-",
+      'title': statusTitles[status] ?? statusTitles['Terkirim']!,
+      'description': statusDescriptions[status] ?? statusDescriptions['Terkirim']!,
+      'color': statusColors[status] ?? statusColors['Terkirim']!,
+    }];
+  });
+}
 
   String _getMonthName(int month) {
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
@@ -199,8 +240,6 @@ class _TrackingAwalState extends State<TrackingAwal> {
     setState(() {
       isLoading = true;
     });
-
-    // Use a short delay to allow the loading indicator to appear
     Future.delayed(const Duration(milliseconds: 300), () {
       _fetchTrackingData();
     });
