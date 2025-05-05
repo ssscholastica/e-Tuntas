@@ -173,7 +173,7 @@ class _PendaftaranState extends State<Pendaftaran> {
             controller: controllers[key],
             keyboardType: isNumber ? TextInputType.number : TextInputType.text,
             inputFormatters: isNumber ? [FilteringTextInputFormatter.digitsOnly] : null,
-            readOnly: isDate,
+            readOnly: readOnly || isDate,
             onTap: isDate ? () => selectDate(context) : null,
             decoration: InputDecoration(
               hintText: hint,
