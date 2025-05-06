@@ -7,6 +7,7 @@ import 'package:etuntas/widgets/loading_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:intl/intl.dart';
 
 class TrackingAwal extends StatefulWidget {
   const TrackingAwal({super.key});
@@ -20,9 +21,10 @@ class _TrackingAwalState extends State<TrackingAwal> {
   bool isTrackingPressed = false;
   bool isTrackingSuccess = false;
   List<Map<String, dynamic>> trackingInfo = [];
+  List<Map<String, dynamic>> comments = [];
   bool isLoading = false;
   String errorMessage = "";
-  
+
   // Grouped status mappings
   final Map<String, String> statusIcons = {
     'Terkirim': 'assets/icon terkirim.png',
@@ -39,10 +41,13 @@ class _TrackingAwalState extends State<TrackingAwal> {
   };
 
   final Map<String, String> statusDescriptions = {
-    'Terkirim': 'Silakan lakukan pengecekan berkala pada aplikasi untuk memantau proses pengajuan santunan Anda.',
-    'Diproses': 'Silakan lakukan pengecekan berkala pada aplikasi dan menunggu informasi selanjutnya terkait pengajuan yang sedang diproses',
-    'Ditolak': 'Catatan Kesalahan: \n- Dokumen yang anda unggah tidak dapat terbaca dengan baik',
-    'Selesai': '',
+    'Terkirim':
+        'Silakan lakukan pengecekan berkala pada aplikasi untuk memantau proses pengajuan santunan Anda.',
+    'Diproses':
+        'Silakan lakukan pengecekan berkala pada aplikasi dan menunggu informasi selanjutnya terkait pengajuan yang sedang diproses',
+    'Ditolak':
+        'Catatan Kesalahan: \n- Dokumen yang anda unggah tidak dapat terbaca dengan baik',
+    'Selesai': 'Pengajuan Santunan Anda telah selesai diproses.',
   };
 
   final Map<String, String> statusTitles = {
@@ -63,40 +68,49 @@ class _TrackingAwalState extends State<TrackingAwal> {
     setState(() {
       isLoading = true;
       errorMessage = "";
+      isTrackingPressed = true;
+      isTrackingSuccess = false;
+      trackingInfo = [];
     });
 
     try {
       print("Searching for nomor pendaftaran: $nomorPendaftaran");
-      
-      // Try main table first
-      bool found = await _tryFetchFromTable(nomorPendaftaran, "");
-      
-      // If not found, try numbered tables
-      if (!found) {
-        for (int i = 1; i <= 5; i++) {
-          print("Trying table $i...");
-          found = await _tryFetchFromTable(nomorPendaftaran, "$i");
-          if (found) {
-            print("Found in table $i!");
-            break;
-          }
+
+      List<String> tableOptions = ["", "1", "2", "3", "4", "5"];
+      bool found = false;
+      Map<String, dynamic>? foundData;
+
+      for (String tableNumber in tableOptions) {
+        if (found) break;
+
+        // Coba pencarian exact match dulu
+        final exactMatchResponse =
+            await _searchData(nomorPendaftaran, tableNumber, false);
+        if (exactMatchResponse != null) {
+          foundData = exactMatchResponse;
+          found = true;
+          break;
+        }
+        final likeMatchResponse =
+            await _searchData(nomorPendaftaran, tableNumber, true);
+        if (likeMatchResponse != null) {
+          foundData = likeMatchResponse;
+          found = true;
+          break;
         }
       }
-      
-      // If still not found, show not found message
-      if (!found) {
-        print("No data found in any table for: $nomorPendaftaran");
+
+      if (found && foundData != null) {
+        _processSearchResults(foundData);
+      } else {
         setState(() {
-          isTrackingPressed = true;
           isTrackingSuccess = false;
-          trackingInfo = [];
         });
       }
     } catch (e) {
       print("Error fetching tracking data: $e");
       setState(() {
         errorMessage = e.toString();
-        isTrackingPressed = true;
         isTrackingSuccess = false;
       });
     } finally {
@@ -106,88 +120,110 @@ class _TrackingAwalState extends State<TrackingAwal> {
     }
   }
 
-  Future<bool> _tryFetchFromTable(String nomorPendaftaran, String tableNumber) async {
-  try {
-    // Try both exact match and a more flexible search
-    final String endpoint = '${baseURL}pengajuan-santunan$tableNumber/search?no_pendaftaran=$nomorPendaftaran';
-    final Uri uri = Uri.parse(endpoint);
-    
-    print('Making request to: ${uri.toString()}');
-    final response = await http.get(
-      uri,
-      headers: {'Accept': 'application/json'},
-    );
+  Future<Map<String, dynamic>?> _searchData(
+      String nomorPendaftaran, String tableNumber, bool useLikeSearch) async {
+    try {
+      final String endpoint = useLikeSearch
+          ? '${baseURL}pengajuan-santunan_$tableNumber/search-like?no_pendaftaran=$nomorPendaftaran'
+          : '${baseURL}pengajuan-santunan_$tableNumber/search?no_pendaftaran=$nomorPendaftaran';
 
-    // If exact match fails, try a LIKE search (this requires backend support)
-    if (response.statusCode == 404 || (response.statusCode == 200 && json.decode(response.body).isEmpty)) {
-      final String likeEndpoint = '${baseURL}pengajuan-santunan$tableNumber/search-like?no_pendaftaran=$nomorPendaftaran';
-      final Uri likeUri = Uri.parse(likeEndpoint);
-      
-      print('Trying LIKE search: ${likeUri.toString()}');
-      final likeResponse = await http.get(
-        likeUri,
+      final Uri uri = Uri.parse(endpoint);
+
+      print('Making request to: ${uri.toString()}');
+
+      final response = await http.get(
+        uri,
         headers: {'Accept': 'application/json'},
       );
-      
-      if (likeResponse.statusCode == 200) {
-        final data = json.decode(likeResponse.body);
-        if (data != null && data.isNotEmpty) {
-          _processSearchResults(data);
-          return true;
+
+      print('Response status: ${response.statusCode} for ${uri.toString()}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        print('Decoded response data: $responseData');
+
+        if (responseData is Map<String, dynamic> &&
+            (responseData.containsKey('id') ||
+                responseData.containsKey('no_pendaftaran'))) {
+          return responseData;
         }
-      }
-      return false;
-    }
 
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      if (data != null && data.isNotEmpty) {
-        _processSearchResults(data);
-        return true;
+        if (responseData is List && responseData.isNotEmpty) {
+          return responseData[0];
+        }
+
+        if (responseData is Map<String, dynamic> &&
+            responseData.containsKey('status') &&
+            responseData.containsKey('data')) {
+          if (responseData['status'] == 'success' &&
+              responseData['data'] != null) {
+            if (responseData['data'] is List &&
+                responseData['data'].isNotEmpty) {
+              return responseData['data'][0];
+            }
+            return responseData['data'];
+          }
+        }
+      } else if (response.statusCode == 404) {
+        print("Data not found: ${response.body}");
+      } else {
+        print("Error response: ${response.statusCode} - ${response.body}");
       }
+
+      return null;
+    } catch (e) {
+      print("Error in _searchData: $e");
+      return null;
     }
-    
-    return false;
-  } catch (e) {
-    print("Error in _tryFetchFromTable: $e");
-    return false;
   }
-}
 
-// Helper method to process the search results
-void _processSearchResults(dynamic data) {
-  setState(() {
-    isTrackingPressed = true;
-    isTrackingSuccess = true;
-    // Make sure we get the status properly, default to 'Terkirim' if missing
-    String status = data[0]['status'] ?? 'Terkirim';
-    
-    DateTime? updatedAt;
-    if (data[0]['updated_at'] != null && data[0]['updated_at'].toString().isNotEmpty) {
-      try {
-        updatedAt = DateTime.parse(data[0]['updated_at']);
-      } catch (e) {
-        print('Error parsing date: ${e.toString()}');
+  void _processSearchResults(Map<String, dynamic> data) {
+    setState(() {
+      isTrackingSuccess = true;
+      String status = data['status'] ?? 'Terkirim';
+
+      DateTime? updatedAt;
+      if (data['updated_at'] != null &&
+          data['updated_at'].toString().isNotEmpty) {
+        try {
+          updatedAt = DateTime.parse(data['updated_at']);
+        } catch (e) {
+          print('Error parsing date: ${e.toString()}');
+          updatedAt = DateTime.now(); // Fallback to current date
+        }
+      } else {
+        updatedAt = DateTime.now(); // Fallback to current date
       }
-    }
-    
-    // Get individual status properties from the maps
-    trackingInfo = [{
-      'icon': statusIcons[status] ?? statusIcons['Terkirim']!,
-      'status': status,
-      'date': updatedAt != null 
-          ? "${updatedAt.day} ${_getMonthName(updatedAt.month)} ${updatedAt.year}, ${updatedAt.hour}:${updatedAt.minute.toString().padLeft(2, '0')}" 
-          : "-",
-      'title': statusTitles[status] ?? statusTitles['Terkirim']!,
-      'description': statusDescriptions[status] ?? statusDescriptions['Terkirim']!,
-      'color': statusColors[status] ?? statusColors['Terkirim']!,
-    }];
-  });
-}
 
-  String _getMonthName(int month) {
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-    return monthNames[month - 1];
+      final dateFormatter = DateFormat('d MMM yyyy, HH:mm');
+      String formattedDate =
+          updatedAt != null ? dateFormatter.format(updatedAt) : "-";
+
+      List<String> orderedStatuses = [
+        'Terkirim',
+        'Diproses',
+        'Ditolak',
+        'Selesai'
+      ];
+      int currentIndex = orderedStatuses.indexOf(status);
+      trackingInfo = [];
+
+      for (int i = 0; i <= currentIndex; i++) {
+        String currentStatus = orderedStatuses[i];
+        trackingInfo.add({
+          'icon': statusIcons[currentStatus]!,
+          'status': currentStatus,
+          'date': formattedDate,
+          'title': statusTitles[currentStatus]!,
+          'description': statusDescriptions[currentStatus]!,
+          'color': statusColors[currentStatus]!,
+          'id': data['id'] ?? '',
+          'no_pendaftaran': data['no_pendaftaran'] ?? '',
+        });
+      }
+
+    });
   }
 
   void _showFailureDialog(String message) {
@@ -210,7 +246,8 @@ void _processSearchResults(dynamic data) {
 
   void openWhatsApp() async {
     String contact = "6282141788021";
-    String text = Uri.encodeComponent("Halo, saya ingin bertanya...");
+    String text = Uri.encodeComponent(
+        "Halo, saya ingin bertanya tentang status pengajuan santunan saya...");
 
     String androidUrl = "whatsapp://send?phone=$contact&text=$text";
     String iosUrl = "https://wa.me/$contact?text=$text";
@@ -245,6 +282,18 @@ void _processSearchResults(dynamic data) {
     });
   }
 
+  void _addComment(String text) {
+    setState(() {
+      comments.add({"author": "Anda", "text": text, "replies": []});
+    });
+  }
+
+  void _addReply(int index, String replyText) {
+    setState(() {
+      comments[index]['replies'].add({"author": "Admin", "text": replyText});
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -271,7 +320,8 @@ void _processSearchResults(dynamic data) {
         icon: Image.asset('assets/logo wa.png', width: 24, height: 24),
         label: const Text(
           "Chat Bantuan",
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+          style: TextStyle(
+              fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
@@ -320,6 +370,7 @@ void _processSearchResults(dynamic data) {
               border:
                   OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
             ),
+            keyboardType: TextInputType.text, // Allow alphanumeric input
           ),
         ],
       ),
@@ -332,7 +383,7 @@ void _processSearchResults(dynamic data) {
       child: Align(
         alignment: Alignment.centerRight,
         child: ElevatedButton(
-          onPressed: _onCheckPressed,
+          onPressed: isLoading ? null : _onCheckPressed,
           style: ElevatedButton.styleFrom(
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -357,7 +408,7 @@ void _processSearchResults(dynamic data) {
               width: 50,
               height: 50,
             ),
-            const SizedBox(width: 0),
+            const SizedBox(width: 10),
             const Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -380,7 +431,7 @@ void _processSearchResults(dynamic data) {
         ),
       );
     }
-    
+
     if (errorMessage.isNotEmpty) {
       return Container(
         margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -393,11 +444,12 @@ void _processSearchResults(dynamic data) {
         child: Text(
           "Error: $errorMessage",
           textAlign: TextAlign.center,
-          style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+          style:
+              const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
         ),
       );
     }
-    
+
     if (!isTrackingSuccess) {
       return Container(
         margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -408,7 +460,7 @@ void _processSearchResults(dynamic data) {
           border: Border.all(color: Colors.red),
         ),
         child: const Text(
-          "Nomor Pendaftaran/NIK tidak ditemukan!",
+          "Nomor Pendaftaran/NIK tidak ditemukan! Coba Isi Kembali!",
           textAlign: TextAlign.center,
           style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
         ),
@@ -421,6 +473,9 @@ void _processSearchResults(dynamic data) {
       itemCount: trackingInfo.length,
       itemBuilder: (context, index) {
         var item = trackingInfo[index];
+        if (item["status"] == "Ditolak") {
+          return RejectedStatusWidget(item: item);
+        }
         return Container(
           margin: const EdgeInsets.only(right: 20, left: 20, bottom: 15),
           padding: const EdgeInsets.all(15),
@@ -448,7 +503,8 @@ void _processSearchResults(dynamic data) {
                           fontSize: 14, fontWeight: FontWeight.bold)),
                   const Spacer(),
                   Text(item["date"]!,
-                      style: const TextStyle(fontSize: 12, color: Color(0XFF474747))),
+                      style: const TextStyle(
+                          fontSize: 12, color: Color(0XFF474747))),
                 ],
               ),
               const SizedBox(height: 8),
@@ -462,6 +518,149 @@ void _processSearchResults(dynamic data) {
           ),
         );
       },
+    );
+  }
+}
+
+class RejectedStatusWidget extends StatefulWidget {
+  final Map<String, dynamic> item;
+  const RejectedStatusWidget({super.key, required this.item});
+
+  @override
+  _RejectedStatusWidgetState createState() => _RejectedStatusWidgetState();
+}
+
+class _RejectedStatusWidgetState extends State<RejectedStatusWidget> {
+  List<Map<String, dynamic>> comments = [];
+  final TextEditingController _commentController = TextEditingController();
+
+  void _addComment(String text) {
+    setState(() {
+      comments.add({"author": "Anda", "text": text, "replies": []});
+      _commentController.clear();
+    });
+  }
+
+  void _addReply(int index, String replyText) {
+    setState(() {
+      comments[index]['replies'].add({"author": "Admin", "text": replyText});
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border(
+          left: BorderSide(
+            color:
+                Color(int.parse(widget.item["color"]!.replaceAll("#", "0xff"))),
+            width: 4,
+          ),
+        ),
+        boxShadow: [
+          BoxShadow(color: Colors.grey.withOpacity(0.2), blurRadius: 5),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Image.asset(
+                widget.item['icon']!,
+                width: 16,
+                height: 16,
+              ),
+              const SizedBox(width: 5),
+              Text(
+                widget.item['status']!,
+                style: const TextStyle(color: Colors.red),
+              ),
+              const Spacer(),
+              Text(
+                widget.item["date"]!,
+                style: const TextStyle(fontSize: 12),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            widget.item["title"]!,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            widget.item["description"]!,
+            style: const TextStyle(fontSize: 14, color: Colors.red),
+          ),
+          const SizedBox(height: 10),
+          if (comments.isNotEmpty) ...[
+            const Divider(),
+            const Text("Komentar:",
+                style: TextStyle(fontWeight: FontWeight.bold)),
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: comments.length,
+              itemBuilder: (context, index) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ListTile(
+                      leading: CircleAvatar(
+                          child: Text(comments[index]['author'][0])),
+                      title: Text(comments[index]['author']),
+                      subtitle: Text(comments[index]['text']),
+                    ),
+                    ...comments[index]['replies'].map<Widget>((reply) {
+                      return Padding(
+                        padding: const EdgeInsets.only(left: 40.0),
+                        child: ListTile(
+                          leading:
+                              CircleAvatar(child: Text(reply['author'][0])),
+                          title: Text(reply['author']),
+                          subtitle: Text(reply['text']),
+                        ),
+                      );
+                    }).toList(),
+                  ],
+                );
+              },
+            ),
+          ],
+          const Divider(),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _commentController,
+                  decoration: const InputDecoration(
+                    hintText: "Tambahkan komentar...",
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              ElevatedButton(
+                onPressed: () {
+                  if (_commentController.text.isNotEmpty) {
+                    _addComment(_commentController.text);
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2F2F9D),
+                ),
+                child: const Icon(Icons.send, color: Colors.white),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

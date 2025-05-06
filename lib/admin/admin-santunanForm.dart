@@ -59,7 +59,6 @@ class _formSantunanState extends State<formSantunan> {
       print('Auth token set');
       String apiEndpoint;
 
-      // Fix URL construction to avoid double slashes
       if (widget.pengaduanData.containsKey('source_table') &&
           widget.pengaduanData['source_table'] != null) {
         String sourceTable = widget.pengaduanData['source_table'];
@@ -118,6 +117,76 @@ class _formSantunanState extends State<formSantunan> {
     }
   }
 
+  List<Widget> buildDokumenList() {
+    List<Map<String, String>> dokumen = [];
+    final sourceTable = widget.pengaduanData['source_table'] ?? '';
+    debugPrint('source_table: $sourceTable');
+
+    switch (sourceTable) {
+      case 'pengajuan-santunan1':
+        dokumen = [
+          {'label': 'Surat Kematian', 'key': 'surat_kematian'},
+          {'label': 'Kartu Keluarga', 'key': 'kartu_keluarga'},
+          {'label': 'KTP Pensiunan dan Anak', 'key': 'ktp_pensiunan_dan_anak'},
+          {'label': 'Buku Rekening Anak', 'key': 'buku_rekening_anak'},
+        ];
+        break;
+
+      case 'pengajuan-santunan2':
+        dokumen = [
+          {'label': 'Surat Kematian', 'key': 'surat_kematian'},
+          {'label': 'Kartu Keluarga', 'key': 'kartu_keluarga'},
+          {'label': 'Surat Nikah', 'key': 'surat_nikah'},
+          {'label': 'KTP Suami Istri', 'key': 'ktp_suami_istri'},
+          {'label': 'Buku Rekening Istri', 'key': 'buku_rekening_istri'},
+        ];
+        break;
+
+      case 'pengajuan-santunan3':
+        dokumen = [
+          {'label': 'Surat Kematian', 'key': 'surat_kematian'},
+          {'label': 'Kartu Keluarga', 'key': 'kartu_keluarga'},
+          {'label': 'Surat Kuasa', 'key': 'surat_kuasa'},
+          {'label': 'KTP Pensiunan Anak', 'key': 'ktp_pensiunan_anak'},
+          {'label': 'Buku Rekening Anak', 'key': 'buku_rekening_anak'},
+        ];
+        break;
+
+      case 'pengajuan-santunan4':
+        dokumen = [
+          {'label': 'Surat Kematian', 'key': 'surat_kematian'},
+          {'label': 'Surat Keterangan', 'key': 'surat_keterangan'},
+          {'label': 'Surat Kuasa', 'key': 'surat_kuasa'},
+          {'label': 'Kartu Keluarga', 'key': 'kartu_keluarga'},
+          {'label': 'KTP Pensiunan Anak', 'key': 'ktp_pensiunan_anak'},
+          {'label': 'Buku Rekening Anak', 'key': 'buku_rekening_anak'},
+        ];
+        break;
+
+      case 'pengajuan-santunan5':
+        dokumen = [
+          {'label': 'Surat Kematian', 'key': 'surat_kematian'},
+          {'label': 'Kartu Keluarga', 'key': 'kartu_keluarga'},
+          {'label': 'KTP Pensiunan Anak', 'key': 'ktp_pensiunan_anak'},
+          {'label': 'Surat Keterangan', 'key': 'surat_keterangan'},
+          {'label': 'Surat Kuasa', 'key': 'surat_kuasa'},
+          {'label': 'Buku Rekening Anak', 'key': 'buku_rekening_anak'},
+        ];
+        break;
+
+      default:
+        dokumen = [
+          {'label': 'Dokumen tidak dikenali', 'key': ''},
+        ];
+    }
+
+    return dokumen.map((doc) {
+      final fileName = widget.pengaduanData[doc['key']] ?? '-';
+      return buildInfoField(doc['label']!, fileName);
+    }).toList();
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
@@ -157,6 +226,9 @@ class _formSantunanState extends State<formSantunan> {
                   widget.pengaduanData['lokasi_meninggal'] ?? '-'),
               buildInfoField('Tanggal Pengajuan',
                   formatDateTime(widget.pengaduanData['updated_at'])),
+              const SizedBox(height: 10),
+              ...buildDokumenList(),
+              const SizedBox(height: 10),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
