@@ -2,11 +2,15 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dropdown_search/dropdown_search.dart';
+import 'package:etuntas/network/globals.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'package:open_file/open_file.dart';
+import 'package:path/path.dart' as path;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class addBank extends StatefulWidget {
   const addBank({super.key});
@@ -43,18 +47,13 @@ class _UploadDokumenState extends State<_UploadDokumen> {
       });
       widget.onFileSelected(_selectedFile);
     }
-
-    if (result != null) {
-      setState(() {
-        _selectedFile = File(result.files.single.path!);
-      });
-    }
   }
 
   void _removeFile() {
     setState(() {
       _selectedFile = null;
     });
+    widget.onFileSelected(null);
   }
 
   void _previewFile() {
@@ -121,69 +120,172 @@ class _UploadDokumenState extends State<_UploadDokumen> {
 }
 
 class _addBankState extends State<addBank> {
+  @override
   void initState() {
     super.initState();
     fetchBankList();
+    _checkExistingBankAccounts();
   }
 
   final TextEditingController namaBankController = TextEditingController();
   final TextEditingController noRekController = TextEditingController();
   final TextEditingController namaPemilikController = TextEditingController();
-  String? _uploadedFileName;
+  File? _selectedBukuTabungan;
   bool isLoading = false;
   List<Bank> bankList = [];
   Bank? selectedBank;
+  int existingBankAccountsCount = 0; // To track number of existing bank accounts
 
-  Future<void> fetchBankList() async {
-    final response = await http.get(Uri.parse('http://10.0.2.2:8000/api/banks'));
+  // Check how many bank accounts already exist
+  Future<void> _checkExistingBankAccounts() async {
+    setState(() {
+      isLoading = true;
+    });
 
-    if (response.statusCode == 200) {
-      List<dynamic> data = json.decode(response.body);
-      setState(() {
-        bankList = data.map((json) => Bank.fromJson(json)).toList();
-        isLoading = false;
-      });
-    } else {
-      // Jika gagal mengambil data
-      setState(() {
-        isLoading = false;
-      });
-      // Tampilkan pesan error jika diperlukan
+    try {
+      final response = await http.get(Uri.parse('${baseURL}rekening-bank/'));
+
+      if (response.statusCode == 200) {
+        List<dynamic> data = json.decode(response.body);
+        setState(() {
+          existingBankAccountsCount = data.length;
+        });
+      } else {
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to load existing bank accounts')),
+        );
+      }
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to load banks')),
+        SnackBar(content: Text('Error checking accounts: ${e.toString()}')),
       );
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
+  Future<void> fetchBankList() async {
+    setState(() {
+      isLoading = true;
+    });
 
-  void _saveBankAccount() {
-    if (namaBankController.text.isNotEmpty &&
-        noRekController.text.isNotEmpty &&
-        namaPemilikController.text.isNotEmpty &&
-        _uploadedFileName != null &&
-        _uploadedFileName!.isNotEmpty) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) {
-          return Center(
-              child: Material(
-                  color: Colors.transparent,
-                  child: Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10)),
-                    alignment: Alignment.center,
-                    child: const CircularProgressIndicator(),
-                  )));
+    try {
+      final response = await http.get(Uri.parse('${baseURL}banks/'));
+
+      if (response.statusCode == 200) {
+        List<dynamic> data = json.decode(response.body);
+        setState(() {
+          bankList = data.map((json) => Bank.fromJson(json)).toList();
+        });
+      } else {
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to load banks')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
+      );
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _saveBankAccount() async {
+    // Check if already reached maximum bank accounts (3)
+    if (existingBankAccountsCount >= 3) {
+      _showDialog(
+        success: false,
+        title: "Batas Maksimum",
+        message: "Rekening sudah melewati batas maksimum (3 rekening)",
+        buttonText: "Mengerti",
+        onPressed: () {
+          Navigator.pop(context);
         },
       );
+      return;
+    }
 
-      Future.delayed(const Duration(seconds: 2), () {
-        Navigator.pop(context);
+    if (namaBankController.text.isEmpty ||
+        noRekController.text.isEmpty ||
+        namaPemilikController.text.isEmpty ||
+        _selectedBukuTabungan == null) {
+      _showDialog(
+        success: false,
+        title: "Data Tidak Lengkap",
+        message: "Mohon lengkapi semua data terlebih dahulu",
+        buttonText: "Ok",
+        onPressed: () {
+          Navigator.pop(context);
+        },
+      );
+      return;
+    }
 
+    setState(() {
+      isLoading = true;
+    });
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    try {
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('${baseURL}rekening-bank/'),
+      );
+      request.fields['nama_bank'] = namaBankController.text;
+      request.fields['nomor_rekening'] = noRekController.text;
+      request.fields['nama_pemilik'] = namaPemilikController.text;
+      String fileName = path.basename(_selectedBukuTabungan!.path);
+      String fileExtension = path.extension(fileName).toLowerCase();
+      
+      String contentType;
+      if (['.jpg', '.jpeg'].contains(fileExtension)) {
+        contentType = 'image/jpeg';
+      } else if (fileExtension == '.png') {
+        contentType = 'image/png';
+      } else if (fileExtension == '.pdf') {
+        contentType = 'application/pdf';
+      } else {
+        contentType = 'application/octet-stream';
+      }
+
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'buku_tabungan',
+          _selectedBukuTabungan!.path,
+          contentType: MediaType.parse(contentType),
+        ),
+      );
+
+      // Send request
+      var response = await request.send();
+      var responseBody = await response.stream.bytesToString();
+      var responseData = json.decode(responseBody);
+
+      // Close loading dialog
+      Navigator.pop(context);
+
+      if (response.statusCode == 201) {
+        // Save bank account path to shared preferences
+        final prefs = await SharedPreferences.getInstance();
+        List<String> savedPaths = prefs.getStringList('bank_tabungan_paths') ?? [];
+        savedPaths.add(_selectedBukuTabungan!.path);
+        await prefs.setStringList('bank_tabungan_paths', savedPaths);
+        
+        // Success
         _showDialog(
           success: true,
           title: "Tersimpan!",
@@ -195,21 +297,41 @@ class _addBankState extends State<addBank> {
               "Nama Bank": namaBankController.text,
               'Nomor Rekening': noRekController.text,
               'Nama Pemilik': namaPemilikController.text,
-              'Buku Tabungan': _uploadedFileName ?? 'No file chosen'
+              'Buku Tabungan': _selectedBukuTabungan!.path
             });
           },
         );
-      });
-    } else {
+      } else {
+        // Failed
+        _showDialog(
+          success: false,
+          title: "Gagal!",
+          message: responseData['message'] ??
+              "Terjadi kesalahan saat menyimpan data",
+          buttonText: "Coba Lagi",
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        );
+      }
+    } catch (e) {
+      // Close loading dialog
+      Navigator.pop(context);
+
+      // Show error dialog
       _showDialog(
         success: false,
-        title: "Gagal!",
-        message: "Terjadi kesalahan...",
-        buttonText: "Reupload",
+        title: "Error!",
+        message: "Terjadi kesalahan: ${e.toString()}",
+        buttonText: "Coba Lagi",
         onPressed: () {
           Navigator.pop(context);
         },
       );
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
@@ -350,7 +472,7 @@ class _addBankState extends State<addBank> {
               dropdownSearchDecoration: InputDecoration(
                 hintText: "Pilih bank",
                 contentPadding:
-                    EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                    const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -367,8 +489,6 @@ class _addBankState extends State<addBank> {
       ],
     );
   }
-
-
 
   Widget buildJudul(String judul, String hint, TextEditingController controller,
       {bool isNumber = false}) {
@@ -437,6 +557,7 @@ class _addBankState extends State<addBank> {
                         height: 28,
                       ),
                     ),
+                    const SizedBox(width: 10),
                     const Text(
                       "Tambah Rekening",
                       style: TextStyle(
@@ -448,37 +569,57 @@ class _addBankState extends State<addBank> {
                   ],
                 ),
               ),
+              // Show count indicator for bank accounts
+              Container(
+                margin: const EdgeInsets.only(top: 10, left: 20, right: 20),
+                child: Row(
+                  children: [
+                    Text(
+                      "Rekening yang telah ditambahkan: $existingBankAccountsCount/3",
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: existingBankAccountsCount >= 3 ? Colors.red : Colors.grey,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               buildBankDropdown("Nama Bank"),
               buildJudul("Nomor Rekening", 'Nomor Rekening', noRekController,
                   isNumber: true),
               buildJudul("Nama Pemilik", "Nama Pemilik", namaPemilikController),
               uploadDokumen("Buku Tabungan", (File? selectedFile) {
                 setState(() {
-                  _uploadedFileName = selectedFile?.path.split('/').last;
+                  _selectedBukuTabungan = selectedFile;
                 });
               }),
               const SizedBox(height: 25),
               Padding(
-                padding: const EdgeInsets.only(right: 20),
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: isLoading
-                      ? const CircularProgressIndicator()
-                      : ElevatedButton(
-                          onPressed: _saveBankAccount,
-                          style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 30, vertical: 10),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              backgroundColor: const Color(0xFF2F2F9D)),
-                          child: const Text("Simpan",
-                              style: TextStyle(
-                                  color: Color(0xFFFFFFFF), fontSize: 14)),
-                        ),
-                ),
-              ),
+                  padding: const EdgeInsets.only(right: 20),
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: isLoading
+                        ? const CircularProgressIndicator()
+                        : ElevatedButton(
+                            onPressed: existingBankAccountsCount >= 3 
+                              ? null // Disable button if already reached max
+                              : _saveBankAccount,
+                            style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 30, vertical: 10),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                backgroundColor: existingBankAccountsCount >= 3 
+                                  ? Colors.grey // Grey out if max reached
+                                  : const Color(0xFF2F2F9D)),
+                            child: const Text("Simpan",
+                                style: TextStyle(
+                                    color: Color(0xFFFFFFFF), fontSize: 14)),
+                          ),
+                  )),
+              const SizedBox(height: 20),
             ],
           ),
         ),
