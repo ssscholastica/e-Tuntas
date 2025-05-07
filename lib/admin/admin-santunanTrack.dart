@@ -114,6 +114,11 @@ class _TrackSantunanState extends State<TrackSantunan> {
           headers: {'Accept': 'application/json'},
         );
 
+        print(
+            'Status code for pengajuan-santunan$i: ${additionalResponse.statusCode}');
+        print(
+            'Response body for pengajuan-santunan$i: ${additionalResponse.body}');
+
         if (additionalResponse.statusCode == 200) {
           final List<dynamic> additionalData =
               json.decode(additionalResponse.body);
@@ -255,7 +260,7 @@ class _TrackSantunanState extends State<TrackSantunan> {
         child: CompositedTransformFollower(
           link: _layerLink,
           showWhenUnlinked: false,
-          offset: const Offset(-310, 35),
+          offset: const Offset(-330, 35),
           child: Material(
             elevation: 5,
             borderRadius: BorderRadius.circular(8),

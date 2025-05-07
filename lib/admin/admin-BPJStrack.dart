@@ -180,7 +180,7 @@ class _TrackBPJSState extends State<TrackBPJS> {
         child: CompositedTransformFollower(
           link: _layerLink,
           showWhenUnlinked: false,
-          offset: const Offset(-310, 35),
+          offset: const Offset(-330, 35),
           child: Material(
             elevation: 5,
             borderRadius: BorderRadius.circular(8),

@@ -5,6 +5,7 @@ import 'package:etuntas/login-signup/forgotPassword.dart';
 import 'package:etuntas/login-signup/pendaftaran.dart';
 import 'package:etuntas/network/auth_services.dart';
 import 'package:etuntas/widgets/loading_widget.dart';
+import 'package:etuntas/admin/admin-home.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -47,24 +48,40 @@ class _LoginState extends State<Login> {
       print("Password: $password");
 
       http.Response response = await AuthServices.login(name, password);
-      Map responseMap = jsonDecode(response.body);
-      print("Response dari server: ${response.body}");
 
       setState(() {
         isLoading = false;
       });
 
       if (response.statusCode == 200) {
+        Map responseMap = jsonDecode(response.body);
+        print("Response dari server: ${response.body}");
+
+        // Store user data in SharedPreferences
         Map<String, dynamic> userData = responseMap['user'];
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('user_email', userData['email']);
         final token = responseMap['access_token'];
         await prefs.setString('access_token', token);
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (BuildContext context) => const Home()),
-        );
+
+        // Check if user is admin
+        bool isAdmin = userData['is_admin'] == 1;
+
+        // Navigate to appropriate screen based on admin status
+        if (isAdmin) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+                builder: (BuildContext context) => const AdminHome()),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (BuildContext context) => const Home()),
+          );
+        }
       } else {
+        Map responseMap = jsonDecode(response.body);
         errorSnackBar(context, responseMap['message'] ?? "Login failed");
       }
     } else {
