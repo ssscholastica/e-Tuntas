@@ -1,8 +1,12 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
+import 'package:etuntas/models/comment_model.dart';
 import 'package:etuntas/network/globals.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 
 class formSantunan extends StatefulWidget {
   final String pengaduanId;
@@ -26,9 +30,12 @@ class _formSantunanState extends State<formSantunan> {
   bool hasError = false;
   String errorMessage = '';
   bool statusChanged = false;
+  bool isSubmittingReply = false;
+  Future<Comment>? commentsFuture;
 
   String? selectedStatus;
   List<String> statusOptions = ['Terkirim', 'Diproses', 'Ditolak', 'Selesai'];
+  TextEditingController replyController = TextEditingController();
 
   @override
   void initState() {
@@ -36,6 +43,151 @@ class _formSantunanState extends State<formSantunan> {
     selectedStatus = widget.pengaduanData['status'] ?? 'Terkirim';
     if (!statusOptions.contains(selectedStatus)) {
       statusOptions.add(selectedStatus!);
+      commentsFuture = fetchCommentByNoPendaftaran();
+    }
+  }
+  
+  @override
+  void dispose() {
+    replyController.dispose();
+    super.dispose();
+  }
+
+  Future<Comment> fetchCommentDetail() async {
+    final url = '${baseURL}comments/${widget.pengaduanId}';
+    print('Fetching comment from: $url'); 
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      return Comment.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception('Failed to load comment: ${response.statusCode}');
+    }
+  }
+
+  Future<Comment> fetchCommentByNoPendaftaran() async {
+    final noPendaftaran = widget.pengaduanData['no_pendaftaran'];
+
+    if (noPendaftaran == null) {
+      throw Exception('No pendaftaran tidak ditemukan');
+    }
+
+    final url = '${baseURL}comments/registration/$noPendaftaran';
+    print('Fetching comment from: $url'); 
+
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      return Comment.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception('Failed to load comment: ${response.statusCode}');
+    }
+  }
+
+  Future<String?> getCsrfToken() async {
+    try {
+      final response =
+          await http.get(Uri.parse('${baseURL}sanctum/csrf-cookie'));
+
+      String? csrfToken;
+      if (response.headers['set-cookie'] != null) {
+        final cookies = response.headers['set-cookie']!;
+        final xsrfCookie = cookies.split(';').firstWhere(
+              (cookie) => cookie.trim().startsWith('XSRF-TOKEN='),
+              orElse: () => '',
+            );
+
+        if (xsrfCookie.isNotEmpty) {
+          csrfToken = xsrfCookie.split('=')[1];
+          csrfToken = Uri.decodeComponent(csrfToken);
+        }
+      }
+
+      return csrfToken;
+    } catch (e) {
+      print('Error getting CSRF token: $e');
+      return null;
+    }
+  }
+
+  Future<void> submitReply(int commentId) async {
+    if (replyController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Balasan tidak boleh kosong')),
+      );
+      return;
+    }
+
+    setState(() {
+      isSubmittingReply = true;
+    });
+
+    try {
+      final csrfToken = await getCsrfToken();
+
+      final url = '${baseURL}comments/$commentId/reply';
+      print('Submitting reply to: $url');
+
+      final headers = {
+        'Authorization': 'Bearer',
+        'Content-Type': 'application/json',
+        'Accept':
+            'application/json',
+      };
+
+      if (csrfToken != null) {
+        headers['X-CSRF-TOKEN'] = csrfToken;
+      }
+
+      final response = await http.post(
+        Uri.parse(url),
+        headers: headers,
+        body: jsonEncode({
+          'comment': replyController.text.trim(),
+          'author_type': 'admin'
+        }),
+      );
+
+      print('Reply response status: ${response.statusCode}');
+      print('Reply response body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        replyController.clear();
+
+        setState(() {
+          commentsFuture = fetchCommentByNoPendaftaran();
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Balasan berhasil dikirim')),
+        );
+      } else if (response.statusCode == 302) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Sesi telah berakhir. Silakan login kembali.')),
+        );
+      } else {
+        String errorMessage;
+        try {
+          final errorData = jsonDecode(response.body);
+          errorMessage = errorData['message'] ?? 'Terjadi kesalahan';
+        } catch (e) {
+          errorMessage = 'Terjadi kesalahan saat mengirim balasan';
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal mengirim balasan: $errorMessage')),
+        );
+      }
+    } catch (e) {
+      print('Error submitting reply: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Terjadi kesalahan: ${e.toString()}')),
+      );
+    } finally {
+      setState(() {
+        isSubmittingReply = false;
+      });
     }
   }
 
@@ -73,7 +225,6 @@ class _formSantunanState extends State<formSantunan> {
             '${baseURL}pengajuan-santunan${tableNumber}/${widget.pengaduanId}/status';
       }
 
-      // Remove any double slashes in the URL (except for http://)
       apiEndpoint = apiEndpoint.replaceAll(RegExp(r'([^:])//'), r'$1/');
 
       print('Making request to: $apiEndpoint');
@@ -292,6 +443,53 @@ class _formSantunanState extends State<formSantunan> {
                         ),
                 ),
               ),
+              const SizedBox(height: 20),
+              Text(
+                'Komentar',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              FutureBuilder(
+                future:
+                    fetchCommentByNoPendaftaran(), 
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (snapshot.hasError) {
+                    return Text('Gagal memuat komentar: ${snapshot.error}');
+                  } else {
+                    final comment = snapshot.data as Comment;
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(comment.comment),
+                        const SizedBox(height: 10),
+                        ...comment.replies.map((reply) => Padding(
+                              padding: const EdgeInsets.only(left: 20, top: 5),
+                              child: Text("- ${reply.comment}"),
+                            )),
+                        const SizedBox(height: 20),
+                        TextField(
+                          controller: replyController,
+                          decoration: const InputDecoration(
+                            labelText: 'Balas komentar',
+                            border: OutlineInputBorder(),
+                          ),
+                          maxLines: 3,
+                        ),
+                        const SizedBox(height: 10),
+                        ElevatedButton(
+                          onPressed: () => submitReply(comment.id),
+                          child: const Text('Kirim Balasan'),
+                        )
+                      ],
+                    );
+                  }
+                },
+              ),
+
             ],
           ),
         ),
