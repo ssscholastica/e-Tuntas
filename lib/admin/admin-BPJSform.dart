@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:etuntas/network/comment_bpjs_service.dart';
 import 'package:etuntas/models/comment_bpjs_model.dart';
 import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 
 class formBPJS extends StatefulWidget {
   final String pengaduanId;
@@ -422,10 +423,20 @@ class _formBPJSState extends State<formBPJS> {
   }
 
   Widget buildDataPendukung() {
-    if (widget.pengaduanData['data_pendukung'] is String) {
-      return buildInfoField(
-          'Data Pendukung', widget.pengaduanData['data_pendukung']);
-    } else {
+    final dataPendukung = widget.pengaduanData['data_pendukung'];
+
+    // Jika hanya berupa teks biasa
+    if (dataPendukung is String && !dataPendukung.contains('dokumen/')) {
+      return buildInfoField('Data Pendukung', dataPendukung);
+    }
+
+    // Jika berupa file path (misal: dokumen/namafile.pdf)
+    if (dataPendukung is String && dataPendukung.contains('dokumen/')) {
+      final filePath = dataPendukung;
+      final fileName = filePath.split('/').last;
+      final fileUrl =
+          'http://192.168.100.12:8000/$filePath'; // sesuaikan base URL Laravel-mu
+
       return Padding(
         padding: const EdgeInsets.only(bottom: 16.0),
         child: Column(
@@ -436,19 +447,44 @@ class _formBPJSState extends State<formBPJS> {
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             const SizedBox(height: 5),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade300),
-                borderRadius: BorderRadius.circular(5),
-                color: Colors.grey.shade100,
+            TextButton(
+              onPressed: () async {
+                final url = Uri.parse(fileUrl);
+                try {
+                  bool launched = await launchUrl(
+                    url,
+                    mode: LaunchMode.externalNonBrowserApplication,
+                  );
+
+                  if (!launched) {
+                    await launchUrl(url, mode: LaunchMode.externalApplication);
+                  }
+                } catch (e) {
+                  debugPrint('Could not launch $fileUrl: $e');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                        content:
+                            Text('Tidak dapat membuka dokumen: $fileName')),
+                  );
+                }
+              },
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.file_present, size: 16),
+                  const SizedBox(width: 4),
+                  Flexible(
+                      child: Text(fileName, overflow: TextOverflow.ellipsis)),
+                ],
               ),
-              child: const Text('File Terlampir'),
             ),
           ],
         ),
       );
     }
+
+    // Jika tidak cocok formatnya
+    return buildInfoField('Data Pendukung', '-');
   }
+
 }
