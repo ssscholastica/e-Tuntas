@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:open_file/open_file.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AduanFormPage extends StatefulWidget {
   final String kategori;
@@ -157,10 +158,34 @@ class _AduanFormPageState extends State<AduanFormPage> {
     }
   }
 
+  Future<String?> getUserEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('user_email');
+  }
+
   void submitForm() async {
     setState(() {
       isLoading = true;
     });
+
+    final prefs = await SharedPreferences.getInstance();
+    final email = await getUserEmail();
+    debugPrint("Retrieved email from SharedPreferences: $email");
+
+    if (email == null || email.isEmpty) {
+      debugPrint("Email tidak ditemukan dalam SharedPreferences.");
+      setState(() {
+        isLoading = false;
+      });
+      _showDialog(
+        success: false,
+        title: "Gagal Upload!",
+        message: "Email pengguna tidak ditemukan. Silakan login kembali.",
+        buttonText: "Kembali",
+        onPressed: () => Navigator.pop(context),
+      );
+      return;
+    }
 
     String tanggalAjuan = controllers["Tanggal Ajuan"]!.text;
     String nomorBpjsNik = controllers["Nomor BPJS/NIK"]!.text;
@@ -186,6 +211,8 @@ class _AduanFormPageState extends State<AduanFormPage> {
       var uri = Uri.parse('${baseURL}pengaduan-bpjs/');
       var request = http.MultipartRequest('POST', uri);
 
+      request.fields['email'] = email;
+      debugPrint("Request fields: ${request.fields}");
       request.headers.addAll({'Accept': 'application/json'});
       request.fields['kategori_bpjs'] = controllers["Kategori"]!.text;
       request.fields['tanggal_ajuan'] = tanggalAjuan;
@@ -195,6 +222,7 @@ class _AduanFormPageState extends State<AduanFormPage> {
         'data_pendukung',
         _selectedFile!.path,
       ));
+      request.fields['send_email'] = 'true';
 
       final response = await request.send();
       final respStr = await response.stream.bytesToString();
@@ -211,6 +239,7 @@ class _AduanFormPageState extends State<AduanFormPage> {
           onPressed: () {
             Navigator.pop(context);
             Navigator.pop(context, {
+              "Email": email,
               "Tanggal Ajuan": tanggalAjuan,
               "Nomor BPJS/NIK": nomorBpjsNik,
               "Deskripsi": deskripsi,

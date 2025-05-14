@@ -6,6 +6,7 @@ import 'package:etuntas/network/globals.dart';
 import 'package:etuntas/widgets/loading_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 import 'package:etuntas/models/comment_model.dart';
@@ -77,6 +78,20 @@ class _TrackingAwalState extends State<TrackingAwal> {
     try {
       print("Searching for nomor pendaftaran: $nomorPendaftaran");
 
+      final bool isAuthorized = await _isUserAuthorized(nomorPendaftaran);
+      print("User authorization result: $isAuthorized");
+
+      if (!isAuthorized) {
+        setState(() {
+          isLoading = false;
+          errorMessage =
+              "Anda hanya dapat melacak pengajuan dengan nomor pendaftaran Anda sendiri!";
+        });
+        _showFailureDialog(
+            "Anda hanya dapat melacak pengajuan dengan nomor pendaftaran Anda sendiri!");
+        return;
+      }
+
       List<String> tableOptions = ["1", "2", "3", "4", "5"];
       bool found = false;
       Map<String, dynamic>? foundData;
@@ -105,7 +120,10 @@ class _TrackingAwalState extends State<TrackingAwal> {
       } else {
         setState(() {
           isTrackingSuccess = false;
+          errorMessage = "Data tidak ditemukan";
         });
+        _showFailureDialog(
+            "Data dengan nomor pendaftaran tersebut tidak ditemukan.");
       }
     } catch (e) {
       print("Error fetching tracking data: $e");
@@ -113,10 +131,138 @@ class _TrackingAwalState extends State<TrackingAwal> {
         errorMessage = e.toString();
         isTrackingSuccess = false;
       });
+      _showFailureDialog("Terjadi kesalahan: ${e.toString()}");
     } finally {
       setState(() {
         isLoading = false;
       });
+    }
+  }
+
+  Future<bool> _isUserAuthorized(String nomorPendaftaran) async {
+    try {
+      final currentUser = await _getCurrentUserData();
+      print("Current user data: $currentUser");
+
+      if (currentUser == null) {
+        print("No user logged in");
+        return false;
+      }
+
+      if (currentUser['is_admin'] == 1 || currentUser['is_admin'] == true) {
+        print("User is admin, authorization granted");
+        return true;
+      }
+
+      final String userEmail = currentUser['email'] ?? '';
+      print(
+          "User email: $userEmail, checking ownership for nomor pendaftaran: $nomorPendaftaran");
+
+      final bool isUserOwnApplication =
+          await _checkPendaftaranOwnership(nomorPendaftaran, userEmail);
+      print("Ownership check result: $isUserOwnApplication");
+      return isUserOwnApplication;
+    } catch (e) {
+      print("Error checking user authorization: $e");
+      return false;
+    }
+  }
+
+  Future<bool> _checkPendaftaranOwnership(
+      String nomorPendaftaran, String userEmail) async {
+    try {
+      if (nomorPendaftaran.isEmpty || userEmail.isEmpty) {
+        print("Empty nomor pendaftaran or email");
+        return false;
+      }
+
+      print(
+          "Checking pendaftaran ownership for: $nomorPendaftaran and email: $userEmail");
+
+      List<String> tableOptions = ["1", "2", "3", "4", "5"];
+
+      for (String tableNumber in tableOptions) {
+        final exactMatchResponse =
+            await _searchData(nomorPendaftaran, tableNumber, false);
+        print(
+            "Search result for table $tableNumber (exact): $exactMatchResponse");
+
+        if (exactMatchResponse != null) {
+          String dataEmail = exactMatchResponse['email'] ?? '';
+          print("Comparing emails - Data: $dataEmail vs User: $userEmail");
+
+          if (dataEmail.isNotEmpty &&
+              dataEmail.toLowerCase() == userEmail.toLowerCase()) {
+            print("Email match found, authorization granted");
+            return true;
+          }
+        }
+
+        final likeMatchResponse =
+            await _searchData(nomorPendaftaran, tableNumber, true);
+        print(
+            "Search result for table $tableNumber (like): $likeMatchResponse");
+
+        if (likeMatchResponse != null) {
+          String dataEmail = likeMatchResponse['email'] ?? '';
+          print("Comparing emails - Data: $dataEmail vs User: $userEmail");
+
+          if (dataEmail.isNotEmpty &&
+              dataEmail.toLowerCase() == userEmail.toLowerCase()) {
+            print("Email match found, authorization granted");
+            return true;
+          }
+        }
+      }
+
+      print("No ownership match found, authorization denied");
+      return false;
+    } catch (e) {
+      print("Error checking pendaftaran ownership: $e");
+      return false;
+    }
+  }
+
+  Future<Map<String, dynamic>?> _getCurrentUserData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      print("Available SharedPreferences keys: ${prefs.getKeys()}");
+
+      final String? userEmail = prefs.getString('user_email') ??
+          prefs.getString('email') ??
+          prefs.getString('userEmail');
+
+      final String? userData = prefs.getString('user_data') ??
+          prefs.getString('userData') ??
+          prefs.getString('user');
+
+      print(
+          "Retrieved from SharedPreferences - userEmail: $userEmail, userData: $userData");
+
+      if (userData != null && userData.isNotEmpty) {
+        try {
+          final Map<String, dynamic> parsedUserData = json.decode(userData);
+          print("Parsed user data from SharedPreferences: $parsedUserData");
+          return parsedUserData;
+        } catch (e) {
+          print("Error parsing user data from SharedPreferences: $e");
+        }
+      }
+
+      if (userEmail == null || userEmail.isEmpty) {
+        print("No user email found in SharedPreferences");
+        return null;
+      }
+
+      return {
+        'email': userEmail,
+        'is_admin': false, 
+        'name': 'User'
+      };
+    } catch (e) {
+      print("Error in _getCurrentUserData: $e");
+      return null; 
     }
   }
 
@@ -222,7 +368,6 @@ class _TrackingAwalState extends State<TrackingAwal> {
           'no_pendaftaran': data['no_pendaftaran']?.toString() ?? '',
         });
       }
-
     });
   }
 
@@ -583,12 +728,11 @@ class _RejectedStatusWidgetState extends State<RejectedStatusWidget> {
       final noPendaftaran = widget.item['no_pendaftaran'];
 
       final comment = await _commentService.submitComment(
-        pengajuanId:
-            pengajuanId, 
+        pengajuanId: pengajuanId,
         noPendaftaran: noPendaftaran,
         commentText: _commentController.text,
       );
-      
+
       if (comment != null) {
         setState(() {
           comments.insert(0, comment);

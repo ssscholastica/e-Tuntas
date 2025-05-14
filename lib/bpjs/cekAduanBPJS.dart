@@ -6,6 +6,7 @@ import 'package:etuntas/network/globals.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CekAduanBPJS extends StatefulWidget {
   const CekAduanBPJS({super.key});
@@ -22,6 +23,7 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
   List<Map<String, dynamic>> trackingInfo = [];
   List<Map<String, dynamic>> comments = [];
   Map<String, dynamic>? currentPengaduan;
+  String errorMessage = "";
 
   final Map<String, String> statusIcons = {
     'Terkirim': 'assets/icon terkirim.png',
@@ -58,16 +60,37 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
     String nomorBPJS = _controller.text.trim();
 
     if (nomorBPJS.isEmpty) {
-      _showFailureDialog("Nomor BPJS tidak boleh kosong!");
+      _showFailureDialog("Nomor BPJS/NIK tidak boleh kosong!");
       return;
     }
 
     setState(() {
       isLoading = true;
+      errorMessage = "";
       isTrackingPressed = true;
+      isTrackingSuccess = false;
+      trackingInfo = [];
     });
 
     try {
+      print("Searching for nomor BPJS: $nomorBPJS");
+
+      // Check if user is authorized to view this data
+      final bool isAuthorized = await _isUserAuthorized(nomorBPJS);
+      print("User authorization result: $isAuthorized");
+
+      if (!isAuthorized) {
+        setState(() {
+          isLoading = false;
+          errorMessage =
+              "Anda hanya dapat melacak pengaduan dengan nomor BPJS/NIK Anda sendiri!";
+        });
+        _showFailureDialog(
+            "Anda hanya dapat melacak pengaduan dengan nomor BPJS/NIK Anda sendiri!");
+        return;
+      }
+
+      // Fetch data from server
       final response = await http.get(
         Uri.parse('${baseURL}pengaduan-bpjs/'),
         headers: {'Accept': 'application/json'},
@@ -76,8 +99,16 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
       if (response.statusCode == 200) {
         final List<dynamic> jsonData = json.decode(response.body);
 
+        // Get current user email for filtering
+        final currentUser = await _getCurrentUserData();
+        final String userEmail = currentUser?['email'] ?? '';
+
+        // Filter data by both nomor BPJS and user email
         final matchingData = jsonData
-            .where((item) => item['nomor_bpjs_nik'].toString() == nomorBPJS)
+            .where((item) =>
+                item['nomor_bpjs_nik'].toString() == nomorBPJS &&
+                item['email'].toString().toLowerCase() ==
+                    userEmail.toLowerCase())
             .toList();
 
         setState(() {
@@ -94,21 +125,112 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
             isTrackingSuccess = false;
             trackingInfo = [];
             currentPengaduan = null;
+            errorMessage = "Data tidak ditemukan";
+            _showFailureDialog(
+                "Data dengan nomor BPJS/NIK tersebut tidak ditemukan.");
           }
         });
       } else {
         setState(() {
           isLoading = false;
           isTrackingSuccess = false;
-          _showFailureDialog("Gagal terhubung ke server. Coba lagi nanti.");
+          errorMessage = "Gagal terhubung ke server";
         });
+        _showFailureDialog("Gagal terhubung ke server. Coba lagi nanti.");
       }
     } catch (e) {
+      print("Error fetching tracking data: $e");
       setState(() {
         isLoading = false;
         isTrackingSuccess = false;
-        _showFailureDialog("Terjadi kesalahan: $e");
+        errorMessage = e.toString();
       });
+      _showFailureDialog("Terjadi kesalahan: ${e.toString()}");
+    }
+  }
+
+  Future<bool> _isUserAuthorized(String nomorBPJS) async {
+    try {
+      final currentUser = await _getCurrentUserData();
+      print("Current user data: $currentUser");
+
+      if (currentUser == null) {
+        print("No user logged in");
+        return false;
+      }
+
+      // Admin can access all data
+      if (currentUser['is_admin'] == 1 || currentUser['is_admin'] == true) {
+        print("User is admin, authorization granted");
+        return true;
+      }
+
+      final String userEmail = currentUser['email'] ?? '';
+      print(
+          "User email: $userEmail, checking ownership for nomor BPJS: $nomorBPJS");
+
+      // For non-admin users, fetch data to verify ownership
+      final response = await http.get(
+        Uri.parse('${baseURL}pengaduan-bpjs/'),
+        headers: {'Accept': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonData = json.decode(response.body);
+
+        // Check if this user has a complaint with this BPJS number
+        final matchingData = jsonData
+            .where((item) =>
+                item['nomor_bpjs_nik'].toString() == nomorBPJS &&
+                item['email'].toString().toLowerCase() ==
+                    userEmail.toLowerCase())
+            .toList();
+
+        return matchingData.isNotEmpty;
+      }
+
+      return false;
+    } catch (e) {
+      print("Error checking user authorization: $e");
+      return false;
+    }
+  }
+
+  Future<Map<String, dynamic>?> _getCurrentUserData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      print("Available SharedPreferences keys: ${prefs.getKeys()}");
+
+      final String? userEmail = prefs.getString('user_email') ??
+          prefs.getString('email') ??
+          prefs.getString('userEmail');
+
+      final String? userData = prefs.getString('user_data') ??
+          prefs.getString('userData') ??
+          prefs.getString('user');
+
+      print(
+          "Retrieved from SharedPreferences - userEmail: $userEmail, userData: $userData");
+
+      if (userData != null && userData.isNotEmpty) {
+        try {
+          final Map<String, dynamic> parsedUserData = json.decode(userData);
+          print("Parsed user data from SharedPreferences: $parsedUserData");
+          return parsedUserData;
+        } catch (e) {
+          print("Error parsing user data from SharedPreferences: $e");
+        }
+      }
+
+      if (userEmail == null || userEmail.isEmpty) {
+        print("No user email found in SharedPreferences");
+        return null;
+      }
+
+      return {'email': userEmail, 'is_admin': false, 'name': 'User'};
+    } catch (e) {
+      print("Error in _getCurrentUserData: $e");
+      return null;
     }
   }
 
@@ -147,8 +269,7 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
           'title': statusTitles[status]!,
           'description': statusDescriptions[status]!,
           'color': statusColors[status]!,
-          'pengaduan':
-              currentPengaduan, // Add the pengaduan data to each tracking item
+          'pengaduan': currentPengaduan,
         });
       }
     }

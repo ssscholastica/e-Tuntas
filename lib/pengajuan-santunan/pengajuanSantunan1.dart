@@ -406,7 +406,7 @@ class _PengajuanSantunan1State extends State<PengajuanSantunan1> {
 Future<void> _sendEmailWithRegistrationNumber(
     String email, String noPendaftaran) async {
   try {
-    final uri = Uri.parse('http://10.0.2.2:8000/api/pengajuan-santunan1');
+    final uri = Uri.parse('${baseURL}pengajuan-santunan1');
     final response = await http.post(
       uri,
       headers: {
