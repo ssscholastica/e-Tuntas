@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 
 class formSantunan extends StatefulWidget {
   final String pengaduanId;
@@ -332,11 +333,60 @@ class _formSantunanState extends State<formSantunan> {
     }
 
     return dokumen.map((doc) {
-      final fileName = widget.pengaduanData[doc['key']] ?? '-';
-      return buildInfoField(doc['label']!, fileName);
+      final filePath = widget.pengaduanData[doc['key']] ?? '';
+      final fileName = filePath.split('/').last;
+      final fileUrl =
+          'http://192.168.100.12:8000/$filePath'; // Ganti sesuai domain Laravel-mu
+
+      if (filePath.isEmpty) {
+        return buildInfoField(doc['label']!, '-');
+      }
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(doc['label']!, style: TextStyle(fontWeight: FontWeight.bold)),
+          TextButton(
+            onPressed: () async {
+              final url = Uri.parse(fileUrl);
+              try {
+                // First try external application which should be faster if PDF viewer is available
+                bool launched = await launchUrl(
+                  url,
+                  mode: LaunchMode.externalNonBrowserApplication,
+                );
+
+                // If external launch fails, fall back to external browser
+                if (!launched) {
+                  await launchUrl(
+                    url,
+                    mode: LaunchMode.externalApplication,
+                  );
+                }
+              } catch (e) {
+                debugPrint('Could not launch $fileUrl: $e');
+                // Show error message to user
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                      content: Text('Tidak dapat membuka dokumen: $fileName')),
+                );
+              }
+            },
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.file_present, size: 16),
+                const SizedBox(width: 4),
+                Flexible(
+                    child: Text(fileName, overflow: TextOverflow.ellipsis)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
+      );
     }).toList();
   }
-
 
   @override
   Widget build(BuildContext context) {
