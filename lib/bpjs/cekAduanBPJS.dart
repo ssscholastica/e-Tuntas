@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:etuntas/network/comment_bpjs_service.dart';
+import 'package:etuntas/models/comment_bpjs_model.dart';
 import 'package:etuntas/network/globals.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -17,8 +19,9 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
   bool isTrackingPressed = false;
   bool isTrackingSuccess = false;
   bool isLoading = false;
-  List<Map<String, String>> trackingInfo = [];
+  List<Map<String, dynamic>> trackingInfo = [];
   List<Map<String, dynamic>> comments = [];
+  Map<String, dynamic>? currentPengaduan;
 
   final Map<String, String> statusIcons = {
     'Terkirim': 'assets/icon terkirim.png',
@@ -35,9 +38,12 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
   };
 
   final Map<String, String> statusDescriptions = {
-    'Terkirim': 'Silakan lakukan pengecekan berkala pada aplikasi untuk memantau proses aduan BPJS Anda.',
-    'Diproses': 'Silakan lakukan pengecekan berkala pada aplikasi dan menunggu informasi selanjutnya terkait aduan yang sedang diproses',
-    'Ditolak': 'Catatan Kesalahan: \n- Dokumen yang anda unggah tidak dapat terbaca dengan baik',
+    'Terkirim':
+        'Silakan lakukan pengecekan berkala pada aplikasi untuk memantau proses aduan BPJS Anda.',
+    'Diproses':
+        'Silakan lakukan pengecekan berkala pada aplikasi dan menunggu informasi selanjutnya terkait aduan yang sedang diproses',
+    'Ditolak':
+        'Catatan Kesalahan: \n- Dokumen yang anda unggah tidak dapat terbaca dengan baik',
     'Selesai': '',
   };
 
@@ -69,24 +75,25 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
 
       if (response.statusCode == 200) {
         final List<dynamic> jsonData = json.decode(response.body);
-        
-        final matchingData = jsonData.where((item) => 
-          item['nomor_bpjs_nik'].toString() == nomorBPJS
-        ).toList();
+
+        final matchingData = jsonData
+            .where((item) => item['nomor_bpjs_nik'].toString() == nomorBPJS)
+            .toList();
 
         setState(() {
           isLoading = false;
-          
+
           if (matchingData.isNotEmpty) {
             isTrackingSuccess = true;
-            final pengaduan = matchingData.first;
-            final status = pengaduan['status'] ?? 'Terkirim';
-            final tanggalAjuan = DateTime.parse(pengaduan['tanggal_ajuan']);
-            final kategori = pengaduan['kategori_bpjs'];
+            currentPengaduan = matchingData.first;
+            final status = currentPengaduan!['status'] ?? 'Terkirim';
+            final tanggalAjuan =
+                DateTime.parse(currentPengaduan!['tanggal_ajuan']);
             trackingInfo = _generateTrackingInfo(status, tanggalAjuan);
           } else {
             isTrackingSuccess = false;
             trackingInfo = [];
+            currentPengaduan = null;
           }
         });
       } else {
@@ -105,45 +112,47 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
     }
   }
 
-  List<Map<String, String>> _generateTrackingInfo(String currentStatus, DateTime tanggalAjuan) {
-    List<Map<String, String>> result = [];
+  List<Map<String, dynamic>> _generateTrackingInfo(
+      String currentStatus, DateTime tanggalAjuan) {
+    List<Map<String, dynamic>> result = [];
     List<String> allStatus = ['Terkirim', 'Diproses', 'Ditolak', 'Selesai'];
     final dateFormatter = DateFormat('dd MMM yyyy, HH:mm');
     final currentStatusIndex = allStatus.indexOf(currentStatus);
-    if (currentStatusIndex == -1) return result; 
+    if (currentStatusIndex == -1) return result;
 
     if (currentStatus == 'Ditolak') {
       allStatus = ['Terkirim', 'Diproses', 'Ditolak'];
     }
-    
+
     if (currentStatus == 'Selesai') {
       allStatus = ['Terkirim', 'Diproses', 'Selesai'];
     }
-    
+
     for (int i = 0; i < allStatus.length; i++) {
       final status = allStatus[i];
-      
+
       if (i <= currentStatusIndex ||
           (currentStatus == 'Selesai' && status != 'Ditolak')) {
-        
         DateTime statusDate = tanggalAjuan.add(Duration(days: i));
-        
+
         final now = DateTime.now();
         if (statusDate.isAfter(now)) {
           statusDate = now;
         }
-        
+
         result.add({
           'icon': statusIcons[status]!,
           'status': status,
           'date': dateFormatter.format(statusDate),
           'title': statusTitles[status]!,
           'description': statusDescriptions[status]!,
-          'color': statusColors[status]!
+          'color': statusColors[status]!,
+          'pengaduan':
+              currentPengaduan, // Add the pengaduan data to each tracking item
         });
       }
     }
-    
+
     return result;
   }
 
@@ -373,7 +382,7 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
 }
 
 class RejectedStatusWidget extends StatefulWidget {
-  final Map<String, String> item;
+  final Map<String, dynamic> item;
   const RejectedStatusWidget({super.key, required this.item});
 
   @override
@@ -381,20 +390,114 @@ class RejectedStatusWidget extends StatefulWidget {
 }
 
 class _RejectedStatusWidgetState extends State<RejectedStatusWidget> {
-  List<Map<String, dynamic>> comments = [];
+  final CommentService _commentService = CommentService();
   final TextEditingController _commentController = TextEditingController();
+  bool isLoading = false;
+  List<Comment> comments = [];
 
-  void _addComment(String text) {
-    setState(() {
-      comments.add({"author": "Anda", "text": text, "replies": []});
-      _commentController.clear();
-    });
+  @override
+  void initState() {
+    super.initState();
+    _loadComments();
   }
 
-  void _addReply(int index, String replyText) {
+  Future<void> _loadComments() async {
     setState(() {
-      comments[index]['replies'].add({"author": "Admin", "text": replyText});
+      isLoading = true;
     });
+
+    try {
+      final pengaduan = widget.item['pengaduan'];
+      if (pengaduan == null) {
+        print('Error: pengaduan data is null');
+        setState(() {
+          isLoading = false;
+        });
+        return;
+      }
+
+      final nomorBPJS = pengaduan['nomor_bpjs_nik'];
+      if (nomorBPJS == null || nomorBPJS.toString().isEmpty) {
+        print('Error: nomor_bpjs_nik is null or empty');
+        setState(() {
+          isLoading = false;
+        });
+        return;
+      }
+
+      final commentsData =
+          await _commentService.getCommentsByNomorBPJS(nomorBPJS);
+
+      setState(() {
+        comments = commentsData;
+        isLoading = false;
+      });
+    } catch (e) {
+      print('Error loading comments: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _submitComment() async {
+    if (_commentController.text.isEmpty) return;
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      // Get pengaduan data from the item
+      final pengaduan = widget.item['pengaduan'];
+      if (pengaduan == null) {
+        throw Exception('Pengaduan data is null');
+      }
+
+      final pengajuanBPJSId = pengaduan['id'];
+      final nomorBPJS = pengaduan['nomor_bpjs_nik'];
+
+      if (pengajuanBPJSId == null) {
+        throw Exception('Pengajuan ID is null');
+      }
+
+      if (nomorBPJS == null) {
+        throw Exception('Nomor BPJS is null');
+      }
+
+      final comment = await _commentService.submitComment(
+        pengajuanBPJSId: pengajuanBPJSId is int
+            ? pengajuanBPJSId
+            : int.parse(pengajuanBPJSId.toString()),
+        nomorBPJS: nomorBPJS.toString(),
+        commentText: _commentController.text,
+      );
+
+      if (comment != null) {
+        setState(() {
+          comments.insert(0, comment);
+          _commentController.clear();
+        });
+      }
+    } catch (e) {
+      print('Error submitting comment: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal mengirim komentar: ${e.toString()}')),
+      );
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  String _formatDate(String dateString) {
+    try {
+      final date = DateTime.parse(dateString);
+      return DateFormat('d MMM yyyy, HH:mm').format(date);
+    } catch (e) {
+      return dateString;
+    }
   }
 
   @override
@@ -449,62 +552,179 @@ class _RejectedStatusWidgetState extends State<RejectedStatusWidget> {
             style: const TextStyle(fontSize: 14, color: Colors.red),
           ),
           const SizedBox(height: 10),
+          const Divider(),
 
-          if (comments.isNotEmpty) ...[
-            const Divider(),
-            const Text("Komentar:", style: TextStyle(fontWeight: FontWeight.bold)),
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: comments.length,
-              itemBuilder: (context, index) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ListTile(
-                      leading: CircleAvatar(child: Text(comments[index]['author'][0])),
-                      title: Text(comments[index]['author']),
-                      subtitle: Text(comments[index]['text']),
-                    ),
-                    ...comments[index]['replies'].map<Widget>((reply) {
-                      return Padding(
-                        padding: const EdgeInsets.only(left: 40.0),
-                        child: ListTile(
-                          leading: CircleAvatar(child: Text(reply['author'][0])),
-                          title: Text(reply['author']),
-                          subtitle: Text(reply['text']),
+          // Comments section
+          if (isLoading)
+            const Center(child: CircularProgressIndicator())
+          else if (comments.isEmpty)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Text(
+                    "Belum ada komentar. Tambahkan komentar untuk klarifikasi."),
+              ),
+            )
+          else
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.only(left: 8.0, bottom: 8.0),
+                  child: Text(
+                    "Komentar:",
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                ),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: comments.length,
+                  itemBuilder: (context, index) {
+                    final Comment comment = comments[index];
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Main comment
+                        Container(
+                          margin: const EdgeInsets.symmetric(vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: comment.authorType == 'user'
+                                  ? Colors.blue
+                                  : Colors.green,
+                              child: Text(
+                                comment.authorType == 'user' ? 'U' : 'A',
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                            ),
+                            title: Row(
+                              children: [
+                                Text(
+                                  comment.authorType == 'user'
+                                      ? 'Anda'
+                                      : 'Admin',
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                const Spacer(),
+                                Text(
+                                  _formatDate(comment.createdAt),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            subtitle: Padding(
+                              padding: const EdgeInsets.only(top: 4.0),
+                              child: Text(comment.comment),
+                            ),
+                          ),
                         ),
-                      );
-                    }).toList(),
-                  ],
-                );
-              },
+
+                        // Replies
+                        if (comment.replies.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 30.0),
+                            child: ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: comment.replies.length,
+                              itemBuilder: (context, replyIndex) {
+                                final reply = comment.replies[replyIndex];
+                                return Container(
+                                  margin:
+                                      const EdgeInsets.symmetric(vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[50],
+                                    borderRadius: BorderRadius.circular(8),
+                                    border:
+                                        Border.all(color: Colors.grey[200]!),
+                                  ),
+                                  child: ListTile(
+                                    leading: CircleAvatar(
+                                      backgroundColor:
+                                          reply.authorType == 'user'
+                                              ? Colors.blue
+                                              : Colors.green,
+                                      child: Text(
+                                        reply.authorType == 'user' ? 'U' : 'A',
+                                        style: const TextStyle(
+                                            color: Colors.white),
+                                      ),
+                                    ),
+                                    title: Row(
+                                      children: [
+                                        Text(
+                                          reply.authorType == 'user'
+                                              ? 'Anda'
+                                              : 'Admin',
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.bold),
+                                        ),
+                                        const Spacer(),
+                                        Text(
+                                          _formatDate(reply.createdAt),
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey[600],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    subtitle: Padding(
+                                      padding: const EdgeInsets.only(top: 4.0),
+                                      child: Text(reply.comment),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                ),
+              ],
             ),
-          ],
 
           const Divider(),
+
+          // Add comment section
           Row(
             children: [
               Expanded(
                 child: TextField(
                   controller: _commentController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: "Tambahkan komentar...",
-                    border: OutlineInputBorder(),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   ),
+                  maxLines: 3,
+                  minLines: 1,
                 ),
               ),
               const SizedBox(width: 10),
               ElevatedButton(
-                onPressed: () {
-                  if (_commentController.text.isNotEmpty) {
-                    _addComment(_commentController.text);
-                  }
-                },
+                onPressed: isLoading ? null : _submitComment,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF2F2F9D),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
-                child: const Icon(Icons.send, color: Colors.white,),
+                child: const Icon(Icons.send, color: Colors.white),
               ),
             ],
           ),

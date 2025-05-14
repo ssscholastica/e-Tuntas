@@ -1,13 +1,13 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:etuntas/models/comment_model.dart';
+import 'package:etuntas/models/comment_bpjs_model.dart';
 import 'package:etuntas/network/globals.dart';
 
 class CommentService {
   Future<List<Comment>> getCommentsByPengajuan(int pengajuanId) async {
     try {
       final response = await http.get(
-        Uri.parse('${baseURL}comments/pengajuan/$pengajuanId'),
+        Uri.parse('${baseURL}commentsbpjs/pengajuan/$pengajuanId'),
         headers: {'Accept': 'application/json'},
       );
 
@@ -25,11 +25,10 @@ class CommentService {
     }
   }
 
-  Future<List<Comment>> getCommentsByNomorPendaftaran(
-      String nomorPendaftaran) async {
+  Future<List<Comment>> getCommentsByNomorBPJS(String nomorBPJS) async {
     try {
       final response = await http.get(
-        Uri.parse('${baseURL}comments/nomor-pendaftaran/$nomorPendaftaran'),
+        Uri.parse('${baseURL}commentsbpjs/nomor-pendaftaran/$nomorBPJS'),
         headers: {'Accept': 'application/json'},
       );
 
@@ -40,7 +39,11 @@ class CommentService {
           return List<Comment>.from(
             responseData['data'].map((comment) => Comment.fromJson(comment)),
           );
+        } else {
+          print('No comments found or status is not success');
         }
+      } else {
+        print('Error: Status code ${response.statusCode}');
       }
       return [];
     } catch (e) {
@@ -49,16 +52,17 @@ class CommentService {
     }
   }
 
+
   Future<Comment?> submitComment({
-    required int pengajuanId,
-    required String noPendaftaran,
+    required int pengajuanBPJSId,
+    required String nomorBPJS,
     required String commentText,
   }) async {
     try {
-      final int pengajuanIdInt = pengajuanId;
+      final int pengajuanBPJSIdInt = pengajuanBPJSId;
       final Map<String, dynamic> requestBody = {
-        'pengajuan_id': pengajuanIdInt, 
-        'no_pendaftaran': noPendaftaran,
+        'pengajuanBPJS_id': pengajuanBPJSIdInt,
+        'nomor_bpjs_nik': nomorBPJS,
         'comment': commentText,
         'author_type': 'user',
       };
@@ -66,7 +70,7 @@ class CommentService {
       print('Sending request body: ${json.encode(requestBody)}');
 
       final response = await http.post(
-        Uri.parse('${baseURL}comments'),
+        Uri.parse('${baseURL}commentsbpjs'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -110,7 +114,7 @@ class CommentService {
       print('Submitting reply with body: ${json.encode(requestBody)}');
 
       final response = await http.post(
-        Uri.parse('${baseURL}comments/$commentId/reply'),
+        Uri.parse('${baseURL}commentsbpjs/$commentId/reply'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -148,7 +152,7 @@ class CommentService {
       print('Adding reply with body: ${json.encode(requestBody)}');
 
       final response = await http.post(
-        Uri.parse('${baseURL}comments/$commentId/reply'),
+        Uri.parse('${baseURL}commentsbpjs/$commentId/reply'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',

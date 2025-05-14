@@ -27,7 +27,6 @@ class _TrackingAwalState extends State<TrackingAwal> {
   bool isLoading = false;
   String errorMessage = "";
 
-  // Grouped status mappings
   final Map<String, String> statusIcons = {
     'Terkirim': 'assets/icon terkirim.png',
     'Diproses': 'assets/icon diproses.png',
@@ -78,14 +77,13 @@ class _TrackingAwalState extends State<TrackingAwal> {
     try {
       print("Searching for nomor pendaftaran: $nomorPendaftaran");
 
-      List<String> tableOptions = ["", "1", "2", "3", "4", "5"];
+      List<String> tableOptions = ["1", "2", "3", "4", "5"];
       bool found = false;
       Map<String, dynamic>? foundData;
 
       for (String tableNumber in tableOptions) {
         if (found) break;
 
-        // Coba pencarian exact match dulu
         final exactMatchResponse =
             await _searchData(nomorPendaftaran, tableNumber, false);
         if (exactMatchResponse != null) {
@@ -279,7 +277,7 @@ class _TrackingAwalState extends State<TrackingAwal> {
     setState(() {
       isLoading = true;
     });
-    Future.delayed(const Duration(milliseconds: 300), () {
+    Future.delayed(const Duration(milliseconds: 600), () {
       _fetchTrackingData();
     });
   }
@@ -372,7 +370,7 @@ class _TrackingAwalState extends State<TrackingAwal> {
               border:
                   OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
             ),
-            keyboardType: TextInputType.text, // Allow alphanumeric input
+            keyboardType: TextInputType.text,
           ),
         ],
       ),
