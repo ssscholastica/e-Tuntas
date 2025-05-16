@@ -7,7 +7,10 @@ import 'package:etuntas/widgets/loading_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:etuntas/models/comment_model.dart';
+import 'package:etuntas/network/comment_service.dart';
 
 class TrackingAwal extends StatefulWidget {
   const TrackingAwal({super.key});
@@ -75,7 +78,21 @@ class _TrackingAwalState extends State<TrackingAwal> {
     try {
       print("Searching for nomor pendaftaran: $nomorPendaftaran");
 
-      List<String> tableOptions = ["", "1", "2", "3", "4", "5"];
+      final bool isAuthorized = await _isUserAuthorized(nomorPendaftaran);
+      print("User authorization result: $isAuthorized");
+
+      if (!isAuthorized) {
+        setState(() {
+          isLoading = false;
+          errorMessage =
+              "Anda hanya dapat melacak pengajuan dengan nomor pendaftaran Anda sendiri!";
+        });
+        _showFailureDialog(
+            "Anda hanya dapat melacak pengajuan dengan nomor pendaftaran Anda sendiri!");
+        return;
+      }
+
+      List<String> tableOptions = ["1", "2", "3", "4", "5"];
       bool found = false;
       Map<String, dynamic>? foundData;
 
@@ -103,7 +120,10 @@ class _TrackingAwalState extends State<TrackingAwal> {
       } else {
         setState(() {
           isTrackingSuccess = false;
+          errorMessage = "Data tidak ditemukan";
         });
+        _showFailureDialog(
+            "Data dengan nomor pendaftaran tersebut tidak ditemukan.");
       }
     } catch (e) {
       print("Error fetching tracking data: $e");
@@ -111,10 +131,138 @@ class _TrackingAwalState extends State<TrackingAwal> {
         errorMessage = e.toString();
         isTrackingSuccess = false;
       });
+      _showFailureDialog("Terjadi kesalahan: ${e.toString()}");
     } finally {
       setState(() {
         isLoading = false;
       });
+    }
+  }
+
+  Future<bool> _isUserAuthorized(String nomorPendaftaran) async {
+    try {
+      final currentUser = await _getCurrentUserData();
+      print("Current user data: $currentUser");
+
+      if (currentUser == null) {
+        print("No user logged in");
+        return false;
+      }
+
+      if (currentUser['is_admin'] == 1 || currentUser['is_admin'] == true) {
+        print("User is admin, authorization granted");
+        return true;
+      }
+
+      final String userEmail = currentUser['email'] ?? '';
+      print(
+          "User email: $userEmail, checking ownership for nomor pendaftaran: $nomorPendaftaran");
+
+      final bool isUserOwnApplication =
+          await _checkPendaftaranOwnership(nomorPendaftaran, userEmail);
+      print("Ownership check result: $isUserOwnApplication");
+      return isUserOwnApplication;
+    } catch (e) {
+      print("Error checking user authorization: $e");
+      return false;
+    }
+  }
+
+  Future<bool> _checkPendaftaranOwnership(
+      String nomorPendaftaran, String userEmail) async {
+    try {
+      if (nomorPendaftaran.isEmpty || userEmail.isEmpty) {
+        print("Empty nomor pendaftaran or email");
+        return false;
+      }
+
+      print(
+          "Checking pendaftaran ownership for: $nomorPendaftaran and email: $userEmail");
+
+      List<String> tableOptions = ["1", "2", "3", "4", "5"];
+
+      for (String tableNumber in tableOptions) {
+        final exactMatchResponse =
+            await _searchData(nomorPendaftaran, tableNumber, false);
+        print(
+            "Search result for table $tableNumber (exact): $exactMatchResponse");
+
+        if (exactMatchResponse != null) {
+          String dataEmail = exactMatchResponse['email'] ?? '';
+          print("Comparing emails - Data: $dataEmail vs User: $userEmail");
+
+          if (dataEmail.isNotEmpty &&
+              dataEmail.toLowerCase() == userEmail.toLowerCase()) {
+            print("Email match found, authorization granted");
+            return true;
+          }
+        }
+
+        final likeMatchResponse =
+            await _searchData(nomorPendaftaran, tableNumber, true);
+        print(
+            "Search result for table $tableNumber (like): $likeMatchResponse");
+
+        if (likeMatchResponse != null) {
+          String dataEmail = likeMatchResponse['email'] ?? '';
+          print("Comparing emails - Data: $dataEmail vs User: $userEmail");
+
+          if (dataEmail.isNotEmpty &&
+              dataEmail.toLowerCase() == userEmail.toLowerCase()) {
+            print("Email match found, authorization granted");
+            return true;
+          }
+        }
+      }
+
+      print("No ownership match found, authorization denied");
+      return false;
+    } catch (e) {
+      print("Error checking pendaftaran ownership: $e");
+      return false;
+    }
+  }
+
+  Future<Map<String, dynamic>?> _getCurrentUserData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      print("Available SharedPreferences keys: ${prefs.getKeys()}");
+
+      final String? userEmail = prefs.getString('user_email') ??
+          prefs.getString('email') ??
+          prefs.getString('userEmail');
+
+      final String? userData = prefs.getString('user_data') ??
+          prefs.getString('userData') ??
+          prefs.getString('user');
+
+      print(
+          "Retrieved from SharedPreferences - userEmail: $userEmail, userData: $userData");
+
+      if (userData != null && userData.isNotEmpty) {
+        try {
+          final Map<String, dynamic> parsedUserData = json.decode(userData);
+          print("Parsed user data from SharedPreferences: $parsedUserData");
+          return parsedUserData;
+        } catch (e) {
+          print("Error parsing user data from SharedPreferences: $e");
+        }
+      }
+
+      if (userEmail == null || userEmail.isEmpty) {
+        print("No user email found in SharedPreferences");
+        return null;
+      }
+
+      return {
+        'email': userEmail,
+        'is_admin': false, 
+        'name': 'User'
+      };
+    } catch (e) {
+      print("Error in _getCurrentUserData: $e");
+      return null; 
     }
   }
 
@@ -216,11 +364,10 @@ class _TrackingAwalState extends State<TrackingAwal> {
           'title': statusTitles[currentStatus]!,
           'description': statusDescriptions[currentStatus]!,
           'color': statusColors[currentStatus]!,
-          'id': data['id'] ?? '',
-          'no_pendaftaran': data['no_pendaftaran'] ?? '',
+          'id': data['id']?.toString() ?? '',
+          'no_pendaftaran': data['no_pendaftaran']?.toString() ?? '',
         });
       }
-
     });
   }
 
@@ -275,7 +422,7 @@ class _TrackingAwalState extends State<TrackingAwal> {
     setState(() {
       isLoading = true;
     });
-    Future.delayed(const Duration(milliseconds: 300), () {
+    Future.delayed(const Duration(milliseconds: 600), () {
       _fetchTrackingData();
     });
   }
@@ -368,7 +515,7 @@ class _TrackingAwalState extends State<TrackingAwal> {
               border:
                   OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
             ),
-            keyboardType: TextInputType.text, // Allow alphanumeric input
+            keyboardType: TextInputType.text,
           ),
         ],
       ),
@@ -529,20 +676,89 @@ class RejectedStatusWidget extends StatefulWidget {
 }
 
 class _RejectedStatusWidgetState extends State<RejectedStatusWidget> {
-  List<Map<String, dynamic>> comments = [];
+  final CommentService _commentService = CommentService();
   final TextEditingController _commentController = TextEditingController();
+  bool isLoading = false;
+  List<Comment> comments = [];
 
-  void _addComment(String text) {
-    setState(() {
-      comments.add({"author": "Anda", "text": text, "replies": []});
-      _commentController.clear();
-    });
+  @override
+  void initState() {
+    super.initState();
+    _loadComments();
   }
 
-  void _addReply(int index, String replyText) {
+  Future<void> _loadComments() async {
     setState(() {
-      comments[index]['replies'].add({"author": "Admin", "text": replyText});
+      isLoading = true;
     });
+
+    try {
+      final nomorPendaftaran = widget.item['no_pendaftaran'];
+      if (nomorPendaftaran == null || nomorPendaftaran.toString().isEmpty) {
+        print('Error: no_pendaftaran is null or empty');
+        setState(() {
+          isLoading = false;
+        });
+        return;
+      }
+      final commentsData =
+          await _commentService.getCommentsByNomorPendaftaran(nomorPendaftaran);
+
+      setState(() {
+        comments = commentsData;
+        isLoading = false;
+      });
+    } catch (e) {
+      print('Error loading comments: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _submitComment() async {
+    if (_commentController.text.isEmpty) return;
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final pengajuanId = int.parse(widget.item['id']);
+      final noPendaftaran = widget.item['no_pendaftaran'];
+
+      final comment = await _commentService.submitComment(
+        pengajuanId: pengajuanId,
+        noPendaftaran: noPendaftaran,
+        commentText: _commentController.text,
+      );
+
+      if (comment != null) {
+        setState(() {
+          comments.insert(0, comment);
+          _commentController.clear();
+        });
+      }
+    } catch (e) {
+      print('Error submitting comment: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Gagal mengirim komentar. Silakan coba lagi.')),
+      );
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  String _formatDate(String dateString) {
+    try {
+      final date = DateTime.parse(dateString);
+      return DateFormat('d MMM yyyy, HH:mm').format(date);
+    } catch (e) {
+      return dateString;
+    }
   }
 
   @override
@@ -597,61 +813,177 @@ class _RejectedStatusWidgetState extends State<RejectedStatusWidget> {
             style: const TextStyle(fontSize: 14, color: Colors.red),
           ),
           const SizedBox(height: 10),
-          if (comments.isNotEmpty) ...[
-            const Divider(),
-            const Text("Komentar:",
-                style: TextStyle(fontWeight: FontWeight.bold)),
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: comments.length,
-              itemBuilder: (context, index) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ListTile(
-                      leading: CircleAvatar(
-                          child: Text(comments[index]['author'][0])),
-                      title: Text(comments[index]['author']),
-                      subtitle: Text(comments[index]['text']),
-                    ),
-                    ...comments[index]['replies'].map<Widget>((reply) {
-                      return Padding(
-                        padding: const EdgeInsets.only(left: 40.0),
-                        child: ListTile(
-                          leading:
-                              CircleAvatar(child: Text(reply['author'][0])),
-                          title: Text(reply['author']),
-                          subtitle: Text(reply['text']),
-                        ),
-                      );
-                    }).toList(),
-                  ],
-                );
-              },
-            ),
-          ],
           const Divider(),
+
+          // Comments section
+          if (isLoading)
+            const Center(child: CircularProgressIndicator())
+          else if (comments.isEmpty)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Text(
+                    "Belum ada komentar. Tambahkan komentar untuk klarifikasi."),
+              ),
+            )
+          else
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.only(left: 8.0, bottom: 8.0),
+                  child: Text(
+                    "Komentar:",
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                ),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: comments.length,
+                  itemBuilder: (context, index) {
+                    final Comment comment = comments[index];
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Main comment
+                        Container(
+                          margin: const EdgeInsets.symmetric(vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: comment.authorType == 'user'
+                                  ? Colors.blue
+                                  : Colors.green,
+                              child: Text(
+                                comment.authorType == 'user' ? 'U' : 'A',
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                            ),
+                            title: Row(
+                              children: [
+                                Text(
+                                  comment.authorType == 'user'
+                                      ? 'Anda'
+                                      : 'Admin',
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                const Spacer(),
+                                Text(
+                                  _formatDate(comment.createdAt),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            subtitle: Padding(
+                              padding: const EdgeInsets.only(top: 4.0),
+                              child: Text(comment.comment),
+                            ),
+                          ),
+                        ),
+
+                        // Replies
+                        if (comment.replies.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 30.0),
+                            child: ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: comment.replies.length,
+                              itemBuilder: (context, replyIndex) {
+                                final reply = comment.replies[replyIndex];
+                                return Container(
+                                  margin:
+                                      const EdgeInsets.symmetric(vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[50],
+                                    borderRadius: BorderRadius.circular(8),
+                                    border:
+                                        Border.all(color: Colors.grey[200]!),
+                                  ),
+                                  child: ListTile(
+                                    leading: CircleAvatar(
+                                      backgroundColor:
+                                          reply.authorType == 'user'
+                                              ? Colors.blue
+                                              : Colors.green,
+                                      child: Text(
+                                        reply.authorType == 'user' ? 'U' : 'A',
+                                        style: const TextStyle(
+                                            color: Colors.white),
+                                      ),
+                                    ),
+                                    title: Row(
+                                      children: [
+                                        Text(
+                                          reply.authorType == 'user'
+                                              ? 'Anda'
+                                              : 'Admin',
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.bold),
+                                        ),
+                                        const Spacer(),
+                                        Text(
+                                          _formatDate(reply.createdAt),
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey[600],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    subtitle: Padding(
+                                      padding: const EdgeInsets.only(top: 4.0),
+                                      child: Text(reply.comment),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                ),
+              ],
+            ),
+
+          const Divider(),
+
+          // Add comment section
           Row(
             children: [
               Expanded(
                 child: TextField(
                   controller: _commentController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: "Tambahkan komentar...",
-                    border: OutlineInputBorder(),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   ),
+                  maxLines: 3,
+                  minLines: 1,
                 ),
               ),
               const SizedBox(width: 10),
               ElevatedButton(
-                onPressed: () {
-                  if (_commentController.text.isNotEmpty) {
-                    _addComment(_commentController.text);
-                  }
-                },
+                onPressed: isLoading ? null : _submitComment,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF2F2F9D),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
                 child: const Icon(Icons.send, color: Colors.white),
               ),
