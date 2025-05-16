@@ -6,8 +6,8 @@ import 'package:etuntas/network/globals.dart';
 import 'package:etuntas/widgets/loading_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class TrackingAwal extends StatefulWidget {
   const TrackingAwal({super.key});
@@ -25,7 +25,6 @@ class _TrackingAwalState extends State<TrackingAwal> {
   bool isLoading = false;
   String errorMessage = "";
 
-  // Grouped status mappings
   final Map<String, String> statusIcons = {
     'Terkirim': 'assets/icon terkirim.png',
     'Diproses': 'assets/icon diproses.png',
@@ -83,7 +82,6 @@ class _TrackingAwalState extends State<TrackingAwal> {
       for (String tableNumber in tableOptions) {
         if (found) break;
 
-        // Coba pencarian exact match dulu
         final exactMatchResponse =
             await _searchData(nomorPendaftaran, tableNumber, false);
         if (exactMatchResponse != null) {
@@ -190,13 +188,13 @@ class _TrackingAwalState extends State<TrackingAwal> {
           updatedAt = DateTime.parse(data['updated_at']);
         } catch (e) {
           print('Error parsing date: ${e.toString()}');
-          updatedAt = DateTime.now(); // Fallback to current date
+          updatedAt = DateTime.now();
         }
       } else {
-        updatedAt = DateTime.now(); // Fallback to current date
+        updatedAt = DateTime.now();
       }
 
-      final dateFormatter = DateFormat('d MMM yyyy, HH:mm');
+      final dateFormatter = DateFormat('d MMM yyyy');
       String formattedDate =
           updatedAt != null ? dateFormatter.format(updatedAt) : "-";
 
@@ -450,7 +448,7 @@ class _TrackingAwalState extends State<TrackingAwal> {
       );
     }
 
-    if (!isTrackingSuccess) {
+    if (!isTrackingSuccess && !isLoading) {
       return Container(
         margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         padding: const EdgeInsets.all(15),

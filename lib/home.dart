@@ -7,7 +7,6 @@ import 'package:etuntas/cek-status-pengajuan/trackingAwal.dart';
 import 'package:etuntas/login-signup/login.dart';
 import 'package:etuntas/navbar.dart';
 import 'package:etuntas/network/globals.dart';
-import 'package:etuntas/notifikasi.dart';
 import 'package:etuntas/pengajuan-santunan/alurPengajuan1.dart';
 import 'package:etuntas/persyaratan/persyaratan.dart';
 import 'package:etuntas/pertanyaan-umum/pertanyaan-umum.dart';
@@ -143,8 +142,6 @@ class _HomeState extends State<Home> {
     );
   }
 
-
-
   Widget buildImageBox(String imagePath, String label) {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -181,188 +178,196 @@ class _HomeState extends State<Home> {
 
   @override
   Widget build(BuildContext context) {
+    double screenHeight = MediaQuery.of(context).size.height;
+    
     return Scaffold(
+      // resizeToAvoidBottomInset: false,
       backgroundColor: Colors.white,
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 60),
-          Center(
-            child: ShaderMask(
-              shaderCallback: (bounds) => const LinearGradient(
-                colors: [
-                  Color(0xFF6F6FB9),
-                  Color(0xFF2F2F9D),
-                  Color(0xFF26267E)
-                ],
-              ).createShader(bounds),
-              child: const Text(
-                'E-Tuntas',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 22.0,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ),
-          Container(
-            margin:
-                const EdgeInsets.only(left: 16, right: 20, top: 25, bottom: 25),
-            child: Row(
-              children: [
-                Container(
-                  margin: const EdgeInsets.only(left: 10),
-                  child: ClipOval(
-                    child: Image.asset(
-                      "assets/profile.png",
-                      height: 45,
-                      width: 45,
-                      fit: BoxFit.cover,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 60),
+              Center(
+                child: ShaderMask(
+                  shaderCallback: (bounds) => const LinearGradient(
+                    colors: [
+                      Color(0xFF6F6FB9),
+                      Color(0xFF2F2F9D),
+                      Color(0xFF26267E)
+                    ],
+                  ).createShader(bounds),
+                  child: const Text(
+                    'E-Tuntas',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 22.0,
+                      color: Colors.white,
                     ),
                   ),
                 ),
-                Container(
-                  margin: const EdgeInsets.only(left: 15),
-                  child: Text(
-                    name,
-                    style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black),
-                  ),
-                ),
-                const Spacer(),
-                InkWell(
-                  onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => NotifPage()),
-                      );
-                    },
-                  child: badges.Badge(
-                      badgeContent: const Text(
-                        '3',
-                        style: TextStyle(color: Colors.white),
+              ),
+              Container(
+                margin:
+                    const EdgeInsets.only(left: 16, right: 20, top: 25, bottom: 25),
+                child: Row(
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.only(left: 10),
+                      child: ClipOval(
+                        child: Image.asset(
+                          "assets/profile.png",
+                          height: 45,
+                          width: 45,
+                          fit: BoxFit.cover,
+                        ),
                       ),
-                      position: badges.BadgePosition.topEnd(top: -8, end: -7),
-                      badgeStyle: const badges.BadgeStyle(badgeColor: Colors.red),
-                      child: const Icon(
-                        Icons.notifications_outlined,
-                        size: 28,
-                      )),
-                )
-              ],
-            ),
-          ),
-          Container(
-            margin: const EdgeInsets.only(left: 30),
-            child: const Text(
-              "Informasi",
-              style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black),
-            ),
-          ),
-          const SizedBox(height: 30),
-          Padding(
-            padding: const EdgeInsets.only(left: 30),
-            child: Row(
-              children: [
-                InkWell(
+                    ),
+                    Container(
+                      margin: const EdgeInsets.only(left: 15),
+                      child: Text(
+                        name,
+                        style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black),
+                      ),
+                    ),
+                    const Spacer(),
+                    InkWell(
+                      // onTap: () {
+                      //     Navigator.push(
+                      //       context,
+                      //       MaterialPageRoute(
+                      //           builder: (context) => NotifPage()),
+                      //     );
+                      //   },
+                      child: badges.Badge(
+                          badgeContent: const Text(
+                            '3',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          position: badges.BadgePosition.topEnd(top: -8, end: -7),
+                          badgeStyle: const badges.BadgeStyle(badgeColor: Colors.red),
+                          child: const Icon(
+                            Icons.notifications_outlined,
+                            size: 28,
+                          )),
+                    )
+                  ],
+                ),
+              ),
+              Container(
+                margin: const EdgeInsets.only(left: 30),
+                child: const Text(
+                  "Informasi",
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black),
+                ),
+              ),
+              const SizedBox(height: 30),
+              Padding(
+                padding: const EdgeInsets.only(left: 30),
+                child: Row(
+                  children: [
+                    InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const CaraPengajuan()),
+                          );
+                        },
+                        child: buildImageBox(
+                            "assets/cara pengajuan.png", "Cara \nPengajuan")),
+                    const SizedBox(width: 35),
+                    InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => Persyaratan()),
+                          );
+                        },
+                        child: buildImageBox(
+                            "assets/persyaratan.png", "Persyaratan \n")),
+                    const SizedBox(width: 35),
+                    InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const PertanyaanUmum()),
+                          );
+                        },
+                        child: buildImageBox(
+                            "assets/faq.png", "Pertanyaan \nUmum / FAQ")),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 30),
+              Container(
+                margin: const EdgeInsets.only(left: 30),
+                child: const Text(
+                  "Pengajuan",
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black),
+                ),
+              ),
+              const SizedBox(height: 30),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  InkWell(
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => const CaraPengajuan()),
+                            builder: (context) => const alurPengajuan1()),
                       );
                     },
                     child: buildImageBox(
-                        "assets/cara pengajuan.png", "Cara \nPengajuan")),
-                const SizedBox(width: 35),
-                InkWell(
+                        "assets/pengajuan santunan.png", "Pengajuan \nSantunan"),
+                  ),
+                  InkWell(
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => Persyaratan()),
+                        MaterialPageRoute(builder: (context) => const aduanBPJS()),
                       );
                     },
-                    child: buildImageBox(
-                        "assets/persyaratan.png", "Persyaratan \n")),
-                const SizedBox(width: 35),
-                InkWell(
+                    child: buildImageBox("assets/pengajuan bpjs.png", "Pengaduan \nBPJS"),
+                  ),
+                                InkWell(
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => const PertanyaanUmum()),
+                            builder: (context) => const TrackingAwal()),
                       );
                     },
-                    child: buildImageBox(
-                        "assets/faq.png", "Pertanyaan \nUmum / FAQ")),
-              ],
-            ),
-          ),
-          const SizedBox(height: 30),
-          Container(
-            margin: const EdgeInsets.only(left: 30),
-            child: const Text(
-              "Pengajuan",
-              style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black),
-            ),
-          ),
-          const SizedBox(height: 30),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const alurPengajuan1()),
-                  );
-                },
-                child: buildImageBox(
-                    "assets/pengajuan santunan.png", "Pengajuan \nSantunan"),
+                    child: buildImageBox("assets/cek status pengajuan.png",
+                        "Cek Status \nPengajuan"),
+                  ),
+                  InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const Bank()),
+                        );
+                      },
+                      child: buildImageBox(
+                          "assets/rekening bank.png", "Rekening \nBank")),
+                ],
               ),
-              InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const aduanBPJS()),
-                  );
-                },
-                child: buildImageBox("assets/pengajuan bpjs.png", "Pengaduan \nBPJS"),
-              ),
-                            InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const TrackingAwal()),
-                  );
-                },
-                child: buildImageBox("assets/cek status pengajuan.png",
-                    "Cek Status \nPengajuan"),
-              ),
-              InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const Bank()),
-                    );
-                  },
-                  child: buildImageBox(
-                      "assets/rekening bank.png", "Rekening \nBank")),
             ],
           ),
-        ],
+        ),
       ),
       bottomNavigationBar: const NavbarWidget(),
     );

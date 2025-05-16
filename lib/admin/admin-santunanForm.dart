@@ -72,8 +72,6 @@ class _formSantunanState extends State<formSantunan> {
         apiEndpoint =
             '${baseURL}pengajuan-santunan${tableNumber}/${widget.pengaduanId}/status';
       }
-
-      // Remove any double slashes in the URL (except for http://)
       apiEndpoint = apiEndpoint.replaceAll(RegExp(r'([^:])//'), r'$1/');
 
       print('Making request to: $apiEndpoint');

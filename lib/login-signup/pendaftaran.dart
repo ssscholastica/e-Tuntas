@@ -51,7 +51,6 @@ class _PendaftaranState extends State<Pendaftaran> {
       });
 
       try {
-
         final response = await http.get(
           Uri.parse('${baseURL}pensiunan/$noPensiunan'),
           headers: {
@@ -68,21 +67,53 @@ class _PendaftaranState extends State<Pendaftaran> {
               controllers["Nama Bersangkutan"]!.text = data['nama_pensiunan'];
             });
           } else {
-            _showErrorMessage('Data pensiunan tidak lengkap');
+            // ignore: use_build_context_synchronously
+            _showDialog(
+            success: false,
+            title: "Gagal Daftar!",
+            message: "Data pensiunan tidak lengkap",
+            buttonText: "Kembali",
+            onPressed: () => Navigator.pop(context),
+            context: context,
+          );
             controllers["Nama Bersangkutan"]!.clear();
           }
         } else if (response.statusCode == 404) {
-          _showErrorMessage('Nomor Pensiunan tidak ditemukan');
+          // ignore: use_build_context_synchronously
+          _showDialog(
+            success: false,
+            title: "Gagal Daftar!",
+            message: "Nomor Pensiunan tidak ditemukan",
+            buttonText: "Kembali",
+            onPressed: () => Navigator.pop(context),
+            context: context,
+          );
           controllers["Nama Bersangkutan"]!.clear();
         } else {
           print("Error status code: ${response.statusCode}");
           print("Error response body: ${response.body}");
-          _showErrorMessage('Gagal mengambil data pensiunan');
+          // ignore: use_build_context_synchronously
+          _showDialog(
+            success: false,
+            title: "Gagal Daftar!",
+            message: "Gagal mengambil data pensiunan",
+            buttonText: "Kembali",
+            onPressed: () => Navigator.pop(context),
+            context: context,
+          );
           controllers["Nama Bersangkutan"]!.clear();
         }
       } catch (e) {
         print("Error fetching pensioner details: $e");
-        _showErrorMessage('Terjadi kesalahan koneksi');
+        // ignore: use_build_context_synchronously
+        _showDialog(
+            success: false,
+            title: "Gagal Daftar!",
+            message: "Terjadi kesalahan koneksi",
+            buttonText: "Kembali",
+            onPressed: () => Navigator.pop(context),
+            context: context,
+          );
         controllers["Nama Bersangkutan"]!.clear();
       } finally {
         setState(() {
@@ -90,12 +121,6 @@ class _PendaftaranState extends State<Pendaftaran> {
         });
       }
     }
-  }
-
-  void _showErrorMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
   }
 
   Future<void> selectDate(BuildContext context) async {
@@ -161,7 +186,10 @@ class _PendaftaranState extends State<Pendaftaran> {
   String? selectedStatusKeluarga;
 
   Widget buildTextField(String key, String label, String hint,
-      {Widget? prefix, bool isDate = false, bool isNumber = false, bool readOnly = false}) {
+      {Widget? prefix,
+      bool isDate = false,
+      bool isNumber = false,
+      bool readOnly = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -172,7 +200,8 @@ class _PendaftaranState extends State<Pendaftaran> {
           child: TextField(
             controller: controllers[key],
             keyboardType: isNumber ? TextInputType.number : TextInputType.text,
-            inputFormatters: isNumber ? [FilteringTextInputFormatter.digitsOnly] : null,
+            inputFormatters:
+                isNumber ? [FilteringTextInputFormatter.digitsOnly] : null,
             readOnly: readOnly || isDate,
             onTap: isDate ? () => selectDate(context) : null,
             decoration: InputDecoration(
@@ -201,7 +230,79 @@ class _PendaftaranState extends State<Pendaftaran> {
 
   bool isLoading = false;
 
- Future<void> createAccountPressed(BuildContext context) async {
+  void _showDialog({
+    required bool success,
+    required BuildContext context,
+    required String title,
+    required String message,
+    required String buttonText,
+    required VoidCallback onPressed,
+  }) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset(
+                success ? 'assets/icon berhasil.png' : 'assets/icon gagal.png',
+                width: 50,
+                height: 50,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.black54,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (!success)
+                    Expanded(
+                      child: TextButton(
+                        onPressed: onPressed,
+                        style: TextButton.styleFrom(
+                          backgroundColor: success
+                              ? const Color.fromARGB(255, 18, 18, 162)
+                              : const Color.fromARGB(170, 231, 0, 23),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: Text(
+                          buttonText,
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> createAccountPressed(BuildContext context) async {
     String name = controllers["Nama"]?.text ?? '';
     String email = controllers["Email"]?.text ?? '';
     String alamat = controllers["Alamat"]?.text ?? '';
@@ -223,8 +324,17 @@ class _PendaftaranState extends State<Pendaftaran> {
         nik.isEmpty ||
         namaBersangkutan.isEmpty ||
         status.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Semua field harus diisi')));
+      setState(() {
+        isLoading = false;
+      });
+      _showDialog(
+        success: false,
+        title: "Gagal Daftar!",
+        message: "Semua field harus diisi",
+        buttonText: "Kembali",
+        onPressed: () => Navigator.pop(context),
+        context: context,
+      );
       return;
     }
 
@@ -233,26 +343,62 @@ class _PendaftaranState extends State<Pendaftaran> {
         .hasMatch(email);
 
     if (!emailValid) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Email tidak valid')));
+      setState(() {
+        isLoading = false;
+      });
+      _showDialog(
+        success: false,
+        title: "Gagal Daftar!",
+        message: "Email pengguna tidak valid",
+        buttonText: "Kembali",
+        onPressed: () => Navigator.pop(context),
+        context: context,
+      );
       return;
     }
 
     if (nomorHP.length < 9) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Nomor HP tidak valid')));
+      setState(() {
+        isLoading = false;
+      });
+      _showDialog(
+        success: false,
+        title: "Gagal Daftar!",
+        message: "Nomor HP pengguna tidak valid",
+        buttonText: "Kembali",
+        onPressed: () => Navigator.pop(context),
+        context: context,
+      );
       return;
     }
 
     if (noPensiunan.length != 12) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('No Pensiunan harus 12 digit')));
+      setState(() {
+        isLoading = false;
+      });
+      _showDialog(
+        success: false,
+        title: "Gagal Daftar!",
+        message: "No Pensiunan harus 12 digit",
+        buttonText: "Kembali",
+        onPressed: () => Navigator.pop(context),
+        context: context,
+      );
       return;
     }
 
     if (nik.length != 16) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('NIK harus 16 digit')));
+      setState(() {
+        isLoading = false;
+      });
+      _showDialog(
+        success: false,
+        title: "Gagal Daftar!",
+        message: "NIK harus 16 digit",
+        buttonText: "Kembali",
+        onPressed: () => Navigator.pop(context),
+        context: context,
+      );
       return;
     }
 
@@ -272,9 +418,6 @@ class _PendaftaranState extends State<Pendaftaran> {
           nik,
           namaBersangkutan,
           status);
-
-      print("Response Status Code: ${response.statusCode}");
-      print("Raw Response: ${response.body}");
 
       Map<String, dynamic> responseMap = jsonDecode(response.body);
 
@@ -298,7 +441,7 @@ class _PendaftaranState extends State<Pendaftaran> {
 
         if (responseMap.containsKey('access_token')) {
           final token = responseMap['access_token'];
-          print("Token value: " + token); 
+          print("Token value: " + token);
           await prefs.setString('access_token', token);
         } else {
           print(
@@ -308,26 +451,35 @@ class _PendaftaranState extends State<Pendaftaran> {
         await prefs.setString('user_phone', nomorHP);
         await prefs.setString('user_address', alamat);
 
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Pendaftaran berhasil')));
-
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
               builder: (BuildContext context) => const DaftarBerhasil()),
         );
       } else {
-        String errorMessage = responseMap["message"] ?? "Terjadi kesalahan";
-
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(errorMessage)));
+        // ignore: use_build_context_synchronously
+        _showDialog(
+          success: false,
+          title: "Gagal Daftar!",
+          message: "NIK sudah pernah terdaftar",
+          buttonText: "Kembali",
+          onPressed: () => Navigator.pop(context),
+          context: context,
+        );
 
         if (response.statusCode == 422) {
           if (responseMap.containsKey('errors')) {
             Map<String, dynamic> errors = responseMap['errors'];
             if (errors.containsKey('email') && errors['email'] is List) {
-              ScaffoldMessenger.of(context)
-                  .showSnackBar(SnackBar(content: Text(errors['email'][0])));
+              // ignore: use_build_context_synchronously
+              _showDialog(
+                success: false,
+                title: "Gagal Daftar!",
+                message: errors['email'][0],
+                buttonText: "Kembali",
+                onPressed: () => Navigator.pop(context),
+                context: context,
+              );
             }
           }
         }
@@ -338,12 +490,17 @@ class _PendaftaranState extends State<Pendaftaran> {
       setState(() {
         isLoading = false;
       });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Terjadi kesalahan. Coba lagi.')));
+      // ignore: use_build_context_synchronously
+      _showDialog(
+        success: false,
+        title: "Gagal Daftar!",
+        message: "Terjadi kesalahan. Coba lagi.",
+        buttonText: "Kembali",
+        onPressed: () => Navigator.pop(context),
+        context: context,
+      );
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -399,7 +556,8 @@ class _PendaftaranState extends State<Pendaftaran> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text("Nomor HP", style: TextStyle(fontSize: 16)),
+                          const Text("Nomor HP",
+                              style: TextStyle(fontSize: 16)),
                           const SizedBox(height: 5),
                           TextField(
                             controller: controllers["Nomor HP"],
@@ -495,9 +653,14 @@ class _PendaftaranState extends State<Pendaftaran> {
                           const SizedBox(height: 10),
                         ],
                       ),
-                      buildTextField("Nomor Pensiunan", "Nomor Pensiunan", "12 digit nomor pensiunan", isNumber: true),
-                      buildTextField("NIK", "NIK", "16 digit NIK", isNumber: true),
-                      buildTextField("Nama Bersangkutan", "Nama", "Nama bersangkutan", readOnly: true),
+                      buildTextField("Nomor Pensiunan", "Nomor Pensiunan",
+                          "12 digit nomor pensiunan",
+                          isNumber: true),
+                      buildTextField("NIK", "NIK", "16 digit NIK",
+                          isNumber: true),
+                      buildTextField(
+                          "Nama Bersangkutan", "Nama", "Nama bersangkutan",
+                          readOnly: true),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -564,7 +727,7 @@ class _PendaftaranState extends State<Pendaftaran> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                         onPressed: () => createAccountPressed(context),
+                          onPressed: () => createAccountPressed(context),
                           child: const Text(
                             "Daftar",
                             style: TextStyle(fontSize: 16, color: Colors.white),

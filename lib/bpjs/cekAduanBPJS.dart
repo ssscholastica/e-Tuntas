@@ -108,9 +108,9 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
   List<Map<String, String>> _generateTrackingInfo(String currentStatus, DateTime tanggalAjuan) {
     List<Map<String, String>> result = [];
     List<String> allStatus = ['Terkirim', 'Diproses', 'Ditolak', 'Selesai'];
-    final dateFormatter = DateFormat('dd MMM yyyy, HH:mm');
+    final dateFormatter = DateFormat('dd MMM yyyy');
     final currentStatusIndex = allStatus.indexOf(currentStatus);
-    if (currentStatusIndex == -1) return result; 
+    if (currentStatusIndex == -1) return result;
 
     if (currentStatus == 'Ditolak') {
       allStatus = ['Terkirim', 'Diproses', 'Ditolak'];
