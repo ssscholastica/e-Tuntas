@@ -1,6 +1,11 @@
+import 'dart:convert';
+
+import 'package:etuntas/network/globals.dart';
 import 'package:etuntas/rekening/addBank.dart';
 import 'package:etuntas/rekening/editBank.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Bank extends StatefulWidget {
   const Bank({super.key});
@@ -11,6 +16,54 @@ class Bank extends StatefulWidget {
 
 class _BankState extends State<Bank> {
   List<Map<String, String>> bankAccounts = [];
+
+  @override
+  void initState() {
+    super.initState();
+    fetchBankAccounts();
+  }
+
+  Future<String?> getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('access_token');
+  }
+
+  Future<void> fetchBankAccounts() async {
+    final token = await getToken();
+    print("Token: $token");
+
+    final url = Uri.parse('${baseURL}rekening-bank');
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token', 
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+
+        setState(() {
+          bankAccounts = data.map<Map<String, String>>((item) {
+            return {
+              'Nama Bank': item['nama_bank']?.toString() ?? '',
+              'Nama Pemilik': item['nama_pemilik']?.toString() ?? '',
+              'Nomor Rekening': item['nomor_rekening']?.toString() ?? '',
+              'Buku Tabungan': item['buku_tabungan']?.toString() ?? '',
+            };
+          }).toList();
+        });
+      } else {
+        print('Gagal mengambil data rekening: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Terjadi kesalahan saat mengambil data rekening: $e');
+    }
+  }
+
 
   void _navigateToAddBank() async {
     final result = await Navigator.push(
@@ -108,8 +161,7 @@ class _BankState extends State<Bank> {
                                   final result = await Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) =>
-                                          editBank(bankAccounts: bank),
+                                      builder: (context) => editBank(bankAccounts: bank),
                                     ),
                                   );
 
@@ -120,7 +172,6 @@ class _BankState extends State<Bank> {
                                     });
                                   }
                                 },
-
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [

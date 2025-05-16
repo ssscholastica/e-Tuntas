@@ -14,7 +14,9 @@ class LoadingWidget extends StatelessWidget {
       opacity: isLoading ? 1.0 : 0.0,
       duration: const Duration(milliseconds: 300),
       child: Container(
-        color: Colors.black.withOpacity(0.4), 
+        width: MediaQuery.of(context).size.width,
+        height: MediaQuery.of(context).size.height,
+        color: Colors.black.withOpacity(0.4),
         child: Center(
           child: Container(
             padding: const EdgeInsets.all(20),
@@ -34,7 +36,7 @@ class LoadingWidget extends StatelessWidget {
               children: [
                 CircularProgressIndicator(
                   valueColor: AlwaysStoppedAnimation<Color>(
-                      Color(0xFF2F2F9D)), 
+                      Color(0xFF2F2F9D)),
                 ),
               ],
             ),

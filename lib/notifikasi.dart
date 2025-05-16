@@ -1,760 +1,805 @@
-import 'package:etuntas/network/globals.dart';
-import 'package:flutter/material.dart';
-import 'dart:async';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:intl/intl.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+// import 'dart:async';
+// import 'dart:convert';
 
-// API Service for handling API requests
-class ApiService {
+// import 'package:etuntas/network/globals.dart';
+// import 'package:firebase_core/firebase_core.dart';
+// import 'package:firebase_messaging/firebase_messaging.dart';
+// import 'package:flutter/material.dart';
+// import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+// import 'package:http/http.dart' as http;
+// import 'package:intl/intl.dart';
+// import 'package:shared_preferences/shared_preferences.dart';
 
-  // Headers for API requests
-  Future<Map<String, String>> _getHeaders() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('auth_token') ?? '';
+// // API Service for handling API requests
+// class ApiService {
+//   // Headers for API requests
+//   Future<Map<String, String>> _getHeaders() async {
+//     final prefs = await SharedPreferences.getInstance();
+//     final token = prefs.getString('auth_token') ?? '';
+
+//     return {
+//       'Content-Type': 'application/json',
+//       'Accept': 'application/json',
+//       'Authorization': 'Bearer $token',
+//     };
+//   }
+
+//   // Fetch data from an endpoint
+//   Future<List<dynamic>> fetchData(String endpoint) async {
+//     try {
+//       final headers = await _getHeaders();
+//       final response = await http.get(
+//         Uri.parse('$baseURL/$endpoint'),
+//         headers: headers,
+//       );
+
+//       if (response.statusCode == 200) {
+//         final data = json.decode(response.body);
+//         return data['data'] ?? [];
+//       } else {
+//         print('Error fetching data: ${response.statusCode}');
+//         return [];
+//       }
+//     } catch (e) {
+//       print('Exception fetching data: $e');
+//       return [];
+//     }
+//   }
+
+//   // Fetch a specific record
+//   Future<Map<String, dynamic>> fetchRecord(String endpoint, String id) async {
+//     try {
+//       final headers = await _getHeaders();
+//       final response = await http.get(
+//         Uri.parse('$baseURL/$endpoint/$id'),
+//         headers: headers,
+//       );
+
+//       if (response.statusCode == 200) {
+//         final data = json.decode(response.body);
+//         return data['data'] ?? {};
+//       } else {
+//         print('Error fetching record: ${response.statusCode}');
+//         return {};
+//       }
+//     } catch (e) {
+//       print('Exception fetching record: $e');
+//       return {};
+//     }
+//   }
+
+//   // Update status of a record
+//   Future<bool> updateStatus(String endpoint, String id, String status) async {
+//     try {
+//       final headers = await _getHeaders();
+//       final response = await http.put(
+//         Uri.parse('$baseURL/$endpoint/$id/status'),
+//         headers: headers,
+//         body: json.encode({'status': status}),
+//       );
+
+//       if (response.statusCode == 200) {
+//         final data = json.decode(response.body);
+//         return true;
+//       } else {
+//         print('Error updating status: ${response.statusCode}');
+//         return false;
+//       }
+//     } catch (e) {
+//       print('Exception updating status: $e');
+//       return false;
+//     }
+//   }
+// }
+
+// // // Status data class
+// // class StatusData {
+// //   final String tableName;
+// //   final String id;
+// //   final String status;
+// //   final String updatedAt;
+
+// //   StatusData({
+// //     required this.tableName,
+// //     required this.id,
+// //     required this.status,
+// //     required this.updatedAt,
+// //   });
+// // }
+
+// class NotificationModel {
+//   final IconData icon;
+//   final String title;
+//   final String description;
+//   final String date;
+//   final String time;
+//   final Color color;
+//   final String category;
+//   final String statusType;
+
+//   NotificationModel({
+//     required this.icon,
+//     required this.title,
+//     required this.description,
+//     required this.date,
+//     required this.time,
+//     required this.color,
+//     required this.category,
+//     required this.statusType,
+//   });
+// }
+
+// class NotificationService {
+//   static final NotificationService _instance = NotificationService._internal();
+//   factory NotificationService() => _instance;
+//   NotificationService._internal();
+
+//   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+//   final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
+  
+//   // Initialize notification channels and request permissions
+//   Future<void> initialize() async {
+//     // Initialize Firebase
+//     await Firebase.initializeApp();
     
-    return {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'Authorization': 'Bearer $token',
-    };
-  }
-
-  // Fetch data from an endpoint
-  Future<List<dynamic>> fetchData(String endpoint) async {
-    try {
-      final headers = await _getHeaders();
-      final response = await http.get(
-        Uri.parse('$baseURL/$endpoint'),
-        headers: headers,
-      );
-      
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        return data['data'] ?? [];
-      } else {
-        print('Error fetching data: ${response.statusCode}');
-        return [];
-      }
-    } catch (e) {
-      print('Exception fetching data: $e');
-      return [];
-    }
-  }
-
-  // Fetch a specific record
-  Future<Map<String, dynamic>> fetchRecord(String endpoint, String id) async {
-    try {
-      final headers = await _getHeaders();
-      final response = await http.get(
-        Uri.parse('$baseURL/$endpoint/$id'),
-        headers: headers,
-      );
-      
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        return data['data'] ?? {};
-      } else {
-        print('Error fetching record: ${response.statusCode}');
-        return {};
-      }
-    } catch (e) {
-      print('Exception fetching record: $e');
-      return {};
-    }
-  }
-}
-
-// Status data class
-class StatusData {
-  final String tableName;
-  final String id;
-  final String status;
-  final String updatedAt;
-  
-  StatusData({
-    required this.tableName,
-    required this.id,
-    required this.status,
-    required this.updatedAt,
-  });
-}
-
-// Status monitoring service
-class StatusMonitorService {
-  final ApiService _apiService;
-  final NotificationService _notificationService;
-  
-  // Map to store the latest status of each item
-  final Map<String, Map<String, String>> _lastKnownStatuses = {
-    'pengaduan-bpjs': {},
-    'pengajuan-santunan1': {},
-    'pengajuan-santunan2': {},
-    'pengajuan-santunan3': {},
-    'pengajuan-santunan4': {},
-    'pengajuan-santunan5': {},
-  };
-  
-  Timer? _pollingTimer;
-  final Duration _pollingInterval = const Duration(minutes: 1); // Poll every minute
-  
-  StatusMonitorService(this._apiService, this._notificationService);
-  
-  // Start monitoring statuses
-  void startMonitoring() {
-    // Do an initial check
-    _checkAllStatuses();
+//     // Request permission for iOS
+//     NotificationSettings settings = await _firebaseMessaging.requestPermission(
+//       alert: true,
+//       badge: true,
+//       provisional: false,
+//       sound: true,
+//     );
     
-    // Set up periodic polling
-    _pollingTimer = Timer.periodic(_pollingInterval, (_) => _checkAllStatuses());
-  }
+//     // Configure local notifications
+//     const AndroidInitializationSettings androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+//     const DarwinInitializationSettings iosSettings = DarwinInitializationSettings(
+//       requestAlertPermission: true,
+//       requestBadgePermission: true,
+//       requestSoundPermission: true,
+//     );
+    
+//     const InitializationSettings initSettings = InitializationSettings(
+//       android: androidSettings,
+//       iOS: iosSettings,
+//     );
+    
+//     await _localNotifications.initialize(
+//       initSettings,
+//       onDidReceiveNotificationResponse: _onSelectNotification,
+//     );
+    
+//     // Create notification channel for Android
+//     const AndroidNotificationChannel channel = AndroidNotificationChannel(
+//       'high_importance_channel',
+//       'High Importance Notifications',
+//       description: 'This channel is used for important notifications.',
+//       importance: Importance.high,
+//     );
+    
+//     await _localNotifications
+//         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+//         ?.createNotificationChannel(channel);
+    
+//     // Handle incoming FCM messages
+//     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+//     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    
+//     // Get and store FCM token
+//     String? token = await _firebaseMessaging.getToken();
+//     if (token != null) {
+//       await _saveFcmToken(token);
+//       await _sendTokenToServer(token);
+//     }
+    
+//     // Listen for token refreshes
+//     _firebaseMessaging.onTokenRefresh.listen((newToken) {
+//       _saveFcmToken(newToken);
+//       _sendTokenToServer(newToken);
+//     });
+//   }
   
-  // Check statuses for all tables
-  Future<void> _checkAllStatuses() async {
-    await Future.wait([
-      _checkTableStatuses('pengaduan-bpjs'),
-      _checkTableStatuses('pengajuan-santunan1'),
-      _checkTableStatuses('pengajuan-santunan2'),
-      _checkTableStatuses('pengajuan-santunan3'),
-      _checkTableStatuses('pengajuan-santunan4'),
-      _checkTableStatuses('pengajuan-santunan5'),
-    ]);
-  }
+//   // Save FCM token to shared preferences
+//   Future<void> _saveFcmToken(String token) async {
+//     final prefs = await SharedPreferences.getInstance();
+//     await prefs.setString('fcm_token', token);
+//   }
   
-  // Check statuses for a specific table
-  Future<void> _checkTableStatuses(String tableName) async {
-    try {
-      final items = await _apiService.fetchData(tableName);
+//   // Send FCM token to your server
+//   Future<void> _sendTokenToServer(String token) async {
+//     try {
+//       final prefs = await SharedPreferences.getInstance();
+//       final String? userId = prefs.getString('user_id');
+//       if (userId == null) return;
       
-      for (var item in items) {
-        final String id = item['id'].toString();
-        final String currentStatus = item['status'] ?? '';
-        final String updatedAt = item['updated_at'] ?? '';
+//       final String baseUrl = 'http://10.0.2.2:8000'; // For emulator, change for real device
+      
+//       final response = await http.post(
+//         Uri.parse('$baseUrl/api/users/update-fcm-token'),
+//         headers: <String, String>{
+//           'Content-Type': 'application/json',
+//           'Authorization': 'Bearer ${prefs.getString('auth_token') ?? ''}',
+//         },
+//         body: jsonEncode(<String, String>{
+//           'fcm_token': token,
+//         }),
+//       );
+      
+//       if (response.statusCode != 200) {
+//         print('Failed to update FCM token: ${response.body}');
+//       }
+//     } catch (e) {
+//       print('Error sending FCM token to server: $e');
+//     }
+//   }
+
+//   // Handle incoming foreground messages
+//   void _handleForegroundMessage(RemoteMessage message) {
+//     RemoteNotification? notification = message.notification;
+//     AndroidNotification? android = message.notification?.android;
+    
+//     // If notification is present, show local notification
+//     if (notification != null && android != null) {
+//       _localNotifications.show(
+//         notification.hashCode,
+//         notification.title,
+//         notification.body,
+//         NotificationDetails(
+//           android: AndroidNotificationDetails(
+//             'high_importance_channel',
+//             'High Importance Notifications',
+//             channelDescription: 'This channel is used for important notifications.',
+//             importance: Importance.high,
+//             priority: Priority.high,
+//           ),
+//           iOS: const DarwinNotificationDetails(
+//             presentAlert: true,
+//             presentBadge: true,
+//             presentSound: true,
+//           ),
+//         ),
+//         payload: jsonEncode(message.data),
+//       );
+//     }
+    
+//     // Process the notification data
+//     _processStatusUpdate(message.data);
+//   }
+  
+//   // Process notification payload
+//   void _processStatusUpdate(Map<String, dynamic> data) {
+//     // Store in local database or update UI as needed
+//     final StatusData statusData = StatusData.fromMap(data);
+    
+//     // Broadcast to the app using a stream controller
+//     notificationStreamController.add(statusData);
+//   }
+  
+//   // Handle notification tap
+//   void _onSelectNotification(NotificationResponse response) {
+//     if (response.payload != null) {
+//       try {
+//         final data = jsonDecode(response.payload!);
+//         _processStatusUpdate(Map<String, dynamic>.from(data));
         
-        // Check if we have a record of this item
-        if (!_lastKnownStatuses[tableName]!.containsKey(id)) {
-          // New item, store its status
-          _lastKnownStatuses[tableName]![id] = currentStatus;
-        } 
-        // Check if status has changed
-        else if (_lastKnownStatuses[tableName]![id] != currentStatus) {
-          // Status changed, create notification
-          _createStatusChangeNotification(
-            StatusData(
-              tableName: tableName,
-              id: id,
-              status: currentStatus,
-              updatedAt: updatedAt,
-            ),
-          );
-          
-          // Update the stored status
-          _lastKnownStatuses[tableName]![id] = currentStatus;
-        }
-      }
-    } catch (e) {
-      print('Error checking $tableName statuses: $e');
-    }
-  }
+//         // Navigate to the appropriate screen based on notification data
+//         final statusData = StatusData.fromMap(data);
+//         _navigateBasedOnNotification(statusData);
+//       } catch (e) {
+//         print('Error processing notification tap: $e');
+//       }
+//     }
+//   }
   
-  void _createStatusChangeNotification(StatusData statusData) {
-    String formattedDate = _formatDate(statusData.updatedAt);
-    String formattedTime = _formatTime(statusData.updatedAt);
-    NotificationModel notification;
-    String category;
-    
-    if (statusData.tableName == 'pengaduan-bpjs') {
-      category = 'BPJS';
-      
-      switch (statusData.status.toLowerCase()) {
-        case 'ditolak':
-          notification = NotificationModel(
-            icon: Icons.cancel,
-            title: "Pengaduan BPJS Ditolak",
-            description: "Pengaduan BPJS anda ditolak. Silahkan cek email untuk informasi lebih lanjut.",
-            date: formattedDate,
-            time: formattedTime,
-            color: Colors.red,
-            category: category,
-            statusType: 'rejected',
-          );
-          break;
-        case 'diterima':
-          notification = NotificationModel(
-            icon: Icons.check_circle,
-            title: "Pengaduan BPJS Diterima",
-            description: "Pengaduan BPJS anda telah diterima. Proses akan dilanjutkan.",
-            date: formattedDate,
-            time: formattedTime,
-            color: Colors.green,
-            category: category,
-            statusType: 'approved',
-          );
-          break;
-        case 'terkirim':
-          notification = NotificationModel(
-            icon: Icons.mark_email_read_outlined,
-            title: "Pengaduan BPJS Berhasil Terkirim",
-            description: "Pengaduan BPJS anda berhasil terkirim. Silahkan cek email untuk melihat ulang nomor pendaftaran.",
-            date: formattedDate,
-            time: formattedTime,
-            color: Colors.blue,
-            category: category,
-            statusType: 'sent',
-          );
-          break;
-        case 'diproses':
-          notification = NotificationModel(
-            icon: Icons.hourglass_top,
-            title: "Pengaduan BPJS Sedang Diproses",
-            description: "Pengaduan BPJS anda sedang diproses. Harap menunggu informasi selanjutnya.",
-            date: formattedDate,
-            time: formattedTime,
-            color: Colors.orange,
-            category: category,
-            statusType: 'processing',
-          );
-          break;
-        default:
-          notification = NotificationModel(
-            icon: Icons.info_outline,
-            title: "Update Pengaduan BPJS",
-            description: "Status pengaduan BPJS anda telah diperbarui menjadi '${statusData.status}'.",
-            date: formattedDate,
-            time: formattedTime,
-            color: Colors.blue,
-            category: category,
-            statusType: 'update',
-          );
-      }
-    } else if (statusData.tableName.startsWith('pengajuan-santunan')) {
-      category = 'Santunan';
-      String santunanType = statusData.tableName.replaceAll('pengajuan-santunan', '');
-      if (santunanType.isNotEmpty) {
-        category = 'Santunan $santunanType';
-      }
-      
-      switch (statusData.status.toLowerCase()) {
-        case 'diterima':
-          notification = NotificationModel(
-            icon: Icons.check,
-            title: "Pengajuan Santunan Diterima",
-            description: "Pengajuan santunan anda telah diterima. Proses pencairan akan segera dilakukan.",
-            date: formattedDate,
-            time: formattedTime,
-            color: Colors.green,
-            category: category,
-            statusType: 'approved',
-          );
-          break;
-        case 'ditolak':
-          notification = NotificationModel(
-            icon: Icons.cancel,
-            title: "Pengajuan Santunan Ditolak",
-            description: "Pengajuan santunan anda ditolak. Silahkan cek email untuk informasi lebih lanjut.",
-            date: formattedDate,
-            time: formattedTime,
-            color: Colors.red,
-            category: category,
-            statusType: 'rejected',
-          );
-          break;
-        case 'diverifikasi':
-          notification = NotificationModel(
-            icon: Icons.watch_later_outlined,
-            title: "Pengajuan Santunan Sedang Diverifikasi",
-            description: "Pengajuan santunan anda sedang dalam proses verifikasi. Harap menunggu untuk informasi selanjutnya.",
-            date: formattedDate,
-            time: formattedTime,
-            color: Colors.orange,
-            category: category,
-            statusType: 'verifying',
-          );
-          break;
-        case 'dibayar':
-          notification = NotificationModel(
-            icon: Icons.credit_score,
-            title: "Dana Telah Dikirimkan",
-            description: "Dana santunan anda telah dikirimkan. Silahkan cek rekening anda.",
-            date: formattedDate,
-            time: formattedTime,
-            color: Colors.green,
-            category: category,
-            statusType: 'paid',
-          );
-          break;
-        case 'terkirim':
-          notification = NotificationModel(
-            icon: Icons.mark_email_read_outlined,
-            title: "Pengajuan Santunan Berhasil Terkirim",
-            description: "Pengajuan santunan anda berhasil terkirim. Silahkan cek email untuk melihat ulang nomor pendaftaran.",
-            date: formattedDate,
-            time: formattedTime,
-            color: Colors.blue,
-            category: category,
-            statusType: 'sent',
-          );
-          break;
-        default:
-          notification = NotificationModel(
-            icon: Icons.info_outline,
-            title: "Update Pengajuan Santunan",
-            description: "Status pengajuan santunan anda telah diperbarui menjadi '${statusData.status}'.",
-            date: formattedDate,
-            time: formattedTime,
-            color: Colors.blue,
-            category: category,
-            statusType: 'update',
-          );
-      }
-    } else {
-      category = 'Lainnya';
-      notification = NotificationModel(
-        icon: Icons.notifications,
-        title: "Notifikasi Baru",
-        description: "Ada perubahan status pada aplikasi anda.",
-        date: formattedDate,
-        time: formattedTime,
-        color: Colors.blue,
-        category: category,
-        statusType: 'general',
-      );
-    }
-    
-    _notificationService.addNotification(notification);
-  }
+//   // Navigate based on notification data
+//   void _navigateBasedOnNotification(StatusData statusData) {
+//     // This needs to be implemented with your navigation logic
+//     // Example:
+//     /*
+//     if (navigatorKey.currentState != null) {
+//       if (statusData.tableName == 'pengaduan-bpjs') {
+//         navigatorKey.currentState!.pushNamed(
+//           '/pengaduan-detail',
+//           arguments: {'id': statusData.recordId}
+//         );
+//       } else if (statusData.tableName == 'pengajuan-santunan1') {
+//         navigatorKey.currentState!.pushNamed(
+//           '/santunan1-detail',
+//           arguments: {'id': statusData.recordId}
+//         );
+//       } else if (statusData.tableName == 'pengajuan-santunan2') {
+//         navigatorKey.currentState!.pushNamed(
+//           '/santunan2-detail',
+//           arguments: {'id': statusData.recordId}
+//         );
+//       } else if (statusData.tableName == 'pengajuan-santunan3') {
+//         navigatorKey.currentState!.pushNamed(
+//           '/santunan3-detail',
+//           arguments: {'id': statusData.recordId}
+//         );
+//       } else if (statusData.tableName == 'pengajuan-santunan4') {
+//         navigatorKey.currentState!.pushNamed(
+//           '/santunan4-detail',
+//           arguments: {'id': statusData.recordId}
+//         );
+//       } else if (statusData.tableName == 'pengajuan-santunan5') {
+//         navigatorKey.currentState!.pushNamed(
+//           '/santunan5-detail',
+//           arguments: {'id': statusData.recordId}
+//         );
+//       }
+//     }
+//     */
+//   }
+// }
+
+// // Stream controller for notifications
+// final StreamController<StatusData> notificationStreamController = StreamController<StatusData>.broadcast();
+
+// // Status data model
+// class StatusData {
+//   final String tableName;
+//   final int recordId;
+//   final String status;
   
-  String _formatDate(String isoDate) {
-    try {
-      final dateTime = DateTime.parse(isoDate);
-      final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day);
-      final yesterday = today.subtract(const Duration(days: 1));
-      final dateToCheck = DateTime(dateTime.year, dateTime.month, dateTime.day);
-      
-      if (dateToCheck == today) {
-        return 'Hari ini';
-      } else if (dateToCheck == yesterday) {
-        return 'Kemarin';
-      } else {
-        return DateFormat('d MMM', 'id_ID').format(dateTime);
-      }
-    } catch (e) {
-      print('Error formatting date: $e');
-      return 'Unknown';
-    }
-  }
+//   StatusData({
+//     required this.tableName,
+//     required this.recordId,
+//     required this.status,
+//   });
   
-  String _formatTime(String isoDate) {
-    try {
-      final dateTime = DateTime.parse(isoDate);
-      return DateFormat('HH:mm', 'id_ID').format(dateTime) + ' WIB';
-    } catch (e) {
-      print('Error formatting time: $e');
-      return 'Unknown';
-    }
-  }
+//   factory StatusData.fromMap(Map<String, dynamic> map) {
+//     return StatusData(
+//       tableName: map['tableName'] ?? '',
+//       recordId: int.tryParse(map['recordId']?.toString() ?? '0') ?? 0,
+//       status: map['status'] ?? '',
+//     );
+//   }
   
-  // Cancel the polling timer
-  void dispose() {
-    _pollingTimer?.cancel();
-  }
-}
+//   Map<String, dynamic> toMap() {
+//     return {
+//       'tableName': tableName,
+//       'recordId': recordId,
+//       'status': status,
+//     };
+//   }
+// }
 
-// Notification model
-class NotificationModel {
-  final IconData icon;
-  final String title;
-  final String description;
-  final String date;
-  final String time;
-  final Color color;
-  final String category;
-  final String statusType;
-
-  NotificationModel({
-    required this.icon,
-    required this.title,
-    required this.description,
-    required this.date,
-    required this.time,
-    required this.color,
-    required this.category,
-    required this.statusType,
-  });
-}
-
-// Notification service
-class NotificationService {
-  final List<NotificationModel> _notifications = [];
-  final _notificationController = StreamController<List<NotificationModel>>.broadcast();
+// // Background message handler
+// @pragma('vm:entry-point')
+// Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+//   await Firebase.initializeApp();
   
-  Stream<List<NotificationModel>> get notificationsStream => _notificationController.stream;
-  List<NotificationModel> get notifications => _notifications;
+//   // Process notification
+//   // In background mode, we can't update UI directly
+//   // But we can store data in shared preferences or local database
+//   try {
+//     final prefs = await SharedPreferences.getInstance();
+//     List<String> notifications = prefs.getStringList('pending_notifications') ?? [];
+//     notifications.add(jsonEncode(message.data));
+//     await prefs.setStringList('pending_notifications', notifications);
+//   } catch (e) {
+//     print('Error storing background notification: $e');
+//   }
+// }
 
-  // Add new notification
-  void addNotification(NotificationModel notification) {
-    _notifications.insert(0, notification); // Add to the beginning of the list
-    _notificationController.add(_notifications);
-    _saveNotifications(); // Save to local storage
-  }
+// // Example of how to listen to notifications in a widget
+// class NotificationListener extends StatefulWidget {
+//   final Widget child;
+  
+//   const NotificationListener({Key? key, required this.child}) : super(key: key);
+  
+//   @override
+//   _NotificationListenerState createState() => _NotificationListenerState();
+// }
 
-  // Get notifications grouped by category
-  Map<String, List<NotificationModel>> getGroupedNotifications() {
-    final Map<String, List<NotificationModel>> grouped = {};
-    
-    for (var notification in _notifications) {
-      if (!grouped.containsKey(notification.category)) {
-        grouped[notification.category] = [];
-      }
-      grouped[notification.category]!.add(notification);
-    }
-    
-    return grouped;
-  }
-
-  // Initialize notifications from local storage
-  Future<void> loadNotifications() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final storedNotifications = prefs.getStringList('notifications') ?? [];
+// class _NotificationListenerState extends State<NotificationListener> {
+//   late StreamSubscription<StatusData> _subscription;
+  
+//   @override
+//   void initState() {
+//     super.initState();
+//     _subscription = notificationStreamController.stream.listen(_handleNotification);
+//     _checkPendingNotifications();
+//   }
+  
+//   @override
+//   void dispose() {
+//     _subscription.cancel();
+//     super.dispose();
+//   }
+  
+//   // Check for any notifications received while app was in background
+//   Future<void> _checkPendingNotifications() async {
+//     try {
+//       final prefs = await SharedPreferences.getInstance();
+//       List<String> notifications = prefs.getStringList('pending_notifications') ?? [];
       
-      _notifications.clear();
-      
-      for (var notificationJson in storedNotifications) {
-        final Map<String, dynamic> notificationMap = json.decode(notificationJson);
+//       if (notifications.isNotEmpty) {
+//         await prefs.setStringList('pending_notifications', []);
         
-        _notifications.add(
-          NotificationModel(
-            icon: _getIconFromString(notificationMap['icon']),
-            title: notificationMap['title'],
-            description: notificationMap['description'],
-            date: notificationMap['date'],
-            time: notificationMap['time'],
-            color: Color(notificationMap['color']),
-            category: notificationMap['category'],
-            statusType: notificationMap['statusType'],
-          ),
-        );
-      }
+//         for (String notificationJson in notifications) {
+//           final data = jsonDecode(notificationJson);
+//           final statusData = StatusData.fromMap(Map<String, dynamic>.from(data));
+//           _handleNotification(statusData);
+//         }
+//       }
+//     } catch (e) {
+//       print('Error checking pending notifications: $e');
+//     }
+//   }
+  
+//   // Handle incoming notification
+//   void _handleNotification(StatusData statusData) {
+//     // Update your UI based on notification data
+//     // Example: Show a snackbar
+//     if (mounted) {
+//       String title = "";
+//       String body = "";
       
-      if (_notifications.isNotEmpty) {
-        _notificationController.add(_notifications);
-      }
-    } catch (e) {
-      print('Error loading notifications: $e');
-    }
-  }
-  
-  // Save notifications to local storage
-  Future<void> _saveNotifications() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final notificationsToSave = _notifications.map((notification) {
-        return json.encode({
-          'icon': _getStringFromIcon(notification.icon),
-          'title': notification.title,
-          'description': notification.description,
-          'date': notification.date,
-          'time': notification.time,
-          'color': notification.color.value,
-          'category': notification.category,
-          'statusType': notification.statusType,
-        });
-      }).toList();
+//       if (statusData.tableName == 'pengaduan-bpjs') {
+//         title = "Update Pengaduan BPJS";
+//         switch (statusData.status.toLowerCase()) {
+//           case 'ditolak':
+//             body = "Pengaduan BPJS anda ditolak. Silahkan cek email untuk informasi lebih lanjut.";
+//             break;
+//           case 'diterima':
+//             body = "Pengaduan BPJS anda telah diterima. Proses akan dilanjutkan.";
+//             break;
+//           case 'terkirim':
+//             body = "Pengaduan BPJS anda berhasil terkirim. Silahkan cek email untuk melihat ulang nomor pendaftaran.";
+//             break;
+//           case 'diproses':
+//             body = "Pengaduan BPJS anda sedang diproses. Harap menunggu informasi selanjutnya.";
+//             break;
+//           default:
+//             body = "Status pengaduan BPJS anda telah diperbarui menjadi '${statusData.status}'.";
+//         }
+//       } else if (statusData.tableName.startsWith('pengajuan-santunan')) {
+//         String santunanType = statusData.tableName.replaceAll('pengajuan-santunan', '');
+//         title = santunanType.isNotEmpty ? "Update Santunan $santunanType" : "Update Santunan";
+        
+//         switch (statusData.status.toLowerCase()) {
+//           case 'diterima':
+//             body = "Pengajuan santunan anda telah diterima. Proses pencairan akan segera dilakukan.";
+//             break;
+//           case 'ditolak':
+//             body = "Pengajuan santunan anda ditolak. Silahkan cek email untuk informasi lebih lanjut.";
+//             break;
+//           case 'diverifikasi':
+//             body = "Pengajuan santunan anda sedang dalam proses verifikasi. Harap menunggu untuk informasi selanjutnya.";
+//             break;
+//           case 'dibayar':
+//             body = "Dana santunan anda telah dikirimkan. Silahkan cek rekening anda.";
+//             break;
+//           case 'terkirim':
+//             body = "Pengajuan santunan anda berhasil terkirim. Silahkan cek email untuk melihat ulang nomor pendaftaran.";
+//             break;
+//           default:
+//             body = "Status pengajuan santunan anda telah diperbarui menjadi '${statusData.status}'.";
+//         }
+//       }
       
-      await prefs.setStringList('notifications', notificationsToSave);
-    } catch (e) {
-      print('Error saving notifications: $e');
-    }
-  }
+//       // Show snackbar or other UI component
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         SnackBar(
+//           content: Column(
+//             mainAxisSize: MainAxisSize.min,
+//             crossAxisAlignment: CrossAxisAlignment.start,
+//             children: [
+//               Text(title, style: TextStyle(fontWeight: FontWeight.bold)),
+//               SizedBox(height: 4),
+//               Text(body),
+//             ],
+//           ),
+//           duration: Duration(seconds: 4),
+//           action: SnackBarAction(
+//             label: 'View',
+//             onPressed: () {
+//               // Navigate to relevant screen based on the specific table name
+//               switch (statusData.tableName) {
+//                 case 'pengaduan-bpjs':
+//                   Navigator.of(context).pushNamed(
+//                     '/pengaduan-detail',
+//                     arguments: {'id': statusData.recordId}
+//                   );
+//                   break;
+//                 case 'pengajuan-santunan1':
+//                   Navigator.of(context).pushNamed(
+//                     '/santunan1-detail',
+//                     arguments: {'id': statusData.recordId}
+//                   );
+//                   break;
+//                 case 'pengajuan-santunan2':
+//                   Navigator.of(context).pushNamed(
+//                     '/santunan2-detail',
+//                     arguments: {'id': statusData.recordId}
+//                   );
+//                   break;
+//                 case 'pengajuan-santunan3':
+//                   Navigator.of(context).pushNamed(
+//                     '/santunan3-detail',
+//                     arguments: {'id': statusData.recordId}
+//                   );
+//                   break;
+//                 case 'pengajuan-santunan4':
+//                   Navigator.of(context).pushNamed(
+//                     '/santunan4-detail',
+//                     arguments: {'id': statusData.recordId}
+//                   );
+//                   break;
+//                 case 'pengajuan-santunan5':
+//                   Navigator.of(context).pushNamed(
+//                     '/santunan5-detail',
+//                     arguments: {'id': statusData.recordId}
+//                   );
+//                   break;
+//               }
+//             },
+//           ),
+//         ),
+//       );
+//     }
+//   }
   
-  // Helper method to convert icon to string
-  String _getStringFromIcon(IconData icon) {
-    if (icon == Icons.cancel) return 'cancel';
-    if (icon == Icons.check) return 'check';
-    if (icon == Icons.credit_score) return 'credit_score';
-    if (icon == Icons.mark_email_read_outlined) return 'mark_email_read_outlined';
-    if (icon == Icons.watch_later_outlined) return 'watch_later_outlined';
-    if (icon == Icons.check_circle) return 'check_circle';
-    if (icon == Icons.hourglass_top) return 'hourglass_top';
-    if (icon == Icons.info_outline) return 'info_outline';
-    return 'notifications'; // Default
-  }
-  
-  // Helper method to convert string to icon
-  IconData _getIconFromString(String iconString) {
-    switch (iconString) {
-      case 'cancel': return Icons.cancel;
-      case 'check': return Icons.check;
-      case 'credit_score': return Icons.credit_score;
-      case 'mark_email_read_outlined': return Icons.mark_email_read_outlined;
-      case 'watch_later_outlined': return Icons.watch_later_outlined;
-      case 'check_circle': return Icons.check_circle;
-      case 'hourglass_top': return Icons.hourglass_top;
-      case 'info_outline': return Icons.info_outline;
-      default: return Icons.notifications;
-    }
-  }
-  
-  // Clear all notifications
-  Future<void> clearNotifications() async {
-    _notifications.clear();
-    _notificationController.add(_notifications);
-    await _saveNotifications();
-  }
-  
-  void dispose() {
-    _notificationController.close();
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return widget.child;
+//   }
+// }
 
-class NotifPage extends StatefulWidget {
-  const NotifPage({super.key});
+// class NotifPage extends StatefulWidget {
+//   const NotifPage({super.key});
 
-  @override
-  State<NotifPage> createState() => _NotifPageState();
-}
+//   @override
+//   State<NotifPage> createState() => _NotifPageState();
+// }
 
-class _NotifPageState extends State<NotifPage> {
-  final NotificationService _notificationService = NotificationService();
-  final ApiService _apiService = ApiService();
-  late StatusMonitorService _statusMonitorService;
-  bool _isLoading = true;
-  
-  @override
-  void initState() {
-    super.initState();
-    _initializeServices();
-  }
-  
-  Future<void> _initializeServices() async {
-    // Initialize notification service
-    await _notificationService.loadNotifications();
-    
-    // Initialize status monitor service
-    _statusMonitorService = StatusMonitorService(_apiService, _notificationService);
-    _statusMonitorService.startMonitoring();
-    
-    setState(() {
-      _isLoading = false;
-    });
-  }
-  
-  @override
-  void dispose() {
-    _statusMonitorService.dispose();
-    _notificationService.dispose();
-    super.dispose();
-  }
+// class _NotifPageState extends State<NotifPage> {
+//   final NotificationService _notificationService = NotificationService();
+//   final ApiService _apiService = ApiService();
+//   late StatusMonitorService _statusMonitorService;
+//   bool _isLoading = true;
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Column(
-        children: [
-          Container(
-            margin: const EdgeInsets.only(top: 60, left: 20, right: 20),
-            child: Row(
-              children: [
-                InkWell(
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                  child: Image.asset(
-                    'assets/simbol back.png',
-                    width: 28,
-                    height: 28,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                const Text(
-                  "Notifikasi",
-                  style: TextStyle(
-                    fontSize: 20,
-                    color: Color(0XFF000000),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.refresh),
-                  onPressed: () {
-                    // Manually trigger a status check
-                    _statusMonitorService.startMonitoring();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Menyegarkan notifikasi...')),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-          // Clear all button
-          if (!_isLoading)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                children: [
-                  const Spacer(),
-                  TextButton(
-                    onPressed: () {
-                      _notificationService.clearNotifications();
-                    },
-                    child: const Text(
-                      'Hapus Semua',
-                      style: TextStyle(color: Colors.blue),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          const SizedBox(height: 10),
-          if (_isLoading)
-            const Expanded(
-              child: Center(
-                child: CircularProgressIndicator(),
-              ),
-            )
-          else
-            Expanded(
-              child: StreamBuilder<List<NotificationModel>>(
-                stream: _notificationService.notificationsStream,
-                initialData: _notificationService.notifications,
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return const Center(
-                      child: Text('Tidak ada notifikasi'),
-                    );
-                  }
-                  
-                  // Group notifications by category
-                  final groupedNotifications = _notificationService.getGroupedNotifications();
-                  final categories = groupedNotifications.keys.toList();
-                  
-                  return RefreshIndicator(
-                    onRefresh: () async {
-                      // Manually trigger a status check
-                      _statusMonitorService.startMonitoring();
-                    },
-                    child: ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: categories.length,
-                      itemBuilder: (context, categoryIndex) {
-                        final category = categories[categoryIndex];
-                        final notificationsInCategory = groupedNotifications[category]!;
-                        
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Category header
-                            Container(
-                              padding: const EdgeInsets.symmetric(vertical: 8.0),
-                              decoration: BoxDecoration(
-                                color: Colors.grey[100],
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              width: double.infinity,
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                                child: Text(
-                                  category,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF444444),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            // Notifications in this category
-                            ListView.separated(
-                              physics: const NeverScrollableScrollPhysics(),
-                              shrinkWrap: true,
-                              itemCount: notificationsInCategory.length,
-                              separatorBuilder: (context, index) => const Divider(height: 20, thickness: 1),
-                              itemBuilder: (context, index) {
-                                return NotificationItem(
-                                  notification: notificationsInCategory[index],
-                                );
-                              },
-                            ),
-                            // Add divider between categories
-                            if (categoryIndex < categories.length - 1)
-                              const Divider(height: 40, thickness: 1.5),
-                          ],
-                        );
-                      },
-                    ),
-                  );
-                },
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
+//   @override
+//   void initState() {
+//     super.initState();
+//     _initializeServices();
+//   }
 
-class NotificationItem extends StatelessWidget {
-  final NotificationModel notification;
+//   Future<void> _initializeServices() async {
+//     // Initialize notification service
+//     await _notificationService.loadNotifications();
 
-  const NotificationItem({Key? key, required this.notification}) : super(key: key);
+//     // Initialize status monitor service
+//     _statusMonitorService =
+//         StatusMonitorService(_apiService, _notificationService);
+//     _statusMonitorService.startMonitoring();
 
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: notification.color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(notification.icon, color: notification.color, size: 24),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      notification.title,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Text(
-                    notification.date,
-                    style: const TextStyle(color: Colors.grey),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Text(
-                notification.description,
-                style: TextStyle(color: Colors.grey[700]),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                notification.time,
-                style: const TextStyle(color: Colors.grey, fontSize: 12),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
+//     setState(() {
+//       _isLoading = false;
+//     });
+//   }
+
+//   @override
+//   void dispose() {
+//     _statusMonitorService.dispose();
+//     _notificationService.dispose();
+//     super.dispose();
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       backgroundColor: Colors.white,
+//       body: Column(
+//         children: [
+//           Container(
+//             margin: const EdgeInsets.only(top: 60, left: 20, right: 20),
+//             child: Row(
+//               children: [
+//                 InkWell(
+//                   onTap: () {
+//                     Navigator.pop(context);
+//                   },
+//                   child: Image.asset(
+//                     'assets/simbol back.png',
+//                     width: 28,
+//                     height: 28,
+//                   ),
+//                 ),
+//                 const SizedBox(width: 10),
+//                 const Text(
+//                   "Notifikasi",
+//                   style: TextStyle(
+//                     fontSize: 20,
+//                     color: Color(0XFF000000),
+//                     fontWeight: FontWeight.w600,
+//                   ),
+//                 ),
+//                 const Spacer(),
+//                 IconButton(
+//                   icon: const Icon(Icons.refresh),
+//                   onPressed: () {
+//                     // Manually trigger a status check
+//                     _statusMonitorService.startMonitoring();
+//                     ScaffoldMessenger.of(context).showSnackBar(
+//                       const SnackBar(
+//                           content: Text('Menyegarkan notifikasi...')),
+//                     );
+//                   },
+//                 ),
+//               ],
+//             ),
+//           ),
+//           const SizedBox(height: 10),
+//           // Clear all button
+//           if (!_isLoading)
+//             Padding(
+//               padding: const EdgeInsets.symmetric(horizontal: 20),
+//               child: Row(
+//                 children: [
+//                   const Spacer(),
+//                   TextButton(
+//                     onPressed: () {
+//                       _notificationService.clearNotifications();
+//                     },
+//                     child: const Text(
+//                       'Hapus Semua',
+//                       style: TextStyle(color: Colors.blue),
+//                     ),
+//                   ),
+//                 ],
+//               ),
+//             ),
+//           const SizedBox(height: 10),
+//           if (_isLoading)
+//             const Expanded(
+//               child: Center(
+//                 child: CircularProgressIndicator(),
+//               ),
+//             )
+//           else
+//             Expanded(
+//               child: StreamBuilder<List<NotificationModel>>(
+//                 stream: _notificationService.notificationsStream,
+//                 initialData: _notificationService.notifications,
+//                 builder: (context, snapshot) {
+//                   if (!snapshot.hasData || snapshot.data!.isEmpty) {
+//                     return const Center(
+//                       child: Text('Tidak ada notifikasi'),
+//                     );
+//                   }
+
+//                   // Group notifications by category
+//                   final groupedNotifications =
+//                       _notificationService.getGroupedNotifications();
+//                   final categories = groupedNotifications.keys.toList();
+
+//                   return RefreshIndicator(
+//                     onRefresh: () async {
+//                       // Manually trigger a status check
+//                       _statusMonitorService.startMonitoring();
+//                     },
+//                     child: ListView.builder(
+//                       padding: const EdgeInsets.all(16),
+//                       itemCount: categories.length,
+//                       itemBuilder: (context, categoryIndex) {
+//                         final category = categories[categoryIndex];
+//                         final notificationsInCategory =
+//                             groupedNotifications[category]!;
+
+//                         return Column(
+//                           crossAxisAlignment: CrossAxisAlignment.start,
+//                           children: [
+//                             // Category header
+//                             Container(
+//                               padding:
+//                                   const EdgeInsets.symmetric(vertical: 8.0),
+//                               decoration: BoxDecoration(
+//                                 color: Colors.grey[100],
+//                                 borderRadius: BorderRadius.circular(8),
+//                               ),
+//                               width: double.infinity,
+//                               child: Padding(
+//                                 padding: const EdgeInsets.symmetric(
+//                                     horizontal: 16.0),
+//                                 child: Text(
+//                                   category,
+//                                   style: const TextStyle(
+//                                     fontSize: 16,
+//                                     fontWeight: FontWeight.bold,
+//                                     color: Color(0xFF444444),
+//                                   ),
+//                                 ),
+//                               ),
+//                             ),
+//                             const SizedBox(height: 8),
+//                             // Notifications in this category
+//                             ListView.separated(
+//                               physics: const NeverScrollableScrollPhysics(),
+//                               shrinkWrap: true,
+//                               itemCount: notificationsInCategory.length,
+//                               separatorBuilder: (context, index) =>
+//                                   const Divider(height: 20, thickness: 1),
+//                               itemBuilder: (context, index) {
+//                                 return NotificationItem(
+//                                   notification: notificationsInCategory[index],
+//                                 );
+//                               },
+//                             ),
+//                             // Add divider between categories
+//                             if (categoryIndex < categories.length - 1)
+//                               const Divider(height: 40, thickness: 1.5),
+//                           ],
+//                         );
+//                       },
+//                     ),
+//                   );
+//                 },
+//               ),
+//             ),
+//         ],
+//       ),
+//     );
+//   }
+// }
+
+// class NotificationItem extends StatelessWidget {
+//   final NotificationModel notification;
+
+//   const NotificationItem({Key? key, required this.notification})
+//       : super(key: key);
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Row(
+//       crossAxisAlignment: CrossAxisAlignment.start,
+//       children: [
+//         Container(
+//           padding: const EdgeInsets.all(8),
+//           decoration: BoxDecoration(
+//             color: notification.color.withOpacity(0.1),
+//             borderRadius: BorderRadius.circular(8),
+//           ),
+//           child: Icon(notification.icon, color: notification.color, size: 24),
+//         ),
+//         const SizedBox(width: 12),
+//         Expanded(
+//           child: Column(
+//             crossAxisAlignment: CrossAxisAlignment.start,
+//             children: [
+//               Row(
+//                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//                 children: [
+//                   Expanded(
+//                     child: Text(
+//                       notification.title,
+//                       style: const TextStyle(fontWeight: FontWeight.bold),
+//                       overflow: TextOverflow.ellipsis,
+//                     ),
+//                   ),
+//                   Text(
+//                     notification.date,
+//                     style: const TextStyle(color: Colors.grey),
+//                   ),
+//                 ],
+//               ),
+//               const SizedBox(height: 4),
+//               Text(
+//                 notification.description,
+//                 style: TextStyle(color: Colors.grey[700]),
+//                 maxLines: 2,
+//                 overflow: TextOverflow.ellipsis,
+//               ),
+//               const SizedBox(height: 4),
+//               Text(
+//                 notification.time,
+//                 style: const TextStyle(color: Colors.grey, fontSize: 12),
+//               ),
+//             ],
+//           ),
+//         ),
+//       ],
+//     );
+//   }
+// }

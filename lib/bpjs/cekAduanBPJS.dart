@@ -238,7 +238,7 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
       String currentStatus, DateTime tanggalAjuan) {
     List<Map<String, dynamic>> result = [];
     List<String> allStatus = ['Terkirim', 'Diproses', 'Ditolak', 'Selesai'];
-    final dateFormatter = DateFormat('dd MMM yyyy, HH:mm');
+    final dateFormatter = DateFormat('dd MMM yyyy');
     final currentStatusIndex = allStatus.indexOf(currentStatus);
     if (currentStatusIndex == -1) return result;
 

@@ -225,7 +225,6 @@ class _formSantunanState extends State<formSantunan> {
         apiEndpoint =
             '${baseURL}pengajuan-santunan${tableNumber}/${widget.pengaduanId}/status';
       }
-
       apiEndpoint = apiEndpoint.replaceAll(RegExp(r'([^:])//'), r'$1/');
 
       print('Making request to: $apiEndpoint');
@@ -350,13 +349,11 @@ class _formSantunanState extends State<formSantunan> {
             onPressed: () async {
               final url = Uri.parse(fileUrl);
               try {
-                // First try external application which should be faster if PDF viewer is available
                 bool launched = await launchUrl(
                   url,
                   mode: LaunchMode.externalNonBrowserApplication,
                 );
 
-                // If external launch fails, fall back to external browser
                 if (!launched) {
                   await launchUrl(
                     url,
@@ -365,7 +362,6 @@ class _formSantunanState extends State<formSantunan> {
                 }
               } catch (e) {
                 debugPrint('Could not launch $fileUrl: $e');
-                // Show error message to user
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                       content: Text('Tidak dapat membuka dokumen: $fileName')),

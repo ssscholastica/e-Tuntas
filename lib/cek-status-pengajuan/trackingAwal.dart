@@ -6,9 +6,9 @@ import 'package:etuntas/network/globals.dart';
 import 'package:etuntas/widgets/loading_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:intl/intl.dart';
 import 'package:etuntas/models/comment_model.dart';
 import 'package:etuntas/network/comment_service.dart';
 
@@ -336,13 +336,13 @@ class _TrackingAwalState extends State<TrackingAwal> {
           updatedAt = DateTime.parse(data['updated_at']);
         } catch (e) {
           print('Error parsing date: ${e.toString()}');
-          updatedAt = DateTime.now(); // Fallback to current date
+          updatedAt = DateTime.now();
         }
       } else {
-        updatedAt = DateTime.now(); // Fallback to current date
+        updatedAt = DateTime.now();
       }
 
-      final dateFormatter = DateFormat('d MMM yyyy, HH:mm');
+      final dateFormatter = DateFormat('d MMM yyyy');
       String formattedDate =
           updatedAt != null ? dateFormatter.format(updatedAt) : "-";
 
@@ -595,7 +595,7 @@ class _TrackingAwalState extends State<TrackingAwal> {
       );
     }
 
-    if (!isTrackingSuccess) {
+    if (!isTrackingSuccess && !isLoading) {
       return Container(
         margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         padding: const EdgeInsets.all(15),
