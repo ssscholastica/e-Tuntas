@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dropdown_search/dropdown_search.dart';
+import 'package:etuntas/network/globals.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -135,7 +136,7 @@ class _addBankState extends State<addBank> {
   Bank? selectedBank;
 
   Future<void> fetchBankList() async {
-    final response = await http.get(Uri.parse('http://10.0.2.2:8000/api/banks'));
+    final response = await http.get(Uri.parse('${baseURL}banks'));
 
     if (response.statusCode == 200) {
       List<dynamic> data = json.decode(response.body);

@@ -435,7 +435,7 @@ class _formBPJSState extends State<formBPJS> {
       final filePath = dataPendukung;
       final fileName = filePath.split('/').last;
       final fileUrl =
-          'http://192.168.100.12:8000/$filePath'; // sesuaikan base URL Laravel-mu
+          'http://192.168.11.106:8000/$filePath'; // sesuaikan base URL Laravel-mu
 
       return Padding(
         padding: const EdgeInsets.only(bottom: 16.0),

@@ -336,7 +336,7 @@ class _formSantunanState extends State<formSantunan> {
       final filePath = widget.pengaduanData[doc['key']] ?? '';
       final fileName = filePath.split('/').last;
       final fileUrl =
-          'http://192.168.100.12:8000/$filePath'; // Ganti sesuai domain Laravel-mu
+          'http://192.168.11.106:8000/$filePath'; 
 
       if (filePath.isEmpty) {
         return buildInfoField(doc['label']!, '-');

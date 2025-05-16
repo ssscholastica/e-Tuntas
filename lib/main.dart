@@ -1,5 +1,6 @@
 import 'package:etuntas/home.dart';
 import 'package:etuntas/login-signup/resetPasswordScreen.dart';
+import 'package:etuntas/splashScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:uni_links/uni_links.dart';
@@ -68,7 +69,7 @@ class _MyAppState extends State<MyApp> {
       theme: ThemeData(
         textTheme: GoogleFonts.dmSansTextTheme(),
       ),
-      home: const Home(),
+      home: const SplashScreen(),
     );
   }
 }
