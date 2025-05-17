@@ -20,11 +20,11 @@ class PengajuanSantunanService {
         'POST',
         Uri.parse('${baseURL}pengajuan-santunan'),
       );
+      final headers = await getHeaders();
 
-      request.headers.addAll({
-        'Accept': 'application/json',
-        'Content-Type': 'multipart/form-data',
-      });
+      request.headers.addAll(
+        headers
+      );
 
       request.fields['email'] = email;
       request.fields['tanggal_meninggal'] = tanggalMeninggal;

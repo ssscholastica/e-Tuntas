@@ -7,6 +7,7 @@ class Comment {
   final String createdAt;
   final String updatedAt;
   final List<CommentReply> replies;
+  final String content;
 
   Comment({
     required this.id,
@@ -17,6 +18,7 @@ class Comment {
     required this.createdAt,
     required this.updatedAt,
     required this.replies,
+    required this.content
   });
 
   factory Comment.fromJson(Map<String, dynamic> json) {
@@ -56,6 +58,21 @@ class Comment {
       createdAt: json['created_at'] ?? '',
       updatedAt: json['updated_at'] ?? '',
       replies: replyList,
+      content: ''
+    );
+  }
+
+  factory Comment.empty() {
+    return Comment(
+      id: 0,
+      pengajuanId: 0,
+      noPendaftaran: '',
+      comment: '',
+      authorType: '',
+      createdAt: '',
+      updatedAt: '',
+      replies: [],
+      content: '',
     );
   }
 

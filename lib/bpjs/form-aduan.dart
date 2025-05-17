@@ -208,12 +208,13 @@ class _AduanFormPageState extends State<AduanFormPage> {
     }
 
     try {
+      final headers = await getHeaders();
       var uri = Uri.parse('${baseURL}pengaduan-bpjs/');
       var request = http.MultipartRequest('POST', uri);
 
       request.fields['email'] = email;
       debugPrint("Request fields: ${request.fields}");
-      request.headers.addAll({'Accept': 'application/json'});
+      request.headers.addAll(headers);
       request.fields['kategori_bpjs'] = controllers["Kategori"]!.text;
       request.fields['tanggal_ajuan'] = tanggalAjuan;
       request.fields['nomor_bpjs_nik'] = nomorBpjsNik;

@@ -72,7 +72,7 @@ class _UploadDokumenState extends State<_UploadDokumen> {
     if (_selectedFile != null) {
       OpenFile.open(_selectedFile!.path);
     } else if (_fileName != null && _fileName!.isNotEmpty) {
-      final fileUrl = 'http://192.168.11.106:8000/$_fileName';
+      final fileUrl = '${baseURLStorage}$_fileName';
       try {
         final url = Uri.parse(fileUrl);
 
@@ -670,13 +670,10 @@ class _editBankState extends State<editBank> {
                     return;
                   }
 
+                  final headers = await getHeaders();
                   final response = await http.delete(
                     Uri.parse('${baseURL}rekening-bank/$id'),
-                    headers: {
-                      'Accept': 'application/json',
-                      'Content-Type': 'application/json',
-                      'Authorization': 'Bearer $token',
-                    },
+                    headers: headers,
                   );
 
                   print("Delete response code: ${response.statusCode}");

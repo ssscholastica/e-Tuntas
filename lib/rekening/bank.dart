@@ -35,12 +35,10 @@ class _BankState extends State<Bank> {
     final url = Uri.parse('${baseURL}rekening-bank');
 
     try {
+      final headers = await getHeaders();
       final response = await http.get(
         url,
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token', 
-        },
+        headers: headers,
       );
 
       if (response.statusCode == 200) {

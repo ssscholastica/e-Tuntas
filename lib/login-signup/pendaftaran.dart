@@ -51,12 +51,10 @@ class _PendaftaranState extends State<Pendaftaran> {
       });
 
       try {
+        final headers = await getHeaders();
         final response = await http.get(
           Uri.parse('${baseURL}pensiunan/$noPensiunan'),
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
+          headers: headers
         );
 
         if (response.statusCode == 200) {

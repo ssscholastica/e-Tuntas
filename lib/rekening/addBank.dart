@@ -153,13 +153,10 @@ class _addBankState extends State<addBank> {
     });
 
     try {
-      final token = await getToken(); // ambil token yang sudah disimpan
+      final headers = await getHeaders();
       final response = await http.get(
         Uri.parse('${baseURL}rekening-bank/'),
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+        headers: headers,
       );
 
       if (response.statusCode == 200) {

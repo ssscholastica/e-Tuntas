@@ -96,9 +96,8 @@ class _PengajuanSantunan5State extends State<PengajuanSantunan5> {
     try {
       final uri = Uri.parse('${baseURL}pengajuan-santunan5');
       final request = http.MultipartRequest('POST', uri);
-      request.headers.addAll({
-        'Accept': 'application/json',
-      });
+      final headers = await getHeaders();
+      request.headers.addAll(headers);
       request.fields['email'] = email;
       debugPrint("Request fields: ${request.fields}");
       request.fields['tanggal_meninggal'] = tanggalMeninggalController.text.trim();
@@ -408,12 +407,10 @@ Future<void> _sendEmailWithRegistrationNumber(
     String email, String noPendaftaran) async {
   try {
     final uri = Uri.parse('${baseURL}pengajuan-santunan5');
+    final headers = await getHeaders();
     final response = await http.post(
       uri,
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: headers,
       body: json.encode({
         'email': email,
         'no_pendaftaran': noPendaftaran,

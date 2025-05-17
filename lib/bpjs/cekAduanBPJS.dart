@@ -90,10 +90,10 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
         return;
       }
 
-      // Fetch data from server
+      final headers = await getHeaders();
       final response = await http.get(
         Uri.parse('${baseURL}pengaduan-bpjs/'),
-        headers: {'Accept': 'application/json'},
+        headers: headers
       );
 
       if (response.statusCode == 200) {
@@ -169,10 +169,10 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
       print(
           "User email: $userEmail, checking ownership for nomor BPJS: $nomorBPJS");
 
-      // For non-admin users, fetch data to verify ownership
+      final headers = await getHeaders();
       final response = await http.get(
         Uri.parse('${baseURL}pengaduan-bpjs/'),
-        headers: {'Accept': 'application/json'},
+        headers: headers,
       );
 
       if (response.statusCode == 200) {
