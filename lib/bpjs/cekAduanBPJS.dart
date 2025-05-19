@@ -84,9 +84,11 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
             "Anda hanya dapat melacak pengaduan dengan nomor BPJS/NIK Anda sendiri!");
         return;
       }
+
+      final headers = await getHeaders();
       final response = await http.get(
         Uri.parse('${baseURL}pengaduan-bpjs/'),
-        headers: {'Accept': 'application/json'},
+        headers: headers
       );
 
       if (response.statusCode == 200) {
@@ -153,9 +155,11 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
       final String userEmail = currentUser['email'] ?? '';
       print(
           "User email: $userEmail, checking ownership for nomor BPJS: $nomorBPJS");
+
+      final headers = await getHeaders();
       final response = await http.get(
         Uri.parse('${baseURL}pengaduan-bpjs/'),
-        headers: {'Accept': 'application/json'},
+        headers: headers,
       );
       if (response.statusCode == 200) {
         final List<dynamic> jsonData = json.decode(response.body);

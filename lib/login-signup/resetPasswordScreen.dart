@@ -44,12 +44,11 @@ class _ResetPasswordState extends State<ResetPassword> {
     });
 
     try {
+      final headers = await getHeaders();
       final url = Uri.parse("${baseURL}password/reset");
       final response = await http.post(
         url,
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: headers,
         body: jsonEncode({
           'email': widget.email,
           'token': widget.token,

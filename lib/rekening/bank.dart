@@ -5,6 +5,7 @@ import 'package:etuntas/rekening/addBank.dart';
 import 'package:etuntas/rekening/editBank.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Bank extends StatefulWidget {
   const Bank({super.key});
@@ -22,11 +23,24 @@ class _BankState extends State<Bank> {
     fetchBankAccounts();
   }
 
+  Future<String?> getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('access_token');
+  }
+
   Future<void> fetchBankAccounts() async {
-    final url = Uri.parse(
-        '${baseURL}rekening-bank');
+    final token = await getToken();
+    print("Token: $token");
+
+    final url = Uri.parse('${baseURL}rekening-bank');
+
     try {
-      final response = await http.get(url);
+      final headers = await getHeaders();
+      final response = await http.get(
+        url,
+        headers: headers,
+      );
+
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
 
@@ -47,6 +61,7 @@ class _BankState extends State<Bank> {
       print('Terjadi kesalahan saat mengambil data rekening: $e');
     }
   }
+
 
   void _navigateToAddBank() async {
     final result = await Navigator.push(

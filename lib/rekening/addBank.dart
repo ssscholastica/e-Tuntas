@@ -127,6 +127,12 @@ class _addBankState extends State<addBank> {
     _checkExistingBankAccounts();
   }
 
+  Future<String?> getLoggedInUserEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('user_email');
+  }
+
+
   final TextEditingController namaBankController = TextEditingController();
   final TextEditingController noRekController = TextEditingController();
   final TextEditingController namaPemilikController = TextEditingController();
@@ -134,16 +140,24 @@ class _addBankState extends State<addBank> {
   bool isLoading = false;
   List<Bank> bankList = [];
   Bank? selectedBank;
-  int existingBankAccountsCount = 0; // To track number of existing bank accounts
+  int existingBankAccountsCount = 0;
 
-  // Check how many bank accounts already exist
-  Future<void> _checkExistingBankAccounts() async {
+  Future<String?> getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('access_token');
+  }
+
+ Future<void> _checkExistingBankAccounts() async {
     setState(() {
       isLoading = true;
     });
 
     try {
-      final response = await http.get(Uri.parse('${baseURL}rekening-bank/'));
+      final headers = await getHeaders();
+      final response = await http.get(
+        Uri.parse('${baseURL}rekening-bank/'),
+        headers: headers,
+      );
 
       if (response.statusCode == 200) {
         List<dynamic> data = json.decode(response.body);
@@ -151,21 +165,20 @@ class _addBankState extends State<addBank> {
           existingBankAccountsCount = data.length;
         });
       } else {
-        // Show error message
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to load existing bank accounts')),
+          const SnackBar(
+              content: Text('Failed to load existing bank accounts')),
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error checking accounts: ${e.toString()}')),
-      );
+      print('Error checking accounts: ${e.toString()}');
     } finally {
       setState(() {
         isLoading = false;
       });
     }
   }
+
 
   Future<void> fetchBankList() async {
     setState(() {
@@ -198,7 +211,22 @@ class _addBankState extends State<addBank> {
   }
 
   Future<void> _saveBankAccount() async {
-    // Check if already reached maximum bank accounts (3)
+    final prefs = await SharedPreferences.getInstance();
+    final email = await getLoggedInUserEmail();
+    debugPrint("Retrieved email from SharedPreferences: $email");
+
+    if (email == null) {
+      // Jika belum login atau tidak ada data email
+      _showDialog(
+        success: false,
+        title: "Error!",
+        message: "Data pengguna tidak ditemukan, silakan login ulang",
+        buttonText: "Oke",
+        onPressed: () => Navigator.pop(context),
+      );
+      return;
+    }
+
     if (existingBankAccountsCount >= 3) {
       _showDialog(
         success: false,
@@ -248,6 +276,7 @@ class _addBankState extends State<addBank> {
       request.fields['nama_bank'] = namaBankController.text;
       request.fields['nomor_rekening'] = noRekController.text;
       request.fields['nama_pemilik'] = namaPemilikController.text;
+      request.fields['email'] = email;
       String fileName = path.basename(_selectedBukuTabungan!.path);
       String fileExtension = path.extension(fileName).toLowerCase();
       
@@ -302,7 +331,6 @@ class _addBankState extends State<addBank> {
           },
         );
       } else {
-        // Failed
         _showDialog(
           success: false,
           title: "Gagal!",

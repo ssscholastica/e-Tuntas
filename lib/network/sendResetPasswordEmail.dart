@@ -5,12 +5,10 @@ import 'package:etuntas/network/globals.dart';
 Future<void> sendResetPasswordEmail(String email) async {
   final url = Uri.parse("${baseURL}password/forgot");
   try {
+    final headers = await getHeaders();
     final response = await http.post(
       url,
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json', 
-      },
+      headers: headers,
       body: jsonEncode({
         'email': email,
       }),

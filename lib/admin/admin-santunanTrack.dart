@@ -91,9 +91,10 @@ class _TrackSantunanState extends State<TrackSantunan> {
     });
     try {
       List<Map<String, dynamic>> allSantunanData = [];
+      final headers = await getHeaders();
       final mainResponse = await http.get(
         Uri.parse('${baseURL}pengajuan-santunan/'),
-        headers: {'Accept': 'application/json'},
+        headers: headers,
       );
 
       if (mainResponse.statusCode == 200) {
@@ -111,7 +112,7 @@ class _TrackSantunanState extends State<TrackSantunan> {
       for (int i = 1; i <= 5; i++) {
         final additionalResponse = await http.get(
           Uri.parse('${baseURL}pengajuan-santunan$i/'),
-          headers: {'Accept': 'application/json'},
+          headers: headers,
         );
 
         print(

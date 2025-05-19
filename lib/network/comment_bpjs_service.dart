@@ -6,9 +6,10 @@ import 'package:etuntas/network/globals.dart';
 class CommentService {
   Future<List<Comment>> getCommentsByPengajuan(int pengajuanId) async {
     try {
+      final headers = await getHeaders();
       final response = await http.get(
         Uri.parse('${baseURL}commentsbpjs/pengajuan/$pengajuanId'),
-        headers: {'Accept': 'application/json'},
+        headers: headers,
       );
 
       final Map<String, dynamic> responseData = json.decode(response.body);
@@ -27,9 +28,10 @@ class CommentService {
 
   Future<List<Comment>> getCommentsByNomorBPJS(String nomorBPJS) async {
     try {
+      final headers = await getHeaders();
       final response = await http.get(
         Uri.parse('${baseURL}commentsbpjs/nomor-pendaftaran/$nomorBPJS'),
-        headers: {'Accept': 'application/json'},
+        headers: headers,
       );
 
       if (response.statusCode == 200) {
@@ -69,12 +71,10 @@ class CommentService {
 
       print('Sending request body: ${json.encode(requestBody)}');
 
+      final headers = await getHeaders();
       final response = await http.post(
         Uri.parse('${baseURL}commentsbpjs'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
+        headers: headers,
         body: json.encode(requestBody),
       );
 
@@ -113,12 +113,10 @@ class CommentService {
 
       print('Submitting reply with body: ${json.encode(requestBody)}');
 
+      final headers = await getHeaders();
       final response = await http.post(
         Uri.parse('${baseURL}commentsbpjs/$commentId/reply'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
+        headers: headers,
         body: json.encode(requestBody),
       );
 

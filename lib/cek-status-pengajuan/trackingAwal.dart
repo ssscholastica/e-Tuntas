@@ -277,9 +277,10 @@ class _TrackingAwalState extends State<TrackingAwal> {
 
       print('Making request to: ${uri.toString()}');
 
+      final headers = await getHeaders();
       final response = await http.get(
         uri,
-        headers: {'Accept': 'application/json'},
+        headers: headers,
       );
 
       print('Response status: ${response.statusCode} for ${uri.toString()}');
