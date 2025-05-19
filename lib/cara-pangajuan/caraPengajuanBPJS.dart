@@ -18,62 +18,63 @@ class _CaraPengajuanBPJSState extends State<CaraPengajuanBPJS> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Column(
-        children: [
-          Center(
-            child: Container(
-              margin: const EdgeInsets.only(
-                  top: 60, left: 20, right: 20, bottom: 10),
-              child: Row(
-                children: [
-                  InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const CaraPengajuan()),
-                      );
-                    },
-                    child: Image.asset(
-                      'assets/simbol back.png',
-                      width: 28,
-                      height: 28,
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            Center(
+              child: Container(
+                margin: const EdgeInsets.only(
+                    top: 60, left: 20, right: 20, bottom: 10),
+                child: Row(
+                  children: [
+                    InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const CaraPengajuan()),
+                        );
+                      },
+                      child: Image.asset(
+                        'assets/simbol back.png',
+                        width: 28,
+                        height: 28,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 20),
-                  const Text(
-                    "Cara Pengajuan",
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Color(0XFF000000),
-                      fontWeight: FontWeight.w600,
+                    const SizedBox(width: 20),
+                    const Text(
+                      "Cara Pengajuan",
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Color(0XFF000000),
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-          Stack(
-            children: [
-              const SizedBox(height: 30),
-              Container(
-                  margin: const EdgeInsets.only(top: 200),
-                  child: Image.asset('assets/background cara pengajuan.png')),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 10),
-                  const Text(
-                    "Alur Pengajuan BPJS",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 10),
-                  Center(child: Image.asset('assets/alur pengajuan BPJS.png', width: 225,)),
-                ],
-              ),
-            ],
-          ),
-        ],
+            Stack(
+              children: [
+                const SizedBox(height: 30),
+                Center(
+                    child: Image.asset('assets/background cara pengajuan.png')),
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 10),
+                    const Text(
+                      "Alur Pengajuan BPJS",
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 10),
+                    Center(child: Image.asset('assets/alur pengajuan BPJS.png', width: 225,)),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

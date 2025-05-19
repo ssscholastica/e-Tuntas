@@ -269,16 +269,16 @@ class _LoginState extends State<Login> {
                       child: const Text(
                         "Informasi Pendaftaran",
                         style: TextStyle(color: Color(0xFF2F2F9D)),
-                      ), //Text
-                    ), //TextButton
+                      ),
+                    ),
                   ],
-                ), //Column
-              ), //Padding
-            ), //Center
+                ),
+              ),
+            ),
             LoadingWidget(isLoading: isLoading),
           ],
-        ), //Stack
-      ), //SingleChildScrollView
-    ); //Scaffold
+        ),
+      ),
+    );
   }
 }

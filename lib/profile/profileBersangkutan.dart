@@ -4,8 +4,8 @@ import 'package:etuntas/navbar.dart';
 import 'package:etuntas/network/globals.dart';
 import 'package:etuntas/profile/profile.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileBersangkutan extends StatefulWidget {
   const ProfileBersangkutan({super.key});
@@ -154,103 +154,105 @@ class _ProfileBersangkutanState extends State<ProfileBersangkutan> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Column(
-        children: [
-          Center(
-            child: Container(
-              margin: const EdgeInsets.only(
-                  top: 80, left: 20, right: 20, bottom: 10),
-              child: Row(
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            Center(
+              child: Container(
+                margin: const EdgeInsets.only(
+                    top: 50, left: 20, right: 20, bottom: 10),
+                child: Row(
+                  children: [
+                    InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const Profile()),
+                        );
+                      },
+                      child: Image.asset(
+                        'assets/simbol back.png',
+                        width: 28,
+                        height: 28,
+                      ),
+                    ),
+                    const Spacer(),
+                    const Text(
+                      "Profile Bersangkutan",
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Color(0XFF000000),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const Spacer(flex: 1),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 1.0,
+              child: Stack(
                 children: [
-                  InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const Profile()),
-                      );
-                    },
-                    child: Image.asset(
-                      'assets/simbol back.png',
-                      width: 28,
-                      height: 28,
+                  Image.asset(
+                    "assets/background data bersangkutan.png",
+                    width: MediaQuery.of(context).size.width,
+                    fit: BoxFit.cover,
+                  ),
+                  Positioned(
+                    top: 80,
+                    left: 20,
+                    right: 20,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFFFFF),
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.15),
+                            offset: const Offset(0, 4),
+                            blurRadius: 4,
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          const Padding(
+                            padding:
+                                EdgeInsets.only(top: 20, left: 20, right: 20),
+                            child: Center(
+                              child: Text(
+                                "Informasi Data Bersangkutan",
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    color: Color(0XFF000000),
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                          Column(
+                            children: [
+                              buildTemplate('Nama Lengkap', namaBersangkutan),
+                              buildTemplate(
+                                  'Unit Terakhir Dinas', pgUnit),
+                              buildTemplate('NIK', nik),
+                              buildTemplate('Nomor Pensiunan', nomorPensiunan),
+                              buildTemplate('Status', status),
+                              const SizedBox(
+                                height: 20,
+                              )
+                            ],
+                          )
+                        ],
+                      ),
                     ),
                   ),
-                  const Spacer(),
-                  const Text(
-                    "Profile Bersangkutan",
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Color(0XFF000000),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const Spacer(flex: 1),
                 ],
               ),
             ),
-          ),
-          SizedBox(
-            height: MediaQuery.of(context).size.height - 510,
-            child: Stack(
-              children: [
-                Image.asset(
-                  "assets/background data bersangkutan.png",
-                  width: MediaQuery.of(context).size.width,
-                  fit: BoxFit.cover,
-                ),
-                Positioned(
-                  top: 80,
-                  left: 20,
-                  right: 20,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFFFFF),
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.15),
-                          offset: const Offset(0, 4),
-                          blurRadius: 4,
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        const Padding(
-                          padding:
-                              EdgeInsets.only(top: 20, left: 20, right: 20),
-                          child: Center(
-                            child: Text(
-                              "Informasi Data Bersangkutan",
-                              style: TextStyle(
-                                  fontSize: 16,
-                                  color: Color(0XFF000000),
-                                  fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ),
-                        Column(
-                          children: [
-                            buildTemplate('Nama Lengkap', namaBersangkutan),
-                            buildTemplate(
-                                'Unit Terakhir Dinas', pgUnit),
-                            buildTemplate('NIK', nik),
-                            buildTemplate('Nomor Pensiunan', nomorPensiunan),
-                            buildTemplate('Status', status),
-                            const SizedBox(
-                              height: 20,
-                            )
-                          ],
-                        )
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
       bottomNavigationBar: const NavbarWidget(),
     );

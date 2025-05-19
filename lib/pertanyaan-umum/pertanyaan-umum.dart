@@ -31,9 +31,9 @@ class _PertanyaanUmumState extends State<PertanyaanUmum> {
               });
             },
             child: Container(
-              margin: const EdgeInsets.only(bottom: 10),
+              margin: const EdgeInsets.only(bottom: 15),
               width: MediaQuery.of(context).size.width * 0.88,
-              height: MediaQuery.of(context).size.height * 0.09,
+              height: MediaQuery.of(context).size.height * 0.099,
               padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -95,58 +95,62 @@ class _PertanyaanUmumState extends State<PertanyaanUmum> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Column(
-        children: [
-          Center(
-            child: Container(
-              margin: const EdgeInsets.only(
-                  top: 60, left: 20, right: 20, bottom: 10),
-              child: Row(
-                children: [
-                  InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const Home()),
-                      );
-                    },
-                    child: Image.asset(
-                      'assets/simbol back.png',
-                      width: 28,
-                      height: 28,
-                    ),
-                  ),
-                  const SizedBox(width: 20),
-                  const Text(
-                    "Pertanyaan Umum",
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Color(0XFF000000),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const Spacer(flex: 1),
-                ],
-              ),
-            ),
-          ),
-          Stack(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
             children: [
-              Container(
-                  margin: const EdgeInsets.only(top: 200),
-                  child: Image.asset('assets/background pertanyaan.png')),
-              Column(
+              Center(
+                child: Container(
+                  margin: const EdgeInsets.only(
+                      top: 60, left: 20, right: 20, bottom: 10),
+                  child: Row(
+                    children: [
+                      InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const Home()),
+                          );
+                        },
+                        child: Image.asset(
+                          'assets/simbol back.png',
+                          width: 28,
+                          height: 28,
+                        ),
+                      ),
+                      const SizedBox(width: 20),
+                      const Text(
+                        "Pertanyaan Umum",
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Color(0XFF000000),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const Spacer(flex: 1),
+                    ],
+                  ),
+                ),
+              ),
+              Stack(
                 children: [
-                  buildImageBox('Pertanyaan Pertama', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt'),
-                  buildImageBox('Pertanyaan Kedua',
-                      'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt'),
-                  buildImageBox('Pertanyaan Ketiga',
-                      'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt')
+                  Positioned.fill(
+                      child: Center(
+                        child: Image.asset('assets/background pertanyaan.png'))),
+                  Column(
+                    children: [
+                      buildImageBox('Pertanyaan Pertama', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt'),
+                      buildImageBox('Pertanyaan Kedua',
+                          'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt'),
+                      buildImageBox('Pertanyaan Ketiga',
+                          'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt')
+                    ],
+                  ),
                 ],
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }

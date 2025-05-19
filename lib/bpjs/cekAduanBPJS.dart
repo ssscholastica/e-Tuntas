@@ -58,12 +58,10 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
 
   Future<void> _cekTrackingData() async {
     String nomorBPJS = _controller.text.trim();
-
     if (nomorBPJS.isEmpty) {
       _showFailureDialog("Nomor BPJS/NIK tidak boleh kosong!");
       return;
     }
-
     setState(() {
       isLoading = true;
       errorMessage = "";
@@ -71,11 +69,8 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
       isTrackingSuccess = false;
       trackingInfo = [];
     });
-
     try {
       print("Searching for nomor BPJS: $nomorBPJS");
-
-      // Check if user is authorized to view this data
       final bool isAuthorized = await _isUserAuthorized(nomorBPJS);
       print("User authorization result: $isAuthorized");
 
@@ -89,8 +84,6 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
             "Anda hanya dapat melacak pengaduan dengan nomor BPJS/NIK Anda sendiri!");
         return;
       }
-
-      // Fetch data from server
       final response = await http.get(
         Uri.parse('${baseURL}pengaduan-bpjs/'),
         headers: {'Accept': 'application/json'},
@@ -98,12 +91,8 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
 
       if (response.statusCode == 200) {
         final List<dynamic> jsonData = json.decode(response.body);
-
-        // Get current user email for filtering
         final currentUser = await _getCurrentUserData();
         final String userEmail = currentUser?['email'] ?? '';
-
-        // Filter data by both nomor BPJS and user email
         final matchingData = jsonData
             .where((item) =>
                 item['nomor_bpjs_nik'].toString() == nomorBPJS &&
@@ -153,39 +142,29 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
     try {
       final currentUser = await _getCurrentUserData();
       print("Current user data: $currentUser");
-
       if (currentUser == null) {
         print("No user logged in");
         return false;
       }
-
-      // Admin can access all data
       if (currentUser['is_admin'] == 1 || currentUser['is_admin'] == true) {
         print("User is admin, authorization granted");
         return true;
       }
-
       final String userEmail = currentUser['email'] ?? '';
       print(
           "User email: $userEmail, checking ownership for nomor BPJS: $nomorBPJS");
-
-      // For non-admin users, fetch data to verify ownership
       final response = await http.get(
         Uri.parse('${baseURL}pengaduan-bpjs/'),
         headers: {'Accept': 'application/json'},
       );
-
       if (response.statusCode == 200) {
         final List<dynamic> jsonData = json.decode(response.body);
-
-        // Check if this user has a complaint with this BPJS number
         final matchingData = jsonData
             .where((item) =>
                 item['nomor_bpjs_nik'].toString() == nomorBPJS &&
                 item['email'].toString().toLowerCase() ==
                     userEmail.toLowerCase())
             .toList();
-
         return matchingData.isNotEmpty;
       }
 

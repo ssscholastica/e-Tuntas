@@ -5,6 +5,7 @@ import 'package:dropdown_search/dropdown_search.dart';
 import 'package:etuntas/network/globals.dart';
 import 'package:etuntas/network/wilayah_service.dart';
 import 'package:etuntas/pengajuan-santunan/successUpload.dart';
+import 'package:etuntas/widgets/loading_widget.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -316,93 +317,98 @@ class _PengajuanSantunan2State extends State<PengajuanSantunan2> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Container(
-              margin: const EdgeInsets.only(top: 60, left: 20, right: 20),
-              child: Row(
-                children: [
-                  InkWell(
-                    onTap: () {
-                      Navigator.pop(context);
-                    },
-                    child: Image.asset(
-                      'assets/simbol back.png',
-                      width: 28,
-                      height: 28,
-                    ),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            child: Column(
+              children: [
+                Container(
+                  margin: const EdgeInsets.only(top: 60, left: 20, right: 20),
+                  child: Row(
+                    children: [
+                      InkWell(
+                        onTap: () {
+                          Navigator.pop(context);
+                        },
+                        child: Image.asset(
+                          'assets/simbol back.png',
+                          width: 28,
+                          height: 28,
+                        ),
+                      ),
+                      const Text(
+                        "Proses Pengajuan Santunan",
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Color(0XFF000000),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const Spacer(flex: 1),
+                    ],
                   ),
-                  const Text(
-                    "Proses Pengajuan Santunan",
+                ),
+                Container(
+                  alignment: Alignment.bottomLeft,
+                  margin: const EdgeInsets.only(top: 30, left: 20, right: 20),
+                  child: const Text(
+                    'Yang Meninggal Pensiunan PTPN XI Kantor Pusat dan Istri Sudah Meninggal, Dalam KK Ada 1 Anak',
+                    textAlign: TextAlign.justify,
                     style: TextStyle(
-                      fontSize: 18,
-                      color: Color(0XFF000000),
+                      fontSize: 16,
+                      color: Color(0XFF26267E),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const Spacer(flex: 1),
-                ],
-              ),
-            ),
-            Container(
-              alignment: Alignment.bottomLeft,
-              margin: const EdgeInsets.only(top: 30, left: 20, right: 20),
-              child: const Text(
-                'Yang Meninggal Pensiunan PTPN XI Kantor Pusat dan Istri Sudah Meninggal, Dalam KK Ada 1 Anak',
-                textAlign: TextAlign.justify,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Color(0XFF26267E),
-                  fontWeight: FontWeight.w600,
                 ),
-              ),
-            ),
-            buildDatePickerField(
-                "Tanggal Meninggal", tanggalMeninggalController),
-            buildJudul("Lokasi Meninggal", lokasiMeninggalController),
-            FileUploadField(key: suratKematianKey, label: "Surat Kematian"),
-            FileUploadField(key: kartuKeluargaKey, label: "Kartu Keluarga"),
-            FileUploadField(key: suratNikahKey, label: "Surat Nikah"),
-            FileUploadField(key: ktpSuamiIstriKey, label: "KTP Suami & Istri"),
-            FileUploadField(key: bukuRekeningIstriKey, label: "Buku Rekening Istri"),
-            const SizedBox(height: 30),
-            ElevatedButton(
-              onPressed: () {
-                if (_validateForm()) {
-                  uploadSantunan();
-                } else {
-                  _showDialog(
-                    success: false,
-                    title: "Gagal!",
-                    message:
-                        "Mohon lengkapi semua kolom dan dokumen yang diperlukan sebelum mengupload.",
-                    buttonText: "Reupload",
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    context: context,
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(
-                  horizontal: MediaQuery.of(context).size.width * 0.37,
-                  vertical: MediaQuery.of(context).size.height * 0.02,
+                buildDatePickerField("Tanggal Meninggal", tanggalMeninggalController),
+                buildJudul("Lokasi Meninggal", lokasiMeninggalController),
+                FileUploadField(key: suratKematianKey, label: "Surat Kematian"),
+                FileUploadField(key: kartuKeluargaKey, label: "Kartu Keluarga"),
+                FileUploadField(key: suratNikahKey, label: "Surat Nikah"),
+                FileUploadField(key: ktpSuamiIstriKey, label: "KTP Suami & Istri"),
+                FileUploadField(key: bukuRekeningIstriKey, label: "Buku Rekening Istri"),
+                const SizedBox(height: 30),
+                ElevatedButton(
+                  onPressed: () {
+                    if (_validateForm()) {
+                      setState(() => isLoading = true);
+                      uploadSantunan();
+                    } else {
+                      _showDialog(
+                        success: false,
+                        title: "Gagal!",
+                        message:
+                            "Mohon lengkapi semua kolom dan dokumen yang diperlukan sebelum mengupload.",
+                        buttonText: "Reupload",
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        context: context,
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: MediaQuery.of(context).size.width * 0.37,
+                      vertical: MediaQuery.of(context).size.height * 0.02,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    backgroundColor: const Color(0xFF2F2F9D),
+                  ),
+                  child: const Text(
+                    "Upload",
+                    style: TextStyle(color: Color(0xFFFFFFFF), fontSize: 16),
+                  ),
                 ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                backgroundColor: const Color(0xFF2F2F9D),
-              ),
-              child: const Text(
-                "Upload",
-                style: TextStyle(color: Color(0xFFFFFFFF), fontSize: 16),
-              ),
+                const SizedBox(height: 30),
+              ],
             ),
-            const SizedBox(height: 30),
-          ],
-        ),
+          ),
+          if (isLoading) LoadingWidget(isLoading: isLoading)
+        ],
       ),
     );
   }

@@ -4,9 +4,9 @@ import 'package:dio/dio.dart';
 import 'package:etuntas/models/comment_model.dart';
 import 'package:etuntas/network/globals.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 
 class formSantunan extends StatefulWidget {
@@ -225,10 +225,6 @@ class _formSantunanState extends State<formSantunan> {
         apiEndpoint =
             '${baseURL}pengajuan-santunan${tableNumber}/${widget.pengaduanId}/status';
       }
-<<<<<<< HEAD
-=======
-
->>>>>>> f398986679ff22a439e9e55c6a000b4d120241a8
       apiEndpoint = apiEndpoint.replaceAll(RegExp(r'([^:])//'), r'$1/');
 
       print('Making request to: $apiEndpoint');

@@ -178,10 +178,7 @@ class _HomeState extends State<Home> {
 
   @override
   Widget build(BuildContext context) {
-    double screenHeight = MediaQuery.of(context).size.height;
-    
     return Scaffold(
-      // resizeToAvoidBottomInset: false,
       backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
@@ -272,7 +269,9 @@ class _HomeState extends State<Home> {
               const SizedBox(height: 30),
               Padding(
                 padding: const EdgeInsets.only(left: 30),
-                child: Row(
+                child: Wrap(
+                  spacing: -4,
+                  runSpacing: 20,
                   children: [
                     InkWell(
                         onTap: () {
@@ -320,50 +319,55 @@ class _HomeState extends State<Home> {
                 ),
               ),
               const SizedBox(height: 30),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const alurPengajuan1()),
-                      );
-                    },
-                    child: buildImageBox(
-                        "assets/pengajuan santunan.png", "Pengajuan \nSantunan"),
-                  ),
-                  InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const aduanBPJS()),
-                      );
-                    },
-                    child: buildImageBox("assets/pengajuan bpjs.png", "Pengaduan \nBPJS"),
-                  ),
-                                InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const TrackingAwal()),
-                      );
-                    },
-                    child: buildImageBox("assets/cek status pengajuan.png",
-                        "Cek Status \nPengajuan"),
-                  ),
-                  InkWell(
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 30),
+                child: Wrap(
+                  spacing: 30,
+                  runSpacing: 40,
+                  alignment: WrapAlignment.start,
+                  children: [
+                    InkWell(
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const Bank()),
+                          MaterialPageRoute(
+                              builder: (context) => const alurPengajuan1()),
                         );
                       },
                       child: buildImageBox(
-                          "assets/rekening bank.png", "Rekening \nBank")),
-                ],
+                          "assets/pengajuan santunan.png", "Pengajuan \nSantunan"),
+                    ),
+                    InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const aduanBPJS()),
+                        );
+                      },
+                      child: buildImageBox("assets/pengajuan bpjs.png", "Pengaduan \nBPJS"),
+                    ),
+                                  InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const TrackingAwal()),
+                        );
+                      },
+                      child: buildImageBox("assets/cek status pengajuan.png",
+                          "Cek Status \nPengajuan"),
+                    ),
+                    InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const Bank()),
+                          );
+                        },
+                        child: buildImageBox(
+                            "assets/rekening bank.png", "Rekening \nBank")),
+                  ],
+                ),
               ),
             ],
           ),

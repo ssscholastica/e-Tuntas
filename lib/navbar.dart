@@ -10,7 +10,7 @@ class NavbarWidget extends StatelessWidget {
     return SafeArea(
       child: Container(
         height: 79,
-        width: 360,
+        width: double.infinity,
         decoration: BoxDecoration(
           color: const Color(0XFF2F2F9D),
           boxShadow: [
@@ -22,11 +22,12 @@ class NavbarWidget extends StatelessWidget {
           ],
         ),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             Container(
-              margin: const EdgeInsets.only(top: 5,left: 80),
+              margin: const EdgeInsets.only(top: 5),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
                     onPressed: () {
@@ -46,27 +47,25 @@ class NavbarWidget extends StatelessWidget {
                 ],
               ),
             ),
-            Container(
-              margin: EdgeInsets.only(top:5 ,right: 80),
-              child: Column(
-                children: [
-                  IconButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const Profile()),
-                      );
-                    },
-                    icon: const Icon(
-                      Icons.person_outline,
-                      color: Color(0xFFFFFFFF),
-                      size: 24,
-                    ),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const Profile()),
+                    );
+                  },
+                  icon: const Icon(
+                    Icons.person_outline,
+                    color: Color(0xFFFFFFFF),
+                    size: 24,
                   ),
-                  const Text("Profile",
-                      style: TextStyle(fontSize: 14, color: Color(0xFFFFFFFF)))
-                ],
-              ),
+                ),
+                const Text("Profile",
+                    style: TextStyle(fontSize: 14, color: Color(0xFFFFFFFF)))
+              ],
             ),
           ],
         ),
