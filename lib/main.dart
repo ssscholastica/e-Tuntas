@@ -1,4 +1,3 @@
-import 'package:etuntas/home.dart';
 import 'package:etuntas/login-signup/resetPasswordScreen.dart';
 import 'package:etuntas/splashScreen.dart';
 import 'package:flutter/material.dart';

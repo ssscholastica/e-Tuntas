@@ -270,8 +270,9 @@ class _TrackingAwalState extends State<TrackingAwal> {
       String nomorPendaftaran, String tableNumber, bool useLikeSearch) async {
     try {
       final String endpoint = useLikeSearch
-          ? '${baseURL}pengajuan-santunan_$tableNumber/search-like?no_pendaftaran=$nomorPendaftaran'
-          : '${baseURL}pengajuan-santunan_$tableNumber/search?no_pendaftaran=$nomorPendaftaran';
+          ? '${baseURL}pengajuan-santunan_$tableNumber/search-like?query=$nomorPendaftaran'
+          : '${baseURL}pengajuan-santunan_$tableNumber/search?query=$nomorPendaftaran';
+
 
       final Uri uri = Uri.parse(endpoint);
 
