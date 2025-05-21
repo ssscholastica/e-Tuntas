@@ -62,6 +62,7 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
       _showFailureDialog("Nomor BPJS/NIK tidak boleh kosong!");
       return;
     }
+
     setState(() {
       isLoading = true;
       errorMessage = "";
@@ -69,44 +70,29 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
       isTrackingSuccess = false;
       trackingInfo = [];
     });
+
     try {
       print("Searching for nomor BPJS: $nomorBPJS");
-      final bool isAuthorized = await _isUserAuthorized(nomorBPJS);
-      print("User authorization result: $isAuthorized");
 
-      if (!isAuthorized) {
-        setState(() {
-          isLoading = false;
-          errorMessage =
-              "Anda hanya dapat melacak pengaduan dengan nomor BPJS/NIK Anda sendiri!";
-        });
-        _showFailureDialog(
-            "Anda hanya dapat melacak pengaduan dengan nomor BPJS/NIK Anda sendiri!");
-        return;
-      }
       final headers = await getHeaders();
+
+      // Fix: Replace the placeholder in the URL with the actual value
       final response = await http.get(
-        Uri.parse('${baseURL}pengaduan-bpjs/'),
+        Uri.parse('${baseURL}pengaduan-bpjs/by-nomor/$nomorBPJS'),
         headers: headers,
       );
 
+      print("Response status: ${response.statusCode}");
+
       if (response.statusCode == 200) {
         final List<dynamic> jsonData = json.decode(response.body);
-        final currentUser = await _getCurrentUserData();
-        final String userEmail = currentUser?['email'] ?? '';
-        final matchingData = jsonData
-            .where((item) =>
-                item['nomor_bpjs_nik'].toString() == nomorBPJS &&
-                item['email'].toString().toLowerCase() ==
-                    userEmail.toLowerCase())
-            .toList();
 
         setState(() {
           isLoading = false;
 
-          if (matchingData.isNotEmpty) {
+          if (jsonData.isNotEmpty) {
             isTrackingSuccess = true;
-            currentPengaduan = matchingData.first;
+            currentPengaduan = jsonData.first;
             final status = currentPengaduan!['status'] ?? 'Terkirim';
             final tanggalAjuan =
                 DateTime.parse(currentPengaduan!['tanggal_ajuan']);
@@ -115,18 +101,47 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
             isTrackingSuccess = false;
             trackingInfo = [];
             currentPengaduan = null;
-            errorMessage = "Data tidak ditemukan";
-            _showFailureDialog(
-                "Data dengan nomor BPJS/NIK tersebut tidak ditemukan.");
+            errorMessage = "Data tidak ditemukan.";
+            _showFailureDialog("Data tidak ditemukan.");
           }
         });
+      } else if (response.statusCode == 403) {
+        // Enhanced error handling for 403 errors
+        String errorMsg = "Anda tidak berhak mengakses data ini.";
+        try {
+          final errorData = json.decode(response.body);
+          if (errorData.containsKey('message')) {
+            errorMsg = errorData['message'];
+          }
+        } catch (_) {}
+
+        setState(() {
+          isLoading = false;
+          errorMessage = errorMsg;
+        });
+        _showFailureDialog(errorMsg);
+
+        // You might want to check if user data exists
+        final userData = await _getCurrentUserData();
+        if (userData == null) {
+          _showFailureDialog(
+              "Anda mungkin perlu login ulang untuk melanjutkan.");
+        }
+      } else if (response.statusCode == 401) {
+        setState(() {
+          isLoading = false;
+          errorMessage = "Anda belum login.";
+        });
+        _showFailureDialog("Anda belum login. Silakan login terlebih dahulu.");
+
+        // Consider redirecting to login page
+        // Navigator.of(context).pushReplacementNamed('/login');
       } else {
         setState(() {
           isLoading = false;
-          isTrackingSuccess = false;
-          errorMessage = "Gagal terhubung ke server";
+          errorMessage = "Gagal mengambil data dari server.";
         });
-        _showFailureDialog("Gagal terhubung ke server. Coba lagi nanti.");
+        _showFailureDialog("Gagal mengambil data. Coba lagi nanti.");
       }
     } catch (e) {
       print("Error fetching tracking data: $e");
@@ -136,44 +151,6 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
         errorMessage = e.toString();
       });
       _showFailureDialog("Terjadi kesalahan: ${e.toString()}");
-    }
-  }
-
-  Future<bool> _isUserAuthorized(String nomorBPJS) async {
-    try {
-      final currentUser = await _getCurrentUserData();
-      print("Current user data: $currentUser");
-      if (currentUser == null) {
-        print("No user logged in");
-        return false;
-      }
-      if (currentUser['is_admin'] == 1 || currentUser['is_admin'] == true) {
-        print("User is admin, authorization granted");
-        return true;
-      }
-      final String userEmail = currentUser['email'] ?? '';
-      print(
-          "User email: $userEmail, checking ownership for nomor BPJS: $nomorBPJS");
-      final headers = await getHeaders();
-      final response = await http.get(
-        Uri.parse('${baseURL}pengaduan-bpjs/'),
-        headers: headers,
-      );
-      if (response.statusCode == 200) {
-        final List<dynamic> jsonData = json.decode(response.body);
-        final matchingData = jsonData
-            .where((item) =>
-                item['nomor_bpjs_nik'].toString() == nomorBPJS &&
-                item['email'].toString().toLowerCase() ==
-                    userEmail.toLowerCase())
-            .toList();
-        return matchingData.isNotEmpty;
-      }
-
-      return false;
-    } catch (e) {
-      print("Error checking user authorization: $e");
-      return false;
     }
   }
 
