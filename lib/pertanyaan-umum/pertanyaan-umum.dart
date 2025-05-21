@@ -33,7 +33,7 @@ class _PertanyaanUmumState extends State<PertanyaanUmum> {
             child: Container(
               margin: const EdgeInsets.only(bottom: 15),
               width: MediaQuery.of(context).size.width * 0.88,
-              height: MediaQuery.of(context).size.height * 0.099,
+              height: MediaQuery.of(context).size.height * 0.12,
               padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
               decoration: BoxDecoration(
                 color: Colors.white,

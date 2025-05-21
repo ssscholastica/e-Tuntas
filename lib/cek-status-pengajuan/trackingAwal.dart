@@ -393,9 +393,7 @@ class _TrackingAwalState extends State<TrackingAwal> {
 
   void openWhatsApp() async {
     String contact = "6282141788021";
-    String text = Uri.encodeComponent(
-        "Halo, saya ingin bertanya tentang status pengajuan santunan saya...");
-
+    String text = Uri.encodeComponent("Halo, saya ingin bertanya tentang status pengajuan santunan saya...");
     String androidUrl = "whatsapp://send?phone=$contact&text=$text";
     String iosUrl = "https://wa.me/$contact?text=$text";
     String webUrl = "https://web.whatsapp.com/send?phone=$contact&text=$text";
@@ -816,8 +814,6 @@ class _RejectedStatusWidgetState extends State<RejectedStatusWidget> {
           ),
           const SizedBox(height: 10),
           const Divider(),
-
-          // Comments section
           if (isLoading)
             const Center(child: CircularProgressIndicator())
           else if (comments.isEmpty)
@@ -848,7 +844,6 @@ class _RejectedStatusWidgetState extends State<RejectedStatusWidget> {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Main comment
                         Container(
                           margin: const EdgeInsets.symmetric(vertical: 4),
                           decoration: BoxDecoration(
@@ -956,10 +951,7 @@ class _RejectedStatusWidgetState extends State<RejectedStatusWidget> {
                 ),
               ],
             ),
-
           const Divider(),
-
-          // Add comment section
           Row(
             children: [
               Expanded(
