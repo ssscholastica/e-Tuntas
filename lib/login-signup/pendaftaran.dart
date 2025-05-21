@@ -470,7 +470,6 @@ class _PendaftaranState extends State<Pendaftaran> {
               builder: (BuildContext context) => const DaftarBerhasil()),
         );
       } else {
-        // ignore: use_build_context_synchronously
         _showDialog(
           success: false,
           title: "Gagal Daftar!",

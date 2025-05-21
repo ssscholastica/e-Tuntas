@@ -256,7 +256,7 @@ class _editBankState extends State<editBank> {
     if (_selectedFile != null) {
       await OpenFile.open(_selectedFile!.path);
     } else if (_uploadedFileName != null && _uploadedFileName!.isNotEmpty) {
-      final fileUrl = 'http://192.168.11.106:8000/$_uploadedFileName';
+      final fileUrl = '${baseURLStorage}$_uploadedFileName';
       try {
         final url = Uri.parse(fileUrl);
 

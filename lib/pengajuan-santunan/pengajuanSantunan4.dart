@@ -163,25 +163,26 @@ class _PengajuanSantunan4State extends State<PengajuanSantunan4> {
               builder: (context) => SuccesUpload(noPendaftaran: noPendaftaran)),
         );
       } else {
+        String errorMessage =
+            "Terjadi kesalahan saat mengupload. Silakan coba lagi.";
+        try {
+          final jsonResponse = json.decode(resStr);
+          if (jsonResponse['message'] != null) {
+            errorMessage = jsonResponse['message'];
+          }
+        } catch (e) {
+          debugPrint("Gagal parsing response JSON: $e");
+        }
+
         _showDialog(
           success: false,
           title: "Gagal Upload!",
-          message: "Terjadi kesalahan saat mengupload. Silakan coba lagi.",
+          message: errorMessage,
           buttonText: "Coba Lagi",
           onPressed: () => Navigator.pop(context),
           context: context,
         );
       }
-    } catch (e) {
-      debugPrint("Upload error: $e");
-      _showDialog(
-        success: false,
-        title: "Error!",
-        message: "Terjadi error saat upload: $e",
-        buttonText: "Coba Lagi",
-        onPressed: () => Navigator.pop(context),
-        context: context,
-      );
     } finally {
       setState(() {
         isLoading = false;

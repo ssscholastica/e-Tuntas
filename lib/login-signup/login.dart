@@ -54,6 +54,7 @@ class _LoginState extends State<Login> {
         Map<String, dynamic> userData = responseMap['user'];
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('user_email', userData['email']);
+        await prefs.setString('user_nik', userData['nik']);
         final token = responseMap['access_token'];
         await prefs.setString('access_token', token);
         bool isAdmin = userData['is_admin'] == 1;

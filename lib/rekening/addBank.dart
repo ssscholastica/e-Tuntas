@@ -273,6 +273,11 @@ class _addBankState extends State<addBank> {
         'POST',
         Uri.parse('${baseURL}rekening-bank/'),
       );
+      final token = await getToken();
+      if (token != null) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+
       request.fields['nama_bank'] = namaBankController.text;
       request.fields['nomor_rekening'] = noRekController.text;
       request.fields['nama_pemilik'] = namaPemilikController.text;
@@ -299,12 +304,21 @@ class _addBankState extends State<addBank> {
         ),
       );
 
-      // Send request
       var response = await request.send();
       var responseBody = await response.stream.bytesToString();
-      var responseData = json.decode(responseBody);
 
-      // Close loading dialog
+      debugPrint("Response status code: ${response.statusCode}");
+      debugPrint("Response body: $responseBody");
+
+      Map<String, dynamic> responseData;
+      try {
+        responseData = json.decode(responseBody);
+      } catch (jsonError) {
+        debugPrint("JSON parse error: $jsonError");
+        throw Exception(
+            "Invalid response format from server: ${responseBody}...");
+      } 
+
       Navigator.pop(context);
 
       if (response.statusCode == 201) {
