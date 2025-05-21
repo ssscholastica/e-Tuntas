@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:core';
 import 'dart:math';
 
 import 'package:etuntas/navbar.dart';
@@ -84,27 +85,33 @@ class _ProfileState extends State<Profile> {
 
   Widget buildTemplate(String judul, String isiJudul) {
     return Padding(
-      padding: const EdgeInsets.only(
-        top: 20,
-        left: 20,
-        right: 20,
-      ),
+      padding: const EdgeInsets.only(top: 20, left: 20, right: 20),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            judul,
-            style: const TextStyle(
-                fontSize: 12,
-                color: Color(0XFF8C8C8C),
-                fontWeight: FontWeight.w400),
+          Expanded(
+            flex: 2,
+            child: Text(
+              judul,
+              style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0XFF8C8C8C),
+                  fontWeight: FontWeight.w400),
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
-          Text(
-            isiJudul,
-            style: const TextStyle(
-                fontSize: 12,
-                color: Color(0XFF000000),
-                fontWeight: FontWeight.w400),
+          const SizedBox(width: 10),
+          Expanded(
+            flex: 3,
+            child: Text(
+              isiJudul,
+              style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0XFF000000),
+                  fontWeight: FontWeight.w400),
+              textAlign: TextAlign.right,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       ),

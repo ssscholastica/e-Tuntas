@@ -400,112 +400,116 @@ class _AduanFormPageState extends State<AduanFormPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              children: [
-                Container(
-                  margin: const EdgeInsets.only(top: 60),
-                  child: Row(
-                    children: [
-                      InkWell(
-                        onTap: () => Navigator.pop(context),
-                        child: Image.asset('assets/simbol back.png',
-                            width: 28, height: 28),
-                      ),
-                      const SizedBox(width: 10),
-                      const Text("Aduan & Tracking BPJS",
-                          style: TextStyle(
-                              fontSize: 20, fontWeight: FontWeight.w600)),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Align(
-                  alignment: Alignment.topLeft,
-                  child: Text(
-                    widget.kategori,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color.fromARGB(217, 38, 38, 126),
+      resizeToAvoidBottomInset: true,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(top: 40),
+                    child: Row(
+                      children: [
+                        InkWell(
+                          onTap: () => Navigator.pop(context),
+                          child: Image.asset('assets/simbol back.png',
+                              width: 28, height: 28),
+                        ),
+                        const SizedBox(width: 10),
+                        const Text("Aduan & Tracking BPJS",
+                            style: TextStyle(
+                                fontSize: 20, fontWeight: FontWeight.w600)),
+                      ],
                     ),
                   ),
-                ),
-                const SizedBox(height: 20),
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        children: [
-                          buildTextField(
-                            label: "Kategori",
-                            hint: "",
-                            controller: controllers["Kategori"]!,
-                            readOnly: true,
-                          ),
-                          buildTextField(
-                            label: "Tanggal Ajuan",
-                            hint: "",
-                            controller: controllers["Tanggal Ajuan"]!,
-                            readOnly: true,
-                            onTap: () => selectDate(context),
-                          ),
-                          buildTextField(
-                            label: "Nomor BPJS/NIK",
-                            hint: "Nomor BPJS/NIK",
-                            controller: controllers["Nomor BPJS/NIK"]!,
-                            isNumber: true,
-                          ),
-                          buildTextField(
-                            label: "Deskripsi",
-                            hint: "Deskripsi",
-                            controller: controllers["Deskripsi"]!,
-                            maxLines: 4,
-                          ),
-                          uploadDokumen("Data Pendukung", (File? selectedFile) {
-                            setState(() {
-                              _selectedFile = selectedFile;
-                              _filePath = selectedFile?.path.split('/').last;
-                            });
-                          }),
-                          const SizedBox(height: 20),
-                          Padding(
-                            padding: const EdgeInsets.only(top: 200),
-                            child: SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                onPressed: submitForm,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF2F2F9D),
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 15),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
+                  const SizedBox(height: 10),
+                  Align(
+                    alignment: Alignment.topLeft,
+                    child: Text(
+                      widget.kategori,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color.fromARGB(217, 38, 38, 126),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          children: [
+                            buildTextField(
+                              label: "Kategori",
+                              hint: "",
+                              controller: controllers["Kategori"]!,
+                              readOnly: true,
+                            ),
+                            buildTextField(
+                              label: "Tanggal Ajuan",
+                              hint: "",
+                              controller: controllers["Tanggal Ajuan"]!,
+                              readOnly: true,
+                              onTap: () => selectDate(context),
+                            ),
+                            buildTextField(
+                              label: "Nomor BPJS/NIK",
+                              hint: "Nomor BPJS/NIK",
+                              controller: controllers["Nomor BPJS/NIK"]!,
+                              isNumber: true,
+                            ),
+                            buildTextField(
+                              label: "Deskripsi",
+                              hint: "Deskripsi",
+                              controller: controllers["Deskripsi"]!,
+                              maxLines: 4,
+                            ),
+                            uploadDokumen("Data Pendukung",
+                                (File? selectedFile) {
+                              setState(() {
+                                _selectedFile = selectedFile;
+                                _filePath = selectedFile?.path.split('/').last;
+                              });
+                            }),
+                            const SizedBox(height: 20),
+                            Padding(
+                              padding: const EdgeInsets.only(top: 200),
+                              child: SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: submitForm,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF2F2F9D),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 15),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
                                   ),
-                                ),
-                                child: const Text(
-                                  "Kirim",
-                                  style: TextStyle(
-                                      fontSize: 16, color: Colors.white),
+                                  child: const Text(
+                                    "Kirim",
+                                    style: TextStyle(
+                                        fontSize: 16, color: Colors.white),
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 20),
-                        ],
+                            const SizedBox(height: 20),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          if (isLoading) LoadingWidget(isLoading: isLoading)
-        ],
+            if (isLoading) LoadingWidget(isLoading: isLoading)
+          ],
+        ),
       ),
     );
   }

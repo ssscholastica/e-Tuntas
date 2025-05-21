@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:etuntas/network/comment_bpjs_service.dart';
 import 'package:etuntas/models/comment_bpjs_model.dart';
+import 'package:etuntas/network/comment_bpjs_service.dart';
 import 'package:etuntas/network/globals.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -325,29 +325,42 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            const Padding(
-              padding: EdgeInsets.only(left: 20, top: 20),
-              child: Align(
-                  alignment: Alignment.topLeft,
-                  child: Text(
-                    'Silahkan masukkan nomor BPJS',
-                    style: TextStyle(fontSize: 16),
-                  )),
-            ),
-            _buildInputField(),
-            _buildCheckButton(),
-            if (isLoading)
-              const Padding(
-                padding: EdgeInsets.all(20.0),
-                child: Center(child: CircularProgressIndicator()),
-              )
-            else
-              _buildTrackingResult(),
-            const SizedBox(height: 80)
-          ],
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: IntrinsicHeight(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.only(left: 20, top: 20),
+                        child: Align(
+                            alignment: Alignment.topLeft,
+                            child: Text(
+                              'Silahkan masukkan nomor BPJS',
+                              style: TextStyle(fontSize: 16),
+                            )),
+                      ),
+                      _buildInputField(),
+                      _buildCheckButton(),
+                      if (isLoading)
+                        const Padding(
+                          padding: EdgeInsets.all(20.0),
+                          child: Center(child: CircularProgressIndicator()),
+                        )
+                      else
+                        _buildTrackingResult(),
+                      const SizedBox(height: 80)
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
         ),
       ),
     );
