@@ -565,7 +565,6 @@ class _RejectedStatusWidgetState extends State<RejectedStatusWidget> {
     });
 
     try {
-      // Get pengaduan data from the item
       final pengaduan = widget.item['pengaduan'];
       if (pengaduan == null) {
         throw Exception('Pengaduan data is null');
@@ -670,8 +669,6 @@ class _RejectedStatusWidgetState extends State<RejectedStatusWidget> {
           ),
           const SizedBox(height: 10),
           const Divider(),
-
-          // Comments section
           if (isLoading)
             const Center(child: CircularProgressIndicator())
           else if (comments.isEmpty)
@@ -702,7 +699,6 @@ class _RejectedStatusWidgetState extends State<RejectedStatusWidget> {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Main comment
                         Container(
                           margin: const EdgeInsets.symmetric(vertical: 4),
                           decoration: BoxDecoration(
@@ -744,8 +740,6 @@ class _RejectedStatusWidgetState extends State<RejectedStatusWidget> {
                             ),
                           ),
                         ),
-
-                        // Replies
                         if (comment.replies.isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.only(left: 30.0),
@@ -810,10 +804,7 @@ class _RejectedStatusWidgetState extends State<RejectedStatusWidget> {
                 ),
               ],
             ),
-
           const Divider(),
-
-          // Add comment section
           Row(
             children: [
               Expanded(

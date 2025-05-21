@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:etuntas/home.dart';
+import 'package:etuntas/models/comment_model.dart';
+import 'package:etuntas/network/comment_service.dart';
 import 'package:etuntas/network/globals.dart';
 import 'package:etuntas/widgets/loading_widget.dart';
 import 'package:flutter/material.dart';
@@ -9,8 +11,6 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:etuntas/models/comment_model.dart';
-import 'package:etuntas/network/comment_service.dart';
 
 class TrackingAwal extends StatefulWidget {
   const TrackingAwal({super.key});
@@ -255,14 +255,10 @@ class _TrackingAwalState extends State<TrackingAwal> {
         return null;
       }
 
-      return {
-        'email': userEmail,
-        'is_admin': false, 
-        'name': 'User'
-      };
+      return {'email': userEmail, 'is_admin': false, 'name': 'User'};
     } catch (e) {
       print("Error in _getCurrentUserData: $e");
-      return null; 
+      return null;
     }
   }
 
@@ -392,7 +388,8 @@ class _TrackingAwalState extends State<TrackingAwal> {
 
   void openWhatsApp() async {
     String contact = "6282141788021";
-    String text = Uri.encodeComponent("Halo, saya ingin bertanya tentang status pengajuan santunan saya...");
+    String text = Uri.encodeComponent(
+        "Halo, saya ingin bertanya tentang status pengajuan santunan saya...");
     String androidUrl = "whatsapp://send?phone=$contact&text=$text";
     String iosUrl = "https://wa.me/$contact?text=$text";
     String webUrl = "https://web.whatsapp.com/send?phone=$contact&text=$text";
@@ -440,23 +437,39 @@ class _TrackingAwalState extends State<TrackingAwal> {
 
   @override
   Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final isKeyboardVisible = mediaQuery.viewInsets.bottom > 0;
+    final isLandscape = mediaQuery.orientation == Orientation.landscape;
+
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            child: Column(
-              children: [
-                _buildHeader(),
-                _buildInputField(),
-                _buildCheckButton(),
-                _buildTrackingResult(),
-                const SizedBox(height: 80)
-              ],
+      resizeToAvoidBottomInset: true,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: mediaQuery.size.height -
+                      mediaQuery.padding.top -
+                      mediaQuery.padding.bottom -
+                      (isKeyboardVisible ? 0 : kToolbarHeight),
+                ),
+                child: Column(
+                  children: [
+                    _buildHeader(),
+                    _buildInputField(),
+                    _buildCheckButton(),
+                    _buildTrackingResult(),
+                    SizedBox(height: isKeyboardVisible && isLandscape ? 120 : 80)
+                  ],
+                ),
+              ),
             ),
-          ),
-          LoadingWidget(isLoading: isLoading),
-        ],
+            LoadingWidget(isLoading: isLoading),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: openWhatsApp,
@@ -474,7 +487,7 @@ class _TrackingAwalState extends State<TrackingAwal> {
 
   Widget _buildHeader() {
     return Container(
-      margin: const EdgeInsets.only(top: 60, left: 20, right: 20),
+      margin: const EdgeInsets.only(top: 20, left: 20, right: 20),
       child: Row(
         children: [
           InkWell(
@@ -483,9 +496,15 @@ class _TrackingAwalState extends State<TrackingAwal> {
             child: Image.asset('assets/simbol back.png', width: 28, height: 28),
           ),
           const Spacer(),
-          const Text(
-            "Cek Status Pengajuan Santunan",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          const Expanded(
+            flex: 8,
+            child: Text(
+              "Cek Status Pengajuan Santunan",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
+            ),
           ),
           const Spacer(),
         ],
@@ -494,8 +513,11 @@ class _TrackingAwalState extends State<TrackingAwal> {
   }
 
   Widget _buildInputField() {
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding:
+          EdgeInsets.symmetric(horizontal: 20, vertical: isLandscape ? 5 : 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -513,6 +535,8 @@ class _TrackingAwalState extends State<TrackingAwal> {
               hintText: 'Nomor Pendaftaran/NIK',
               border:
                   OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              contentPadding: EdgeInsets.symmetric(
+                  horizontal: 12, vertical: isLandscape ? 8 : 12),
             ),
             keyboardType: TextInputType.text,
           ),
@@ -884,8 +908,6 @@ class _RejectedStatusWidgetState extends State<RejectedStatusWidget> {
                             ),
                           ),
                         ),
-
-                        // Replies
                         if (comment.replies.isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.only(left: 30.0),

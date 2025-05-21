@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:etuntas/network/globals.dart';
 import 'package:flutter/material.dart';
@@ -175,168 +176,189 @@ class _TrackBPJSState extends State<TrackBPJS> {
 
   void _showFilterOverlay() {
     final RenderBox renderBox = context.findRenderObject() as RenderBox;
-    final size = renderBox.size;
+    final Offset position = renderBox.localToGlobal(Offset.zero);
+    final screenSize = MediaQuery.of(context).size;
+
     _overlayEntry = OverlayEntry(
-      builder: (context) => Positioned(
-        width: size.width - 32,
-        child: CompositedTransformFollower(
-          link: _layerLink,
-          showWhenUnlinked: false,
-          offset: const Offset(-330, 35),
-          child: Material(
-            elevation: 5,
-            borderRadius: BorderRadius.circular(8),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Filter',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        onPressed: _removeFilterOverlay,
-                      )
-                    ],
-                  ),
-                  const Divider(),
-                  const Text(
-                    "Filter Berdasarkan Kategori:",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: categoryOptions.map((category) {
-                      return FilterChip(
-                        label: Text(category),
-                        selected: selectedCategories.contains(category),
-                        onSelected: (selected) {
-                          setState(() {
-                            if (selected) {
-                              selectedCategories.add(category);
-                            } else {
-                              selectedCategories.remove(category);
-                            }
-                            isFilterApplied = selectedCategories.isNotEmpty ||
-                                selectedStatus.isNotEmpty ||
-                                startDate != null ||
-                                endDate != null ||
-                                sortByDate;
-                          });
-                          _rebuildFilterOverlay();
-                        },
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    "Filter Berdasarkan Status:",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: statusOptions.map((status) {
-                      return FilterChip(
-                        label: Text(status),
-                        selected: selectedStatus.contains(status),
-                        onSelected: (selected) {
-                          setState(() {
-                            if (selected) {
-                              selectedStatus.add(status);
-                            } else {
-                              selectedStatus.remove(status);
-                            }
-                            isFilterApplied = selectedCategories.isNotEmpty ||
-                                selectedStatus.isNotEmpty ||
-                                startDate != null ||
-                                endDate != null ||
-                                sortByDate;
-                          });
-                          _rebuildFilterOverlay();
-                        },
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      const Text(
-                        "Urut Berdasarkan Tanggal:",
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(width: 8),
-                      Switch(
-                        value: sortByDate,
-                        onChanged: (value) {
-                          setState(() {
-                            sortByDate = value;
-                            isFilterApplied = selectedCategories.isNotEmpty ||
-                                selectedStatus.isNotEmpty ||
-                                startDate != null ||
-                                endDate != null ||
-                                sortByDate;
-                          });
-                          _rebuildFilterOverlay();
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: () {
-                          setState(() {
-                            selectedCategories = [];
-                            selectedStatus = [];
-                            startDate = null;
-                            endDate = null;
-                            sortByDate = false;
-                            isFilterApplied = false;
-                          });
-                          _rebuildFilterOverlay();
-                        },
-                        child: const Text("Reset"),
-                      ),
-                      ElevatedButton(
-                        onPressed: () {
-                          _removeFilterOverlay();
-                          setState(() {
-                            isFilterApplied = selectedCategories.isNotEmpty ||
-                                selectedStatus.isNotEmpty ||
-                                startDate != null ||
-                                endDate != null ||
-                                sortByDate;
-                          });
-                        },
-                        child: const Text("Terapkan"),
-                      ),
-                    ],
-                  ),
-                ],
+      builder: (context) => Stack(
+        children: [
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: _removeFilterOverlay,
+              child: Container(
+                color: Colors.black.withOpacity(0.2),
               ),
             ),
           ),
-        ),
+          Positioned(
+            top: position.dy + 35,
+            right: max(10.0, min(position.dx - 8, screenSize.width - 340)),
+            width: min(340.0, screenSize.width - 32),
+            child: Material(
+              elevation: 5,
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                constraints: BoxConstraints(
+                  maxHeight: screenSize.height * 0.7,
+                ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Filter',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            onPressed: _removeFilterOverlay,
+                          )
+                        ],
+                      ),
+                      const Divider(),
+                      const Text(
+                        "Filter Berdasarkan Kategori:",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: categoryOptions.map((category) {
+                          return FilterChip(
+                            label: Text(category),
+                            selected: selectedCategories.contains(category),
+                            onSelected: (selected) {
+                              setState(() {
+                                if (selected) {
+                                  selectedCategories.add(category);
+                                } else {
+                                  selectedCategories.remove(category);
+                                }
+                                isFilterApplied =
+                                    selectedCategories.isNotEmpty ||
+                                        selectedStatus.isNotEmpty ||
+                                        startDate != null ||
+                                        endDate != null ||
+                                        sortByDate;
+                              });
+                              _rebuildFilterOverlay();
+                            },
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        "Filter Berdasarkan Status:",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: statusOptions.map((status) {
+                          return FilterChip(
+                            label: Text(status),
+                            selected: selectedStatus.contains(status),
+                            onSelected: (selected) {
+                              setState(() {
+                                if (selected) {
+                                  selectedStatus.add(status);
+                                } else {
+                                  selectedStatus.remove(status);
+                                }
+                                isFilterApplied =
+                                    selectedCategories.isNotEmpty ||
+                                        selectedStatus.isNotEmpty ||
+                                        startDate != null ||
+                                        endDate != null ||
+                                        sortByDate;
+                              });
+                              _rebuildFilterOverlay();
+                            },
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              "Urut Berdasarkan Tanggal:",
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          Switch(
+                            value: sortByDate,
+                            onChanged: (value) {
+                              setState(() {
+                                sortByDate = value;
+                                isFilterApplied =
+                                    selectedCategories.isNotEmpty ||
+                                        selectedStatus.isNotEmpty ||
+                                        startDate != null ||
+                                        endDate != null ||
+                                        sortByDate;
+                              });
+                              _rebuildFilterOverlay();
+                            },
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            onPressed: () {
+                              setState(() {
+                                selectedCategories = [];
+                                selectedStatus = [];
+                                startDate = null;
+                                endDate = null;
+                                sortByDate = false;
+                                isFilterApplied = false;
+                              });
+                              _rebuildFilterOverlay();
+                            },
+                            child: const Text("Reset"),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton(
+                            onPressed: () {
+                              _removeFilterOverlay();
+                              setState(() {
+                                isFilterApplied =
+                                    selectedCategories.isNotEmpty ||
+                                        selectedStatus.isNotEmpty ||
+                                        startDate != null ||
+                                        endDate != null ||
+                                        sortByDate;
+                              });
+                            },
+                            child: const Text("Terapkan"),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
-
     Overlay.of(context).insert(_overlayEntry!);
   }
 
@@ -427,38 +449,31 @@ class _TrackBPJSState extends State<TrackBPJS> {
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Column(
+            child: Row(
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        decoration: InputDecoration(
-                          hintText: "Cari berdasarkan nomor atau kategori",
-                          prefixIcon: const Icon(Icons.search),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                        ),
-                        onChanged: (value) {
-                          setState(() {
-                            searchQuery = value;
-                          });
-                        },
+                Expanded(
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: "Cari berdasarkan nomor atau kategori",
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.0),
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    CompositedTransformTarget(
-                      link: _layerLink,
-                      child: IconButton(
-                        icon: Icon(
-                          Icons.filter_list,
-                          color: isFilterApplied ? Colors.blue : Colors.black,
-                        ),
-                        onPressed: _toggleFilterOverlay,
-                      ),
-                    ),
-                  ],
+                    onChanged: (value) {
+                      setState(() {
+                        searchQuery = value;
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(width: 10),
+                IconButton(
+                  icon: Icon(
+                    Icons.filter_list,
+                    color: isFilterApplied ? Colors.blue : Colors.black,
+                  ),
+                  onPressed: _toggleFilterOverlay,
                 ),
               ],
             ),

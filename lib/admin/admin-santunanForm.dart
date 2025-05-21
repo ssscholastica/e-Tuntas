@@ -93,7 +93,6 @@ class _formSantunanState extends State<formSantunan> {
       if (response.statusCode == 200) {
         return Comment.fromJson(jsonDecode(response.body));
       } else if (response.statusCode == 404) {
-        // Return Comment kosong bukan null
         print('Komentar belum ada untuk no_pendaftaran ini');
         return Comment.empty();
       } else {
@@ -101,7 +100,7 @@ class _formSantunanState extends State<formSantunan> {
       }
     } catch (e) {
       print('Error detail: $e');
-      rethrow; // Biar error tetap dilempar ke atas (optional tergantung use case)
+      rethrow;
     }
   }
 
@@ -161,18 +160,13 @@ class _formSantunanState extends State<formSantunan> {
         body: jsonEncode(
             {'comment': replyController.text.trim(), 'author_type': 'admin'}),
       );
-
       print('Reply response status: ${response.statusCode}');
       print('Reply response body: ${response.body}');
-
-      // If we get a 302 redirect but still want to consider it a success
-      // (since data was saved in the database)
       if (response.statusCode == 200 ||
           response.statusCode == 201 ||
           (response.statusCode == 302 &&
               response.body.contains('Redirecting'))) {
         replyController.clear();
-
         setState(() {
           commentsFuture = fetchCommentByNoPendaftaran();
         });
@@ -180,21 +174,14 @@ class _formSantunanState extends State<formSantunan> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Balasan berhasil dikirim')),
         );
-
-        // If it was a redirect, you might want to refresh the session or token
         if (response.statusCode == 302) {
-          // This might be a good place to refresh your auth token silently
-          // without showing the error message to the user
           _refreshSession();
         }
       } else if (response.statusCode == 302) {
-        // This is for other types of 302 redirects that might indicate an error
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
               content: Text('Sesi telah berakhir. Silakan login kembali.')),
         );
-        // You might want to navigate to login page
-        // Navigator.of(context).pushReplacementNamed('/login');
       } else {
         String errorMessage;
         try {
@@ -220,19 +207,11 @@ class _formSantunanState extends State<formSantunan> {
     }
   }
 
-// Function to refresh session or token silently
   void _refreshSession() async {
     try {
-      // Implement your token refresh logic here
-      // This could be a silent refresh of the token without interrupting the user
       print('Session redirect detected, refreshing session silently');
-
-      // Example:
-      // final refreshedToken = await refreshAuthToken();
-      // await saveAuthToken(refreshedToken);
     } catch (e) {
       print('Failed to refresh session: $e');
-      // You might want to queue a delayed login prompt if this fails repeatedly
     }
   }
 
@@ -242,11 +221,9 @@ class _formSantunanState extends State<formSantunan> {
       isLoading = true;
     });
     try {
-      // Gunakan cara yang sama seperti di fungsi fetchCommentByNoPendaftaran dan submitReply
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString(
-          'access_token'); // Menggunakan access_token bukan auth_token
-
+          'access_token');
       if (token == null || token.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -264,7 +241,6 @@ class _formSantunanState extends State<formSantunan> {
         'Content-Type': 'application/json',
       };
 
-      // Tambahkan CSRF token jika diperlukan
       final csrfToken = await getCsrfToken();
       if (csrfToken != null) {
         headers['X-CSRF-TOKEN'] = csrfToken;
@@ -289,7 +265,6 @@ class _formSantunanState extends State<formSantunan> {
       print('Making PUT request to: $apiEndpoint');
       print('Using headers: $headers');
 
-      // Gunakan http.put alih-alih _dio.put
       final response = await http.put(
         Uri.parse(apiEndpoint),
         headers: headers,
@@ -308,9 +283,7 @@ class _formSantunanState extends State<formSantunan> {
         });
         widget.onStatusUpdated();
       } else if (response.statusCode == 302) {
-        // Tangani redirect seperti pada fungsi submitReply
         if (response.body.contains('Redirecting')) {
-          // Mungkin operasi berhasil sebelum redirect
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Status berhasil diperbarui')),
           );
@@ -329,8 +302,6 @@ class _formSantunanState extends State<formSantunan> {
           const SnackBar(
               content: Text('Sesi telah berakhir. Silakan login kembali')),
         );
-        // Di sini bisa ditambahkan navigasi ke halaman login
-        // Navigator.of(context).pushReplacementNamed('/login');
       } else {
         String errorMessage;
         try {
