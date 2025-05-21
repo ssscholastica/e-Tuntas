@@ -63,7 +63,6 @@
       _showFailureDialog("Nomor BPJS/NIK tidak boleh kosong!");
       return;
     }
-
     setState(() {
       isLoading = true;
       errorMessage = "";
@@ -71,7 +70,6 @@
       isTrackingSuccess = false;
       trackingInfo = [];
     });
-
     try {
       print("Searching for BPJS/NIK: $searchQuery");
 
@@ -101,51 +99,93 @@
       print('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
-        final List<dynamic> jsonData = json.decode(response.body);
+        try {
+          final dynamic responseData = json.decode(response.body);
 
-        // Get current user email for filtering
-        final currentUser = await _getCurrentUserData();
-        final String userEmail = currentUser?['email'] ?? '';
-        final String userNik = currentUser?['nik'] ?? '';
+          // Handle both array and object responses
+          List<dynamic> jsonData = [];
+          if (responseData is List) {
+            jsonData = responseData;
+          } else if (responseData is Map && responseData['status'] == 'error') {
+            setState(() {
+              isLoading = false;
+              isTrackingSuccess = false;
+              errorMessage = responseData['message'] ?? "Data tidak ditemukan";
+            });
+            _showFailureDialog(responseData['message'] ??
+                "Data dengan nomor BPJS/NIK tersebut tidak ditemukan.");
+            return;
+          }
 
-        final matchingData = jsonData.where((item) {
-          final itemNik = item['nik']?.toString() ?? '';
-          final itemBPJS = item['nomor_bpjs_nik']?.toString() ?? '';
-          final itemEmail = item['email']?.toString().toLowerCase() ?? '';
+          // Print the keys of the first item to debug field names
+          if (jsonData.isNotEmpty) {
+            print("First item keys: ${jsonData.first.keys.toList()}");
+          }
 
-          // Match when:
-          // 1. The email matches AND either BPJS or NIK matches the search query
-          // 2. OR the user's NIK matches the query (for NIK-based searches)
-          return (itemEmail == userEmail.toLowerCase() &&
-                  (itemBPJS == searchQuery || itemNik == searchQuery)) ||
-              (userNik == searchQuery);
-        }).toList();
+          final currentUser = await _getCurrentUserData();
+          final String userEmail = currentUser?['email'] ?? '';
+          final String userNik = currentUser?['nik'] ?? '';
 
+          final matchingData = jsonData.where((item) {
+            final itemNik = item['nik']?.toString() ?? '';
+
+            // Check for both possible field names
+            final itemBPJS = item['nomor_bpjs']?.toString() ??
+                item['nomor_bpjs_nik']?.toString() ??
+                '';
+
+            final itemEmail = item['email']?.toString().toLowerCase() ?? '';
+
+            // Match when:
+            // 1. The email matches AND either BPJS or NIK matches the search query
+            // 2. OR the user's NIK matches the query (for NIK-based searches)
+            return (itemEmail == userEmail.toLowerCase() &&
+                    (itemBPJS == searchQuery || itemNik == searchQuery)) ||
+                (userNik == searchQuery);
+          }).toList();
+
+          setState(() {
+            isLoading = false;
+
+            if (matchingData.isNotEmpty) {
+              isTrackingSuccess = true;
+              currentPengaduan = matchingData.first;
+              final status = currentPengaduan!['status'] ?? 'Terkirim';
+              final tanggalAjuan = DateTime.parse(
+                  currentPengaduan!['tanggal_ajuan'] ??
+                      currentPengaduan!['created_at']);
+              trackingInfo = _generateTrackingInfo(status, tanggalAjuan);
+            } else {
+              isTrackingSuccess = false;
+              trackingInfo = [];
+              currentPengaduan = null;
+              errorMessage = "Data tidak ditemukan";
+              _showFailureDialog(
+                  "Data dengan nomor BPJS/NIK tersebut tidak ditemukan.");
+            }
+          });
+        } catch (e) {
+          print("Error parsing response data: $e");
+          setState(() {
+            isLoading = false;
+            isTrackingSuccess = false;
+            errorMessage = "Error parsing data: ${e.toString()}";
+          });
+          _showFailureDialog("Terjadi kesalahan saat memproses data.");
+        }
+      } else if (response.statusCode == 404) {
         setState(() {
           isLoading = false;
-
-          if (matchingData.isNotEmpty) {
-            isTrackingSuccess = true;
-            currentPengaduan = matchingData.first;
-            final status = currentPengaduan!['status'] ?? 'Terkirim';
-            final tanggalAjuan = DateTime.parse(
-                currentPengaduan!['tanggal_ajuan'] ??
-                    currentPengaduan!['created_at']);
-            trackingInfo = _generateTrackingInfo(status, tanggalAjuan);
-          } else {
-            isTrackingSuccess = false;
-            trackingInfo = [];
-            currentPengaduan = null;
-            errorMessage = "Data tidak ditemukan";
-            _showFailureDialog(
-                "Data dengan nomor BPJS/NIK tersebut tidak ditemukan.");
-          }
+          isTrackingSuccess = false;
+          errorMessage = "Data tidak ditemukan";
         });
+        _showFailureDialog(
+            "Data dengan nomor BPJS/NIK tersebut tidak ditemukan.");
       } else {
         setState(() {
           isLoading = false;
           isTrackingSuccess = false;
-          errorMessage = "Gagal terhubung ke server";
+          errorMessage = "Gagal terhubung ke server (${response.statusCode})";
         });
         _showFailureDialog("Gagal terhubung ke server. Coba lagi nanti.");
       }
@@ -164,26 +204,24 @@
     try {
       final currentUser = await _getCurrentUserData();
       print("Current user data: $currentUser");
-
       if (currentUser == null) {
         print("No user logged in");
         return false;
       }
-
-      // Admin can access all data
       if (currentUser['is_admin'] == 1 || currentUser['is_admin'] == true) {
         print("User is admin, authorization granted");
         return true;
       }
-
       final String userEmail = currentUser['email'] ?? '';
       final String userNik = currentUser['nik'] ?? '';
       print(
           "User email: $userEmail, User NIK: $userNik, checking for search query: $searchQuery");
 
-      // If the search query matches the user's own NIK, they are authorized
-      if (searchQuery == userNik && userNik.isNotEmpty) {
-        print("Search query matches user's NIK, authorization granted");
+      // If the search query matches the user's own NIK (even a substring of it), they are authorized
+      if (userNik.isNotEmpty &&
+          (searchQuery == userNik || userNik.contains(searchQuery))) {
+        print(
+            "Search query matches user's NIK (or is part of it), authorization granted");
         return true;
       }
 
@@ -193,21 +231,63 @@
             '${baseURL}pengaduan-bpjs/search-comprehensive?query=$searchQuery'),
         headers: headers,
       );
+      print('Authorization check response status: ${response.statusCode}');
+      print('Authorization check response body: ${response.body}');
 
       if (response.statusCode == 200) {
-        final List<dynamic> jsonData = json.decode(response.body);
+        try {
+          final dynamic responseData = json.decode(response.body);
 
-        // Check if this user has a complaint with this BPJS number or NIK
-        final matchingData = jsonData.where((item) {
-          final itemEmail = item['email']?.toString().toLowerCase() ?? '';
-          final itemBpjs = item['nomor_bpjs_nik']?.toString() ?? '';
-          final itemNik = item['nik']?.toString() ?? '';
+          // Handle both array and object responses
+          List<dynamic> jsonData = [];
+          if (responseData is List) {
+            jsonData = responseData;
+          } else if (responseData is Map) {
+            // If it's not a list but has a status error, return false
+            if (responseData['status'] == 'error') {
+              print("Authorization check: returned error status");
+              return false;
+            }
+          }
 
-          return itemEmail == userEmail.toLowerCase() &&
-              (itemBpjs == searchQuery || itemNik == searchQuery);
-        }).toList();
+          // Print the keys of the first item to debug field names
+          if (jsonData.isNotEmpty) {
+            print("First item keys: ${jsonData.first.keys.toList()}");
+          }
 
-        return matchingData.isNotEmpty;
+          // Check if this user has a complaint with this BPJS number or NIK
+          final cleanedSearchQuery = searchQuery.trim();
+          final lowerUserEmail = userEmail.toLowerCase();
+          final lowerUserNik = userNik.trim();
+
+          final matchingData = jsonData.where((item) {
+            final itemEmail =
+                item['email']?.toString().toLowerCase().trim() ?? '';
+            final itemNik = item['nik']?.toString().trim() ?? '';
+            final itemBPJS = item['nomor_bpjs']?.toString().trim() ??
+                item['nomor_bpjs_nik']?.toString().trim() ??
+                '';
+
+            final isMatchEmail = itemEmail == lowerUserEmail;
+            final isMatchNik = itemNik == cleanedSearchQuery;
+            final isMatchBPJS = itemBPJS == cleanedSearchQuery;
+            final isUserNikMatch = lowerUserNik == cleanedSearchQuery;
+
+            return (isMatchEmail && (isMatchNik || isMatchBPJS)) ||
+                isUserNikMatch;
+          }).toList();
+
+
+          print("Found ${matchingData.length} matching data items");
+          return matchingData.isNotEmpty;
+        } catch (e) {
+          print("Error parsing response in authorization check: $e");
+          return false;
+        }
+      } else if (response.statusCode == 404) {
+        // If the backend returns 404, there's no data to check against
+        print("No data found for this query in authorization check");
+        return false;
       }
 
       return false;

@@ -19,8 +19,11 @@ class _CaraPengajuanState extends State<CaraPengajuan> {
   Widget buildImageBox(String nama, String imagePath, int color) {
     return Container(
       margin: const EdgeInsets.only(top: 20),
-      width: MediaQuery.of(context).size.width * 0.9,
-      height: MediaQuery.of(context).size.height * 0.1,
+      width: double.infinity,
+      constraints: const BoxConstraints(
+        minHeight: 60,
+        maxHeight: 120,
+      ),
       decoration: BoxDecoration(
         color: Color(color),
         borderRadius: BorderRadius.circular(10),
@@ -33,21 +36,27 @@ class _CaraPengajuanState extends State<CaraPengajuan> {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.only(left: 40, right: 20),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              nama,
-              style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0XFFFFFFFF)),
+            Flexible(
+              child: Text(
+                nama,
+                style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0XFFFFFFFF)),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              ),
             ),
-            Image.asset(
-              imagePath,
-              width: 100,
-              height: 100,
+            Flexible(
+              child: Image.asset(
+                imagePath,
+                width: 100,
+                height: 100,
+              ),
             )
           ],
         ),
@@ -59,85 +68,86 @@ class _CaraPengajuanState extends State<CaraPengajuan> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Column(
-        children: [
-          Center(
-            child: Container(
-              margin: const EdgeInsets.only(
-                  top: 60, left: 20, right: 20, bottom: 10),
-              child: Row(
-                children: [
-                  InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const Home()),
-                      );
-                    },
-                    child: Image.asset(
-                      'assets/simbol back.png',
-                      width: 28,
-                      height: 28,
-                    ),
-                  ),
-                  const SizedBox(width: 20),
-                  const Text(
-                    "Cara Pengajuan",
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Color(0XFF000000),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const Spacer(flex: 1),
-                ],
-              ),
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: MediaQuery.of(context).size.width * 0.05,
-              vertical: MediaQuery.of(context).size.height * 0.02,
-            ),
-            child: Stack(
-              children: [
-                Container(
-                    margin: const EdgeInsets.only(top: 200),
-                    child: Image.asset('assets/background cara pengajuan.png')),
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            Center(
+              child: Container(
+                margin: const EdgeInsets.only(
+                    top: 60, left: 20, right: 20, bottom: 10),
+                child: Row(
                   children: [
                     InkWell(
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(
-                              builder: (context) =>
-                                  const CaraPengajuanSantunan()),
+                          MaterialPageRoute(builder: (context) => const Home()),
                         );
                       },
-                      child: buildImageBox(
-                          "Cara Pengajuan \nSantunan",
-                          "assets/simbol cara pengajuan santunan.png",
-                          0XFFE6AE06),
+                      child: Image.asset(
+                        'assets/simbol back.png',
+                        width: 28,
+                        height: 28,
+                      ),
                     ),
-                    InkWell(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const CaraPengajuanBPJS()),
-                        );
-                      },
-                      child: buildImageBox("Cara Pengaduan \nBPJS ",
-                          "assets/simbol cara pengajuan BPJS.png", 0XFF26267E),
-                    )
+                    const SizedBox(width: 20),
+                    const Text(
+                      "Cara Pengajuan",
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Color(0XFF000000),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const Spacer(flex: 1),
                   ],
                 ),
-              ],
+              ),
             ),
-          ),
-        ],
+            Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: MediaQuery.of(context).size.width * 0.05,
+                vertical: MediaQuery.of(context).size.height * 0.02,
+              ),
+              child: Stack(
+                children: [
+                  Center(
+                      child: Image.asset('assets/background cara pengajuan.png')),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) =>
+                                    const CaraPengajuanSantunan()),
+                          );
+                        },
+                        child: buildImageBox(
+                            "Cara Pengajuan Santunan",
+                            "assets/simbol cara pengajuan santunan.png",
+                            0XFFE6AE06),
+                      ),
+                      InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const CaraPengajuanBPJS()),
+                          );
+                        },
+                        child: buildImageBox("Cara Pengaduan BPJS ",
+                            "assets/simbol cara pengajuan BPJS.png", 0XFF26267E),
+                      )
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

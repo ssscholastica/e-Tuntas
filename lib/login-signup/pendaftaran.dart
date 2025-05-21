@@ -61,62 +61,77 @@ class _PendaftaranState extends State<Pendaftaran> {
           final data = jsonDecode(response.body);
 
           if (data != null && data.containsKey('nama_pensiunan')) {
-            setState(() {
-              controllers["Nama Bersangkutan"]!.text = data['nama_pensiunan'];
-            });
+            if (mounted) {
+              setState(() {
+                controllers["Nama Bersangkutan"]!.text = data['nama_pensiunan'];
+              });
+            }
           } else {
-            // ignore: use_build_context_synchronously
-            _showDialog(
-            success: false,
-            title: "Gagal Daftar!",
-            message: "Data pensiunan tidak lengkap",
-            buttonText: "Kembali",
-            onPressed: () => Navigator.pop(context),
-            context: context,
-          );
-            controllers["Nama Bersangkutan"]!.clear();
+            if (mounted) {
+              _showDialog(
+                success: false,
+                title: "Gagal Daftar!",
+                message: "Data pensiunan tidak lengkap",
+                buttonText: "Kembali",
+                onPressed: () => Navigator.pop(context),
+                context: context,
+              );
+              setState(() {
+                controllers["Nama Bersangkutan"]!.clear();
+                isLoadingPensiunan = false;
+              });
+            }
           }
         } else if (response.statusCode == 404) {
-          // ignore: use_build_context_synchronously
-          _showDialog(
-            success: false,
-            title: "Gagal Daftar!",
-            message: "Nomor Pensiunan tidak ditemukan",
-            buttonText: "Kembali",
-            onPressed: () => Navigator.pop(context),
-            context: context,
-          );
-          controllers["Nama Bersangkutan"]!.clear();
+          if (mounted) {
+            // ignore: use_build_context_synchronously
+            _showDialog(
+              success: false,
+              title: "Gagal Daftar!",
+              message: "Nomor Pensiunan tidak ditemukan",
+              buttonText: "Kembali",
+              onPressed: () => Navigator.pop(context),
+              context: context,
+            );
+            setState(() {
+              controllers["Nama Bersangkutan"]!.clear();
+              isLoadingPensiunan = false;
+            });
+          }
         } else {
           print("Error status code: ${response.statusCode}");
           print("Error response body: ${response.body}");
-          // ignore: use_build_context_synchronously
-          _showDialog(
-            success: false,
-            title: "Gagal Daftar!",
-            message: "Gagal mengambil data pensiunan",
-            buttonText: "Kembali",
-            onPressed: () => Navigator.pop(context),
-            context: context,
-          );
-          controllers["Nama Bersangkutan"]!.clear();
+          if (mounted) {
+            _showDialog(
+              success: false,
+              title: "Gagal Daftar!",
+              message: "Gagal mengambil data pensiunan",
+              buttonText: "Kembali",
+              onPressed: () => Navigator.pop(context),
+              context: context,
+            );
+            setState(() {
+              controllers["Nama Bersangkutan"]!.clear();
+              isLoadingPensiunan = false;
+            });
+          }
         }
       } catch (e) {
         print("Error fetching pensioner details: $e");
-        // ignore: use_build_context_synchronously
-        _showDialog(
+        if (mounted) {
+          _showDialog(
             success: false,
-            title: "Gagal Daftar!",
-            message: "Terjadi kesalahan koneksi",
+            title: "Error",
+            message: "Terjadi kesalahan saat mengambil data",
             buttonText: "Kembali",
             onPressed: () => Navigator.pop(context),
             context: context,
           );
-        controllers["Nama Bersangkutan"]!.clear();
-      } finally {
-        setState(() {
-          isLoadingPensiunan = false;
-        });
+          setState(() {
+            controllers["Nama Bersangkutan"]!.clear();
+            isLoadingPensiunan = false;
+          });
+        }
       }
     }
   }

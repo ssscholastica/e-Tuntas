@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:etuntas/network/globals.dart';
+import 'package:etuntas/widgets/loading_widget.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:etuntas/network/globals.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
@@ -139,7 +140,7 @@ class _AduanFormPageState extends State<AduanFormPage> {
     controllers["Deskripsi"] = TextEditingController();
     controllers["Kategori"] = TextEditingController(text: widget.kategori);
   }
-  
+
   String? _filePath;
   File? _selectedFile;
 
@@ -197,6 +198,9 @@ class _AduanFormPageState extends State<AduanFormPage> {
         _filePath == null ||
         _filePath!.isEmpty ||
         _selectedFile == null) {
+      setState(() {
+        isLoading = false;
+      });
       _showDialog(
         success: false,
         title: "Gagal!",
@@ -230,6 +234,10 @@ class _AduanFormPageState extends State<AduanFormPage> {
 
       debugPrint('Status code: ${response.statusCode}');
       debugPrint('Response body: $respStr');
+
+      setState(() {
+        isLoading = false;
+      });
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         _showDialog(
@@ -270,6 +278,9 @@ class _AduanFormPageState extends State<AduanFormPage> {
         );
       }
     } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
       _showDialog(
         success: false,
         title: "Error",
@@ -389,101 +400,112 @@ class _AduanFormPageState extends State<AduanFormPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(
-          children: [
-            Container(
-              margin: const EdgeInsets.only(top: 60),
-              child: Row(
-                children: [
-                  InkWell(
-                    onTap: () => Navigator.pop(context),
-                    child: Image.asset('assets/simbol back.png',
-                        width: 28, height: 28),
-                  ),
-                  const SizedBox(width: 10),
-                  const Text("Aduan & Tracking BPJS",
-                      style:
-                          TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
-                ],
-              ),
-            ),
-            const SizedBox(height: 10),
-            Align(
-              alignment: Alignment.topLeft,
-              child: Text(
-                widget.kategori,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color.fromARGB(217, 38, 38, 126),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Form(
-                  key: _formKey,
-                  child: Column(
+      body: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              children: [
+                Container(
+                  margin: const EdgeInsets.only(top: 60),
+                  child: Row(
                     children: [
-                      buildTextField(
-                        label: "Kategori",
-                        hint: "",
-                        controller: controllers["Kategori"]!,
-                        readOnly: true,
+                      InkWell(
+                        onTap: () => Navigator.pop(context),
+                        child: Image.asset('assets/simbol back.png',
+                            width: 28, height: 28),
                       ),
-                      buildTextField(
-                        label: "Tanggal Ajuan",
-                        hint: "",
-                        controller: controllers["Tanggal Ajuan"]!,
-                        readOnly: true,
-                        onTap: () => selectDate(context),
-                      ),
-                      buildTextField(
-                          label: "Nomor BPJS/NIK",
-                          hint: "Nomor BPJS/NIK",
-                          controller: controllers["Nomor BPJS/NIK"]!,
-                          isNumber: true),
-                      buildTextField(
-                          label: "Deskripsi",
-                          hint: "Deskripsi",
-                          controller: controllers["Deskripsi"]!,
-                          maxLines: 4),
-                      uploadDokumen("Data Pendukung", (File? selectedFile) {
-                        setState(() {
-                          _selectedFile = selectedFile;
-                          _filePath = selectedFile?.path.split('/').last;
-                        });
-                      }),
-                      const SizedBox(height: 20),
-                      Padding(
-                        padding: const EdgeInsets.only(top: 200),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: submitForm,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF2F2F9D),
-                              padding: const EdgeInsets.symmetric(vertical: 15),
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10)),
-                            ),
-                            child: const Text("Kirim",
-                                style: TextStyle(
-                                    fontSize: 16, color: Colors.white)),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
+                      const SizedBox(width: 10),
+                      const Text("Aduan & Tracking BPJS",
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.w600)),
                     ],
                   ),
                 ),
-              ),
+                const SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.topLeft,
+                  child: Text(
+                    widget.kategori,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color.fromARGB(217, 38, 38, 126),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        children: [
+                          buildTextField(
+                            label: "Kategori",
+                            hint: "",
+                            controller: controllers["Kategori"]!,
+                            readOnly: true,
+                          ),
+                          buildTextField(
+                            label: "Tanggal Ajuan",
+                            hint: "",
+                            controller: controllers["Tanggal Ajuan"]!,
+                            readOnly: true,
+                            onTap: () => selectDate(context),
+                          ),
+                          buildTextField(
+                            label: "Nomor BPJS/NIK",
+                            hint: "Nomor BPJS/NIK",
+                            controller: controllers["Nomor BPJS/NIK"]!,
+                            isNumber: true,
+                          ),
+                          buildTextField(
+                            label: "Deskripsi",
+                            hint: "Deskripsi",
+                            controller: controllers["Deskripsi"]!,
+                            maxLines: 4,
+                          ),
+                          uploadDokumen("Data Pendukung", (File? selectedFile) {
+                            setState(() {
+                              _selectedFile = selectedFile;
+                              _filePath = selectedFile?.path.split('/').last;
+                            });
+                          }),
+                          const SizedBox(height: 20),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 200),
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: submitForm,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF2F2F9D),
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 15),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                child: const Text(
+                                  "Kirim",
+                                  style: TextStyle(
+                                      fontSize: 16, color: Colors.white),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+          if (isLoading) LoadingWidget(isLoading: isLoading)
+        ],
       ),
     );
   }
