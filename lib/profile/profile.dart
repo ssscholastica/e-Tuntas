@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:core';
-import 'dart:math';
 
 import 'package:etuntas/navbar.dart';
 import 'package:etuntas/network/globals.dart';
@@ -98,6 +97,7 @@ class _ProfileState extends State<Profile> {
                   color: Color(0XFF8C8C8C),
                   fontWeight: FontWeight.w400),
               overflow: TextOverflow.ellipsis,
+              maxLines: 1,
             ),
           ),
           const SizedBox(width: 10),
@@ -111,6 +111,7 @@ class _ProfileState extends State<Profile> {
                   fontWeight: FontWeight.w400),
               textAlign: TextAlign.right,
               overflow: TextOverflow.ellipsis,
+              maxLines: 2,
             ),
           ),
         ],
@@ -140,6 +141,7 @@ class _ProfileState extends State<Profile> {
                 fontWeight: FontWeight.w400,
               ),
               overflow: TextOverflow.ellipsis,
+              maxLines: 1,
             ),
           ),
           if (imagePathKanan != null)
@@ -155,145 +157,150 @@ class _ProfileState extends State<Profile> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
     final isLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;
+    final topPadding = MediaQuery.of(context).padding.top;
+    final screenHeight = size.height -
+        topPadding -
+        (isLandscape ? 0 : kBottomNavigationBarHeight);
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
-          child: Column(
-            children: [
-              Center(
-                child: Container(
-                    margin: EdgeInsets.only(top: isLandscape ? 10 : 80),
-                    child: const Text(
-                      "Akun Pengguna",
-                      style: TextStyle(
-                          fontSize: 18,
-                          color: Color(0XFF000000),
-                          fontWeight: FontWeight.bold),
-                    )),
-              ),
-              Container(
-                height: isLandscape
-                    ? MediaQuery.of(context).size.height * 0.7
-                    : max(MediaQuery.of(context).size.height - 510, 0),
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Image.asset(
-                      "assets/background profile.png",
-                      width: MediaQuery.of(context).size.width,
-                      height: isLandscape ? 100 : null,
-                      fit: BoxFit.cover,
-                    ),
-                    Positioned(
-                      top: isLandscape ? 40 : 80,
-                      left: 20,
-                      right: 20,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFFFFF),
-                          borderRadius: BorderRadius.circular(10),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.15),
-                              offset: const Offset(0, 4),
-                              blurRadius: 4,
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.only(
-                                  top: 40, left: 20, right: 20),
-                              child: Row(
-                                children: [
-                                  const Text(
-                                    "Profile",
-                                    style: TextStyle(
-                                        fontSize: 16,
-                                        color: Color(0XFF000000),
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                  const Spacer(),
-                                  InkWell(
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) =>
-                                                const EditProfile()),
-                                      );
-                                    },
-                                    child: const Text(
-                                      "Edit",
-                                      style: TextStyle(
-                                          fontSize: 16,
-                                          color: Color(0XFF2F2F9D),
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                  )
-                                ],
-                              ),
-                            ),
-                            Column(
-                              children: [
-                                buildTemplate('Nama Lengkap', name),
-                                buildTemplate('Email', email),
-                                buildTemplate('Nomor HP', nomorHp),
-                                buildTemplate('Tanggal Lahir', tanggalLahir),
-                                buildTemplate('Alamat', alamat),
-                                const SizedBox(
-                                  height: 20,
-                                )
-                              ],
-                            )
-                          ],
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: screenHeight,
+            ),
+            child: Column(
+              children: [
+                SizedBox(height: isLandscape ? 10 : 20),
+                const Text(
+                  "Akun Pengguna",
+                  style: TextStyle(
+                      fontSize: 18,
+                      color: Color(0XFF000000),
+                      fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: isLandscape ? 10 : 30),
+                Container(
+                  width: double.infinity,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    alignment: Alignment.topCenter,
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        height: isLandscape ? 100 : 180,
+                        child: Image.asset(
+                          "assets/background profile.png",
+                          width: double.infinity,
+                          fit: BoxFit.cover,
                         ),
                       ),
-                    ),
-                    Positioned(
-                        top: isLandscape ? 10 : 40,
-                        left: 0,
-                        right: 0,
-                        child: const Center(
-                          child: CircleAvatar(
-                            radius: 40,
-                            backgroundImage: AssetImage("assets/profile.png"),
+                      Padding(
+                        padding: EdgeInsets.only(
+                          top: isLandscape ? 40 : 80,
+                          left: 20,
+                          right: 20,
+                          bottom: 20,
+                        ),
+                        child: Container(
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFFFFF),
+                            borderRadius: BorderRadius.circular(10),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.15),
+                                offset: const Offset(0, 4),
+                                blurRadius: 4,
+                              ),
+                            ],
                           ),
-                        ))
-                  ],
+                          child: Column(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                    top: 40, left: 20, right: 20),
+                                child: Row(
+                                  children: [
+                                    const Text(
+                                      "Profile",
+                                      style: TextStyle(
+                                          fontSize: 16,
+                                          color: Color(0XFF000000),
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                    const Spacer(),
+                                    InkWell(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (context) =>
+                                                  const EditProfile()),
+                                        );
+                                      },
+                                      child: const Text(
+                                        "Edit",
+                                        style: TextStyle(
+                                            fontSize: 16,
+                                            color: Color(0XFF2F2F9D),
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    )
+                                  ],
+                                ),
+                              ),
+                              Column(
+                                children: [
+                                  buildTemplate('Nama Lengkap', name),
+                                  buildTemplate('Email', email),
+                                  buildTemplate('Nomor HP', nomorHp),
+                                  buildTemplate('Tanggal Lahir', tanggalLahir),
+                                  buildTemplate('Alamat', alamat),
+                                  const SizedBox(height: 20)
+                                ],
+                              )
+                            ],
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: isLandscape ? 10 : 40,
+                        child: const CircleAvatar(
+                          radius: 40,
+                          backgroundImage: AssetImage("assets/profile.png"),
+                        ),
+                      )
+                    ],
+                  ),
                 ),
-              ),
-              SizedBox(height: isLandscape
-                    ? MediaQuery.of(context).size.height * 0.1
-                    : max(MediaQuery.of(context).size.height - 910, 0)),
-              Container(
-                alignment: Alignment.topLeft,
-                margin: EdgeInsets.only(
-                    top: isLandscape ? 10 : 30,
-                    left: 20,
-                    bottom: isLandscape ? 10 : 20),
-                child: const Text(
-                  'Lainnya',
-                  style: TextStyle(
-                      fontSize: 16,
-                      color: Color(0XFF000000),
-                      fontWeight: FontWeight.w600),
+                SizedBox(height: 20),
+                Container(
+                  alignment: Alignment.topLeft,
+                  margin: const EdgeInsets.only(left: 20, bottom: 10),
+                  child: const Text(
+                    'Lainnya',
+                    style: TextStyle(
+                        fontSize: 16,
+                        color: Color(0XFF000000),
+                        fontWeight: FontWeight.w600),
+                  ),
                 ),
-              ),
-              Center(
-                child: Container(
-                  height: 150,
-                  width: 330,
+                Container(
+                  margin:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  width: double.infinity,
                   decoration: BoxDecoration(
                     color: const Color(0xFFF9FAFD),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Material(
+                    borderRadius: BorderRadius.circular(10),
                     child: Column(
                       children: [
                         InkWell(
@@ -335,9 +342,9 @@ class _ProfileState extends State<Profile> {
                     ),
                   ),
                 ),
-              ),
-              isLandscape ? SizedBox(height: 20) : SizedBox(),
-            ],
+                SizedBox(height: 20),
+              ],
+            ),
           ),
         ),
       ),

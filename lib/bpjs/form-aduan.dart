@@ -371,6 +371,10 @@ class _AduanFormPageState extends State<AduanFormPage> {
       int maxLines = 1,
       VoidCallback? onTap,
       bool isNumber = false}) {
+    // Check orientation for better padding in landscape
+    final isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -387,62 +391,82 @@ class _AduanFormPageState extends State<AduanFormPage> {
           decoration: InputDecoration(
             hintText: hint,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-            contentPadding:
-                const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            contentPadding: EdgeInsets.symmetric(
+                vertical: isLandscape ? 6 : 8, horizontal: 12),
           ),
           onTap: onTap,
         ),
-        const SizedBox(height: 10),
+        SizedBox(height: isLandscape ? 5 : 10),
       ],
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    // Get screen metrics
+    final mediaQuery = MediaQuery.of(context);
+    final isKeyboardVisible = mediaQuery.viewInsets.bottom > 0;
+    final isLandscape = mediaQuery.orientation == Orientation.landscape;
+    final screenHeight = mediaQuery.size.height;
+
     return Scaffold(
       resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: Stack(
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                children: [
-                  Container(
-                    margin: const EdgeInsets.only(top: 40),
-                    child: Row(
-                      children: [
-                        InkWell(
-                          onTap: () => Navigator.pop(context),
-                          child: Image.asset('assets/simbol back.png',
-                              width: 28, height: 28),
-                        ),
-                        const SizedBox(width: 10),
-                        const Text("Aduan & Tracking BPJS",
-                            style: TextStyle(
-                                fontSize: 20, fontWeight: FontWeight.w600)),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Align(
-                    alignment: Alignment.topLeft,
-                    child: Text(
-                      widget.kategori,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color.fromARGB(217, 38, 38, 126),
+            Column(
+              children: [
+                // Header section - fixed at top
+                Padding(
+                  padding: EdgeInsets.only(
+                      top: isLandscape ? 10 : 20, left: 20, right: 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          InkWell(
+                            onTap: () => Navigator.pop(context),
+                            child: Image.asset('assets/simbol back.png',
+                                width: 28, height: 28),
+                          ),
+                          const SizedBox(width: 10),
+                          const Expanded(
+                            child: Text(
+                              "Aduan & Tracking BPJS",
+                              style: TextStyle(
+                                  fontSize: 20, fontWeight: FontWeight.w600),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
+                      SizedBox(height: isLandscape ? 5 : 10),
+                      Text(
+                        widget.kategori,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color.fromARGB(217, 38, 38, 126),
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 20),
-                  Expanded(
-                    child: SingleChildScrollView(
+                ),
+
+                // Form content - scrollable
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: Form(
                         key: _formKey,
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            SizedBox(height: isLandscape ? 5 : 10),
                             buildTextField(
                               label: "Kategori",
                               hint: "",
@@ -466,7 +490,7 @@ class _AduanFormPageState extends State<AduanFormPage> {
                               label: "Deskripsi",
                               hint: "Deskripsi",
                               controller: controllers["Deskripsi"]!,
-                              maxLines: 4,
+                              maxLines: isLandscape ? 3 : 4,
                             ),
                             uploadDokumen("Data Pendukung",
                                 (File? selectedFile) {
@@ -475,17 +499,25 @@ class _AduanFormPageState extends State<AduanFormPage> {
                                 _filePath = selectedFile?.path.split('/').last;
                               });
                             }),
-                            const SizedBox(height: 20),
-                            Padding(
-                              padding: const EdgeInsets.only(top: 200),
-                              child: SizedBox(
-                                width: double.infinity,
+
+                            // Submit button with bottom padding adjusted for keyboard
+                            SizedBox(
+                              width: double.infinity,
+                              child: Padding(
+                                // Adjust padding dynamically based on keyboard and orientation
+                                padding: EdgeInsets.only(
+                                    top: isKeyboardVisible && isLandscape
+                                        ? 20
+                                        : 40,
+                                    bottom: isKeyboardVisible
+                                        ? (isLandscape ? 80 : 40)
+                                        : 20),
                                 child: ElevatedButton(
                                   onPressed: submitForm,
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF2F2F9D),
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 15),
+                                    padding: EdgeInsets.symmetric(
+                                        vertical: isLandscape ? 10 : 15),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(10),
                                     ),
@@ -498,14 +530,13 @@ class _AduanFormPageState extends State<AduanFormPage> {
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 20),
                           ],
                         ),
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
             if (isLoading) LoadingWidget(isLoading: isLoading)
           ],

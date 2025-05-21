@@ -173,118 +173,122 @@ class _AdminHomeState extends State<AdminHome> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 60),
-          Center(
-            child: ShaderMask(
-              shaderCallback: (bounds) => const LinearGradient(
-                colors: [
-                  Color(0xFF6F6FB9),
-                  Color(0xFF2F2F9D),
-                  Color(0xFF26267E)
-                ],
-              ).createShader(bounds),
-              child: const Text(
-                'Admin E-Tuntas',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 22.0,
-                  color: Colors.white,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 60),
+              Center(
+                child: ShaderMask(
+                  shaderCallback: (bounds) => const LinearGradient(
+                    colors: [
+                      Color(0xFF6F6FB9),
+                      Color(0xFF2F2F9D),
+                      Color(0xFF26267E)
+                    ],
+                  ).createShader(bounds),
+                  child: const Text(
+                    'Admin E-Tuntas',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 22.0,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-          Container(
-            margin:
-                const EdgeInsets.only(left: 16, right: 20, top: 25, bottom: 25),
-            child: Row(
-              children: [
-                Container(
-                  margin: const EdgeInsets.only(left: 10),
-                  child: ClipOval(
-                    child: Image.asset(
-                      "assets/profile.png",
-                      height: 45,
-                      width: 45,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-                Container(
-                  margin: const EdgeInsets.only(left: 15),
-                  child: Text(
-                    name,
-                    style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black),
-                  ),
-                ),
-                const Spacer(),
-                InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const SplashScreen()),
-                    );
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.only(right: 10),
-                    child: ClipOval(
-                      child: Image.asset(
-                        'assets/logo logout.png',
-                        height: 25,
-                        width: 25,
-                        fit: BoxFit.cover,
+              Container(
+                margin:
+                    const EdgeInsets.only(left: 16, right: 20, top: 25, bottom: 25),
+                child: Row(
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.only(left: 10),
+                      child: ClipOval(
+                        child: Image.asset(
+                          "assets/profile.png",
+                          height: 45,
+                          width: 45,
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
-                  ),
+                    Container(
+                      margin: const EdgeInsets.only(left: 15),
+                      child: Text(
+                        name,
+                        style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black),
+                      ),
+                    ),
+                    const Spacer(),
+                    InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const SplashScreen()),
+                        );
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.only(right: 10),
+                        child: ClipOval(
+                          child: Image.asset(
+                            'assets/logo logout.png',
+                            height: 25,
+                            width: 25,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              Container(
+                margin: const EdgeInsets.only(left: 30),
+                child: const Text(
+                  "Tracking",
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.only(left: 30),
+                child: Row(
+                  children: [
+                    InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const TrackSantunan()),
+                          );
+                        },
+                        child: buildImageBox("assets/pengajuan santunan.png",
+                            "Tracking \nSantunan")),
+                    const SizedBox(width: 35),
+                    InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const TrackBPJS()),
+                          );
+                        },
+                        child: buildImageBox(
+                            "assets/pengajuan bpjs.png", "Tracking \nBPJS")),
+                  ],
+                ),
+              ),
+            ],
           ),
-          Container(
-            margin: const EdgeInsets.only(left: 30),
-            child: const Text(
-              "Tracking",
-              style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Padding(
-            padding: const EdgeInsets.only(left: 30),
-            child: Row(
-              children: [
-                InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const TrackSantunan()),
-                      );
-                    },
-                    child: buildImageBox("assets/pengajuan santunan.png",
-                        "Tracking \nSantunan")),
-                const SizedBox(width: 35),
-                InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const TrackBPJS()),
-                      );
-                    },
-                    child: buildImageBox(
-                        "assets/pengajuan bpjs.png", "Tracking \nBPJS")),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
       bottomNavigationBar: Container(
         height: 79,
