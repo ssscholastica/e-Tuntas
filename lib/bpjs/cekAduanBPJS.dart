@@ -75,43 +75,71 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
       print("Searching for nomor BPJS: $nomorBPJS");
 
       final headers = await getHeaders();
+      print("Using token: ${headers['Authorization']}");
 
-      // Fix: Replace the placeholder in the URL with the actual value
+      // Tambahkan log untuk debugging
+      print("URL: ${baseURL}pengaduan-bpjs/by-nomor/$nomorBPJS");
+
+      // Coba cari dengan endpoint yang langsung
       final response = await http.get(
         Uri.parse('${baseURL}pengaduan-bpjs/by-nomor/$nomorBPJS'),
         headers: headers,
       );
 
       print("Response status: ${response.statusCode}");
+      if (response.statusCode >= 400) {
+        print("Response body: ${response.body}");
+      }
 
       if (response.statusCode == 200) {
-        final List<dynamic> jsonData = json.decode(response.body);
+        // Pastikan response berisi data yang valid
+        try {
+          final dynamic decodedResponse = json.decode(response.body);
 
-        setState(() {
-          isLoading = false;
-
-          if (jsonData.isNotEmpty) {
-            isTrackingSuccess = true;
-            currentPengaduan = jsonData.first;
-            final status = currentPengaduan!['status'] ?? 'Terkirim';
-            final tanggalAjuan =
-                DateTime.parse(currentPengaduan!['tanggal_ajuan']);
-            trackingInfo = _generateTrackingInfo(status, tanggalAjuan);
+          if (decodedResponse is List) {
+            if (decodedResponse.isNotEmpty) {
+              _processTrackingResults(decodedResponse);
+            } else {
+              _handleNoData();
+            }
+          } else if (decodedResponse is Map<String, dynamic>) {
+            if (decodedResponse.containsKey('data') &&
+                decodedResponse['data'] is List &&
+                decodedResponse['data'].isNotEmpty) {
+              _processTrackingResults(decodedResponse['data']);
+            } else {
+              // Coba proses sebagai objek tunggal jika memiliki field yang diperlukan
+              if (decodedResponse.containsKey('id') ||
+                  decodedResponse.containsKey('nomor_bpjs_nik') ||
+                  decodedResponse.containsKey('status')) {
+                _processTrackingSingleResult(decodedResponse);
+              } else {
+                _handleNoData();
+              }
+            }
           } else {
-            isTrackingSuccess = false;
-            trackingInfo = [];
-            currentPengaduan = null;
-            errorMessage = "Data tidak ditemukan.";
-            _showFailureDialog("Data tidak ditemukan.");
+            _handleNoData();
           }
-        });
-      } else if (response.statusCode == 403) {
-        // Enhanced error handling for 403 errors
-        String errorMsg = "Anda tidak berhak mengakses data ini.";
+        } catch (e) {
+          print("Error parsing response data: $e");
+          _showFailureDialog("Format data tidak valid: ${e.toString()}");
+          setState(() {
+            isLoading = false;
+            errorMessage = "Format data tidak valid: ${e.toString()}";
+          });
+        }
+      }
+      // Jika 500, kemungkinan masalah server
+      else if (response.statusCode == 500) {
+        String errorMsg =
+            "Terjadi kesalahan pada server. Silakan coba lagi nanti.";
         try {
           final errorData = json.decode(response.body);
           if (errorData.containsKey('message')) {
             errorMsg = errorData['message'];
+          }
+          if (errorData.containsKey('error')) {
+            print("Server error: ${errorData['error']}");
           }
         } catch (_) {}
 
@@ -121,27 +149,14 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
         });
         _showFailureDialog(errorMsg);
 
-        // You might want to check if user data exists
-        final userData = await _getCurrentUserData();
-        if (userData == null) {
-          _showFailureDialog(
-              "Anda mungkin perlu login ulang untuk melanjutkan.");
-        }
-      } else if (response.statusCode == 401) {
-        setState(() {
-          isLoading = false;
-          errorMessage = "Anda belum login.";
-        });
-        _showFailureDialog("Anda belum login. Silakan login terlebih dahulu.");
-
-        // Consider redirecting to login page
-        // Navigator.of(context).pushReplacementNamed('/login');
+        // Coba endpoint alternatif jika endpoint utama gagal dengan 500
+        _tryAlternativeSearch(nomorBPJS, headers);
+      }
+      // Jika 403 atau data tidak ditemukan dengan metode langsung
+      else if (response.statusCode == 403 || response.statusCode == 404) {
+        _tryAlternativeSearch(nomorBPJS, headers);
       } else {
-        setState(() {
-          isLoading = false;
-          errorMessage = "Gagal mengambil data dari server.";
-        });
-        _showFailureDialog("Gagal mengambil data. Coba lagi nanti.");
+        _handleErrorResponse(response.statusCode);
       }
     } catch (e) {
       print("Error fetching tracking data: $e");
@@ -152,6 +167,148 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
       });
       _showFailureDialog("Terjadi kesalahan: ${e.toString()}");
     }
+  }
+
+// Mencoba pencarian dengan endpoint alternatif
+  Future<void> _tryAlternativeSearch(
+      String query, Map<String, String> headers) async {
+    try {
+      print("Trying alternative search with query: $query");
+
+      // Coba cari dengan endpoint search
+      final searchResponse = await http.get(
+        Uri.parse('${baseURL}pengaduan-bpjs/search?query=$query'),
+        headers: headers,
+      );
+
+      print("Alternative search response status: ${searchResponse.statusCode}");
+
+      if (searchResponse.statusCode == 200) {
+        try {
+          final dynamic searchData = json.decode(searchResponse.body);
+
+          if (searchData is List && searchData.isNotEmpty) {
+            _processTrackingResults(searchData);
+          } else if (searchData is Map<String, dynamic>) {
+            if (searchData.containsKey('data') &&
+                searchData['data'] is List &&
+                searchData['data'].isNotEmpty) {
+              _processTrackingResults(searchData['data']);
+            }
+            // Coba proses sebagai objek tunggal
+            else if (searchData.containsKey('id') ||
+                searchData.containsKey('nomor_bpjs_nik') ||
+                searchData.containsKey('status')) {
+              _processTrackingSingleResult(searchData);
+            } else {
+              _handleNoData();
+            }
+          } else {
+            _handleNoData();
+          }
+        } catch (e) {
+          print("Error parsing alternative search data: $e");
+          _handleNoData();
+        }
+      } else {
+        _handleErrorResponse(searchResponse.statusCode);
+      }
+    } catch (e) {
+      print("Error in alternative search: $e");
+      // Sudah ada dialog error di metode utama, jadi tidak perlu menampilkan lagi
+    }
+  }
+
+// Helper method untuk memproses hasil tracking dari list
+  void _processTrackingResults(List<dynamic> jsonData) {
+    setState(() {
+      isLoading = false;
+
+      if (jsonData.isNotEmpty) {
+        isTrackingSuccess = true;
+        currentPengaduan = jsonData.first;
+
+        // Pastikan field yang diperlukan ada
+        if (currentPengaduan!.containsKey('status') &&
+            currentPengaduan!.containsKey('tanggal_ajuan')) {
+          final status = currentPengaduan!['status'] ?? 'Terkirim';
+
+          DateTime tanggalAjuan;
+          try {
+            tanggalAjuan = DateTime.parse(currentPengaduan!['tanggal_ajuan']);
+          } catch (e) {
+            print("Error parsing date: $e");
+            tanggalAjuan = DateTime.now();
+          }
+
+          trackingInfo = _generateTrackingInfo(status, tanggalAjuan);
+        } else {
+          // Jika tidak ada field yang diperlukan, gunakan nilai default
+          trackingInfo = _generateTrackingInfo('Terkirim', DateTime.now());
+        }
+      } else {
+        _handleNoData();
+      }
+    });
+  }
+
+// Helper method untuk memproses hasil tracking dari objek tunggal
+  void _processTrackingSingleResult(Map<String, dynamic> data) {
+    setState(() {
+      isLoading = false;
+      isTrackingSuccess = true;
+      currentPengaduan = data;
+
+      // Pastikan field yang diperlukan ada
+      String status = data['status'] ?? 'Terkirim';
+
+      DateTime tanggalAjuan;
+      if (data.containsKey('tanggal_ajuan')) {
+        try {
+          tanggalAjuan = DateTime.parse(data['tanggal_ajuan']);
+        } catch (e) {
+          print("Error parsing date: $e");
+          tanggalAjuan = DateTime.now();
+        }
+      } else {
+        tanggalAjuan = DateTime.now();
+      }
+
+      trackingInfo = _generateTrackingInfo(status, tanggalAjuan);
+    });
+  }
+
+// Helper method untuk menangani kasus tidak ada data
+  void _handleNoData() {
+    setState(() {
+      isLoading = false;
+      isTrackingSuccess = false;
+      trackingInfo = [];
+      currentPengaduan = null;
+      errorMessage = "Data tidak ditemukan.";
+    });
+    _showFailureDialog("Data tidak ditemukan.");
+  }
+
+// Helper method untuk menangani response error
+  void _handleErrorResponse(int statusCode) {
+    String errorMsg;
+
+    if (statusCode == 403) {
+      errorMsg = "Anda tidak berhak mengakses data ini.";
+    } else if (statusCode == 401) {
+      errorMsg = "Anda belum login. Silakan login terlebih dahulu.";
+    } else if (statusCode == 500) {
+      errorMsg = "Terjadi kesalahan pada server. Silakan coba lagi nanti.";
+    } else {
+      errorMsg = "Gagal mengambil data dari server.";
+    }
+
+    setState(() {
+      isLoading = false;
+      errorMessage = errorMsg;
+    });
+    _showFailureDialog(errorMsg);
   }
 
   Future<Map<String, dynamic>?> _getCurrentUserData() async {
