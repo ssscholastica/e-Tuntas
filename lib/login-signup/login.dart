@@ -34,52 +34,52 @@ class _LoginState extends State<Login> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  void loginPressed() async {
-    String name = _nameController.text.trim();
-    String password = _passwordController.text.trim();
+    void loginPressed() async {
+      String name = _nameController.text.trim();
+      String password = _passwordController.text.trim();
 
-    if (name.isNotEmpty && password.isNotEmpty) {
-      setState(() {
-        isLoading = true;
-      });
+      if (name.isNotEmpty && password.isNotEmpty) {
+        setState(() {
+          isLoading = true;
+        });
 
-      http.Response response = await AuthServices.login(name, password);
+        http.Response response = await AuthServices.login(name, password);
 
-      setState(() {
-        isLoading = false;
-      });
+        setState(() {
+          isLoading = false;
+        });
 
-      if (response.statusCode == 200) {
-        Map responseMap = jsonDecode(response.body);
-        print("Response dari server: ${response.body}");
-        Map<String, dynamic> userData = responseMap['user'];
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('user_email', userData['email']);
-        await prefs.setString('user_nik', userData['nik']);
-        final token = responseMap['access_token'];
-        await prefs.setString('access_token', token);
-        await FCMService.saveTokenToServer();
-        bool isAdmin = userData['is_admin'] == 1;
-        if (isAdmin) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-                builder: (BuildContext context) => const AdminHome()),
-          );
+        if (response.statusCode == 200) {
+          Map responseMap = jsonDecode(response.body);
+          print("Response dari server: ${response.body}");
+          Map<String, dynamic> userData = responseMap['user'];
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('user_email', userData['email']);
+          await prefs.setString('user_nik', userData['nik']);
+          final token = responseMap['access_token'];
+          await prefs.setString('access_token', token);
+          await FCMService.saveTokenToServer();
+          bool isAdmin = userData['is_admin'] == 1;
+          if (isAdmin) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                  builder: (BuildContext context) => const AdminHome()),
+            );
+          } else {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (BuildContext context) => const Home()),
+            );
+          }
         } else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (BuildContext context) => const Home()),
-          );
+          Map responseMap = jsonDecode(response.body);
+          errorSnackBar(context, responseMap['message'] ?? "Login failed");
         }
       } else {
-        Map responseMap = jsonDecode(response.body);
-        errorSnackBar(context, responseMap['message'] ?? "Login failed");
+        errorSnackBar(context, 'Pastikan semua kolom sudah terisi!');
       }
-    } else {
-      errorSnackBar(context, 'Pastikan semua kolom sudah terisi!');
     }
-  }
 
   void errorSnackBar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
