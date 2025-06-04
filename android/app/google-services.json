@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "945269751030",
+    "project_id": "e-tuntas",
+    "storage_bucket": "e-tuntas.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:945269751030:android:27019c91187ffb9cf0c0d7",
+        "android_client_info": {
+          "package_name": "com.e.tuntas11"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDb2UwRFRWASXVBJPFfuwOJFEVYlbdKS6c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
