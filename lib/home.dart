@@ -7,6 +7,7 @@ import 'package:etuntas/cek-status-pengajuan/trackingAwal.dart';
 import 'package:etuntas/login-signup/login.dart';
 import 'package:etuntas/navbar.dart';
 import 'package:etuntas/network/globals.dart';
+import 'package:etuntas/notifikasi.dart';
 import 'package:etuntas/pengajuan-santunan/alurPengajuan1.dart';
 import 'package:etuntas/persyaratan/persyaratan.dart';
 import 'package:etuntas/pertanyaan-umum/pertanyaan-umum.dart';
@@ -234,13 +235,13 @@ class _HomeState extends State<Home> {
                     ),
                     const Spacer(),
                     InkWell(
-                      // onTap: () {
-                      //     Navigator.push(
-                      //       context,
-                      //       MaterialPageRoute(
-                      //           builder: (context) => NotifPage()),
-                      //     );
-                      //   },
+                      onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => NotifPage()),
+                          );
+                        },
                       child: badges.Badge(
                           badgeContent: const Text(
                             '3',

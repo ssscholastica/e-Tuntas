@@ -1,805 +1,950 @@
-// import 'dart:async';
-// import 'dart:convert';
+import 'dart:convert';
 
-// import 'package:etuntas/network/globals.dart';
-// import 'package:firebase_core/firebase_core.dart';
-// import 'package:firebase_messaging/firebase_messaging.dart';
-// import 'package:flutter/material.dart';
-// import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-// import 'package:http/http.dart' as http;
-// import 'package:intl/intl.dart';
-// import 'package:shared_preferences/shared_preferences.dart';
+import 'package:etuntas/network/globals.dart';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-// // API Service for handling API requests
-// class ApiService {
-//   // Headers for API requests
-//   Future<Map<String, String>> _getHeaders() async {
-//     final prefs = await SharedPreferences.getInstance();
-//     final token = prefs.getString('auth_token') ?? '';
+class NotifPage extends StatefulWidget {
+  @override
+  _NotifPageState createState() => _NotifPageState();
+}
 
-//     return {
-//       'Content-Type': 'application/json',
-//       'Accept': 'application/json',
-//       'Authorization': 'Bearer $token',
-//     };
-//   }
-
-//   // Fetch data from an endpoint
-//   Future<List<dynamic>> fetchData(String endpoint) async {
-//     try {
-//       final headers = await _getHeaders();
-//       final response = await http.get(
-//         Uri.parse('$baseURL/$endpoint'),
-//         headers: headers,
-//       );
-
-//       if (response.statusCode == 200) {
-//         final data = json.decode(response.body);
-//         return data['data'] ?? [];
-//       } else {
-//         print('Error fetching data: ${response.statusCode}');
-//         return [];
-//       }
-//     } catch (e) {
-//       print('Exception fetching data: $e');
-//       return [];
-//     }
-//   }
-
-//   // Fetch a specific record
-//   Future<Map<String, dynamic>> fetchRecord(String endpoint, String id) async {
-//     try {
-//       final headers = await _getHeaders();
-//       final response = await http.get(
-//         Uri.parse('$baseURL/$endpoint/$id'),
-//         headers: headers,
-//       );
-
-//       if (response.statusCode == 200) {
-//         final data = json.decode(response.body);
-//         return data['data'] ?? {};
-//       } else {
-//         print('Error fetching record: ${response.statusCode}');
-//         return {};
-//       }
-//     } catch (e) {
-//       print('Exception fetching record: $e');
-//       return {};
-//     }
-//   }
-
-//   // Update status of a record
-//   Future<bool> updateStatus(String endpoint, String id, String status) async {
-//     try {
-//       final headers = await _getHeaders();
-//       final response = await http.put(
-//         Uri.parse('$baseURL/$endpoint/$id/status'),
-//         headers: headers,
-//         body: json.encode({'status': status}),
-//       );
-
-//       if (response.statusCode == 200) {
-//         final data = json.decode(response.body);
-//         return true;
-//       } else {
-//         print('Error updating status: ${response.statusCode}');
-//         return false;
-//       }
-//     } catch (e) {
-//       print('Exception updating status: $e');
-//       return false;
-//     }
-//   }
-// }
-
-// // // Status data class
-// // class StatusData {
-// //   final String tableName;
-// //   final String id;
-// //   final String status;
-// //   final String updatedAt;
-
-// //   StatusData({
-// //     required this.tableName,
-// //     required this.id,
-// //     required this.status,
-// //     required this.updatedAt,
-// //   });
-// // }
-
-// class NotificationModel {
-//   final IconData icon;
-//   final String title;
-//   final String description;
-//   final String date;
-//   final String time;
-//   final Color color;
-//   final String category;
-//   final String statusType;
-
-//   NotificationModel({
-//     required this.icon,
-//     required this.title,
-//     required this.description,
-//     required this.date,
-//     required this.time,
-//     required this.color,
-//     required this.category,
-//     required this.statusType,
-//   });
-// }
-
-// class NotificationService {
-//   static final NotificationService _instance = NotificationService._internal();
-//   factory NotificationService() => _instance;
-//   NotificationService._internal();
-
-//   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
-//   final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
+class _NotifPageState extends State<NotifPage> with TickerProviderStateMixin {
+  List<NotificationModel> notifications = [];
+  bool isLoading = true;
+  String? errorMessage;
+  int currentPage = 1;
+  bool hasMorePages = false;
+  bool isLoadingMore = false;
+  String selectedFilter = 'all'; // 'all', 'status_update', 'comment', 'unread'
+  int unreadCount = 0;
   
-//   // Initialize notification channels and request permissions
-//   Future<void> initialize() async {
-//     // Initialize Firebase
-//     await Firebase.initializeApp();
+  late TabController _tabController;
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 4, vsync: this);
+    _tabController.addListener(_onTabChanged);
+    _scrollController.addListener(_onScroll);
+    _loadNotifications();
+    _getUnreadCount();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onTabChanged() {
+    if (_tabController.indexIsChanging) {
+      setState(() {
+        switch (_tabController.index) {
+          case 0:
+            selectedFilter = 'all';
+            break;
+          case 1:
+            selectedFilter = 'unread';
+            break;
+          case 2:
+            selectedFilter = 'status_update';
+            break;
+          case 3:
+            selectedFilter = 'comment';
+            break;
+        }
+        currentPage = 1;
+        notifications.clear();
+      });
+      _loadNotifications();
+    }
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >= 
+        _scrollController.position.maxScrollExtent - 200) {
+      if (hasMorePages && !isLoadingMore) {
+        _loadMoreNotifications();
+      }
+    }
+  }
+
+  Future<void> _loadNotifications() async {
+    if (!mounted) return;
     
-//     // Request permission for iOS
-//     NotificationSettings settings = await _firebaseMessaging.requestPermission(
-//       alert: true,
-//       badge: true,
-//       provisional: false,
-//       sound: true,
-//     );
-    
-//     // Configure local notifications
-//     const AndroidInitializationSettings androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
-//     const DarwinInitializationSettings iosSettings = DarwinInitializationSettings(
-//       requestAlertPermission: true,
-//       requestBadgePermission: true,
-//       requestSoundPermission: true,
-//     );
-    
-//     const InitializationSettings initSettings = InitializationSettings(
-//       android: androidSettings,
-//       iOS: iosSettings,
-//     );
-    
-//     await _localNotifications.initialize(
-//       initSettings,
-//       onDidReceiveNotificationResponse: _onSelectNotification,
-//     );
-    
-//     // Create notification channel for Android
-//     const AndroidNotificationChannel channel = AndroidNotificationChannel(
-//       'high_importance_channel',
-//       'High Importance Notifications',
-//       description: 'This channel is used for important notifications.',
-//       importance: Importance.high,
-//     );
-    
-//     await _localNotifications
-//         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-//         ?.createNotificationChannel(channel);
-    
-//     // Handle incoming FCM messages
-//     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
-//     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-    
-//     // Get and store FCM token
-//     String? token = await _firebaseMessaging.getToken();
-//     if (token != null) {
-//       await _saveFcmToken(token);
-//       await _sendTokenToServer(token);
-//     }
-    
-//     // Listen for token refreshes
-//     _firebaseMessaging.onTokenRefresh.listen((newToken) {
-//       _saveFcmToken(newToken);
-//       _sendTokenToServer(newToken);
-//     });
-//   }
-  
-//   // Save FCM token to shared preferences
-//   Future<void> _saveFcmToken(String token) async {
-//     final prefs = await SharedPreferences.getInstance();
-//     await prefs.setString('fcm_token', token);
-//   }
-  
-//   // Send FCM token to your server
-//   Future<void> _sendTokenToServer(String token) async {
-//     try {
-//       final prefs = await SharedPreferences.getInstance();
-//       final String? userId = prefs.getString('user_id');
-//       if (userId == null) return;
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
       
-//       final String baseUrl = 'http://10.0.2.2:8000'; // For emulator, change for real device
-      
-//       final response = await http.post(
-//         Uri.parse('$baseUrl/api/users/update-fcm-token'),
-//         headers: <String, String>{
-//           'Content-Type': 'application/json',
-//           'Authorization': 'Bearer ${prefs.getString('auth_token') ?? ''}',
-//         },
-//         body: jsonEncode(<String, String>{
-//           'fcm_token': token,
-//         }),
-//       );
-      
-//       if (response.statusCode != 200) {
-//         print('Failed to update FCM token: ${response.body}');
-//       }
-//     } catch (e) {
-//       print('Error sending FCM token to server: $e');
-//     }
-//   }
+      if (token == null) {
+        setState(() {
+          errorMessage = 'Authentication token not found';
+          isLoading = false;
+        });
+        return;
+      }
 
-//   // Handle incoming foreground messages
-//   void _handleForegroundMessage(RemoteMessage message) {
-//     RemoteNotification? notification = message.notification;
-//     AndroidNotification? android = message.notification?.android;
-    
-//     // If notification is present, show local notification
-//     if (notification != null && android != null) {
-//       _localNotifications.show(
-//         notification.hashCode,
-//         notification.title,
-//         notification.body,
-//         NotificationDetails(
-//           android: AndroidNotificationDetails(
-//             'high_importance_channel',
-//             'High Importance Notifications',
-//             channelDescription: 'This channel is used for important notifications.',
-//             importance: Importance.high,
-//             priority: Priority.high,
-//           ),
-//           iOS: const DarwinNotificationDetails(
-//             presentAlert: true,
-//             presentBadge: true,
-//             presentSound: true,
-//           ),
-//         ),
-//         payload: jsonEncode(message.data),
-//       );
-//     }
-    
-//     // Process the notification data
-//     _processStatusUpdate(message.data);
-//   }
-  
-//   // Process notification payload
-//   void _processStatusUpdate(Map<String, dynamic> data) {
-//     // Store in local database or update UI as needed
-//     final StatusData statusData = StatusData.fromMap(data);
-    
-//     // Broadcast to the app using a stream controller
-//     notificationStreamController.add(statusData);
-//   }
-  
-//   // Handle notification tap
-//   void _onSelectNotification(NotificationResponse response) {
-//     if (response.payload != null) {
-//       try {
-//         final data = jsonDecode(response.payload!);
-//         _processStatusUpdate(Map<String, dynamic>.from(data));
+      String url = '${baseURL}notifications?page=$currentPage&per_page=15';
+      
+      // Add filters
+      if (selectedFilter == 'unread') {
+        url += '&unread_only=true';
+      } else if (selectedFilter != 'all') {
+        url += '&type=$selectedFilter';
+      }
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
         
-//         // Navigate to the appropriate screen based on notification data
-//         final statusData = StatusData.fromMap(data);
-//         _navigateBasedOnNotification(statusData);
-//       } catch (e) {
-//         print('Error processing notification tap: $e');
-//       }
-//     }
-//   }
-  
-//   // Navigate based on notification data
-//   void _navigateBasedOnNotification(StatusData statusData) {
-//     // This needs to be implemented with your navigation logic
-//     // Example:
-//     /*
-//     if (navigatorKey.currentState != null) {
-//       if (statusData.tableName == 'pengaduan-bpjs') {
-//         navigatorKey.currentState!.pushNamed(
-//           '/pengaduan-detail',
-//           arguments: {'id': statusData.recordId}
-//         );
-//       } else if (statusData.tableName == 'pengajuan-santunan1') {
-//         navigatorKey.currentState!.pushNamed(
-//           '/santunan1-detail',
-//           arguments: {'id': statusData.recordId}
-//         );
-//       } else if (statusData.tableName == 'pengajuan-santunan2') {
-//         navigatorKey.currentState!.pushNamed(
-//           '/santunan2-detail',
-//           arguments: {'id': statusData.recordId}
-//         );
-//       } else if (statusData.tableName == 'pengajuan-santunan3') {
-//         navigatorKey.currentState!.pushNamed(
-//           '/santunan3-detail',
-//           arguments: {'id': statusData.recordId}
-//         );
-//       } else if (statusData.tableName == 'pengajuan-santunan4') {
-//         navigatorKey.currentState!.pushNamed(
-//           '/santunan4-detail',
-//           arguments: {'id': statusData.recordId}
-//         );
-//       } else if (statusData.tableName == 'pengajuan-santunan5') {
-//         navigatorKey.currentState!.pushNamed(
-//           '/santunan5-detail',
-//           arguments: {'id': statusData.recordId}
-//         );
-//       }
-//     }
-//     */
-//   }
-// }
+        if (data['status'] == 'success') {
+          final List<dynamic> notificationData = data['data'];
+          final pagination = data['pagination'];
+          
+          setState(() {
+            if (currentPage == 1) {
+              notifications = notificationData
+                  .map((item) => NotificationModel.fromJson(item))
+                  .toList();
+            } else {
+              notifications.addAll(notificationData
+                  .map((item) => NotificationModel.fromJson(item))
+                  .toList());
+            }
+            
+            hasMorePages = pagination['has_more'] ?? false;
+            unreadCount = data['unread_count'] ?? 0;
+            isLoading = false;
+            isLoadingMore = false;
+          });
+        } else {
+          setState(() {
+            errorMessage = data['message'] ?? 'Failed to load notifications';
+            isLoading = false;
+          });
+        }
+      } else {
+        setState(() {
+          errorMessage = 'Server error: ${response.statusCode}';
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Network error: $e';
+        isLoading = false;
+      });
+    }
+  }
 
-// // Stream controller for notifications
-// final StreamController<StatusData> notificationStreamController = StreamController<StatusData>.broadcast();
+  Future<void> _loadMoreNotifications() async {
+    if (isLoadingMore || !hasMorePages) return;
+    
+    setState(() {
+      isLoadingMore = true;
+      currentPage++;
+    });
+    
+    await _loadNotifications();
+  }
 
-// // Status data model
-// class StatusData {
-//   final String tableName;
-//   final int recordId;
-//   final String status;
-  
-//   StatusData({
-//     required this.tableName,
-//     required this.recordId,
-//     required this.status,
-//   });
-  
-//   factory StatusData.fromMap(Map<String, dynamic> map) {
-//     return StatusData(
-//       tableName: map['tableName'] ?? '',
-//       recordId: int.tryParse(map['recordId']?.toString() ?? '0') ?? 0,
-//       status: map['status'] ?? '',
-//     );
-//   }
-  
-//   Map<String, dynamic> toMap() {
-//     return {
-//       'tableName': tableName,
-//       'recordId': recordId,
-//       'status': status,
-//     };
-//   }
-// }
-
-// // Background message handler
-// @pragma('vm:entry-point')
-// Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-//   await Firebase.initializeApp();
-  
-//   // Process notification
-//   // In background mode, we can't update UI directly
-//   // But we can store data in shared preferences or local database
-//   try {
-//     final prefs = await SharedPreferences.getInstance();
-//     List<String> notifications = prefs.getStringList('pending_notifications') ?? [];
-//     notifications.add(jsonEncode(message.data));
-//     await prefs.setStringList('pending_notifications', notifications);
-//   } catch (e) {
-//     print('Error storing background notification: $e');
-//   }
-// }
-
-// // Example of how to listen to notifications in a widget
-// class NotificationListener extends StatefulWidget {
-//   final Widget child;
-  
-//   const NotificationListener({Key? key, required this.child}) : super(key: key);
-  
-//   @override
-//   _NotificationListenerState createState() => _NotificationListenerState();
-// }
-
-// class _NotificationListenerState extends State<NotificationListener> {
-//   late StreamSubscription<StatusData> _subscription;
-  
-//   @override
-//   void initState() {
-//     super.initState();
-//     _subscription = notificationStreamController.stream.listen(_handleNotification);
-//     _checkPendingNotifications();
-//   }
-  
-//   @override
-//   void dispose() {
-//     _subscription.cancel();
-//     super.dispose();
-//   }
-  
-//   // Check for any notifications received while app was in background
-//   Future<void> _checkPendingNotifications() async {
-//     try {
-//       final prefs = await SharedPreferences.getInstance();
-//       List<String> notifications = prefs.getStringList('pending_notifications') ?? [];
+  Future<void> _getUnreadCount() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
       
-//       if (notifications.isNotEmpty) {
-//         await prefs.setStringList('pending_notifications', []);
+      if (token == null) return;
+
+      final response = await http.get(
+        Uri.parse('${baseURL}notifications/unread-count'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['status'] == 'success') {
+          setState(() {
+            unreadCount = data['unread_count'] ?? 0;
+          });
+        }
+      }
+    } catch (e) {
+      print('Error getting unread count: $e');
+    }
+  }
+
+  Future<void> _markAsRead(String notificationId, int index) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      
+      if (token == null) return;
+
+      final response = await http.put(
+        Uri.parse('${baseURL}notifications/$notificationId/read'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          notifications[index].isRead = true;
+          notifications[index].readAt = DateTime.now();
+          if (unreadCount > 0) unreadCount--;
+        });
+      }
+    } catch (e) {
+      print('Error marking notification as read: $e');
+    }
+  }
+
+  Future<void> _markAllAsRead() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      
+      if (token == null) return;
+
+      final response = await http.put(
+        Uri.parse('${baseURL}notifications/mark-all-read'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          for (var notification in notifications) {
+            notification.isRead = true;
+            notification.readAt = DateTime.now();
+          }
+          unreadCount = 0;
+        });
         
-//         for (String notificationJson in notifications) {
-//           final data = jsonDecode(notificationJson);
-//           final statusData = StatusData.fromMap(Map<String, dynamic>.from(data));
-//           _handleNotification(statusData);
-//         }
-//       }
-//     } catch (e) {
-//       print('Error checking pending notifications: $e');
-//     }
-//   }
-  
-//   // Handle incoming notification
-//   void _handleNotification(StatusData statusData) {
-//     // Update your UI based on notification data
-//     // Example: Show a snackbar
-//     if (mounted) {
-//       String title = "";
-//       String body = "";
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Semua notifikasi telah ditandai sudah dibaca'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal menandai semua notifikasi: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _deleteNotification(String notificationId, int index) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
       
-//       if (statusData.tableName == 'pengaduan-bpjs') {
-//         title = "Update Pengaduan BPJS";
-//         switch (statusData.status.toLowerCase()) {
-//           case 'ditolak':
-//             body = "Pengaduan BPJS anda ditolak. Silahkan cek email untuk informasi lebih lanjut.";
-//             break;
-//           case 'diterima':
-//             body = "Pengaduan BPJS anda telah diterima. Proses akan dilanjutkan.";
-//             break;
-//           case 'terkirim':
-//             body = "Pengaduan BPJS anda berhasil terkirim. Silahkan cek email untuk melihat ulang nomor pendaftaran.";
-//             break;
-//           case 'diproses':
-//             body = "Pengaduan BPJS anda sedang diproses. Harap menunggu informasi selanjutnya.";
-//             break;
-//           default:
-//             body = "Status pengaduan BPJS anda telah diperbarui menjadi '${statusData.status}'.";
-//         }
-//       } else if (statusData.tableName.startsWith('pengajuan-santunan')) {
-//         String santunanType = statusData.tableName.replaceAll('pengajuan-santunan', '');
-//         title = santunanType.isNotEmpty ? "Update Santunan $santunanType" : "Update Santunan";
+      if (token == null) return;
+
+      final response = await http.delete(
+        Uri.parse('${baseURL}notifications/$notificationId'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          if (!notifications[index].isRead && unreadCount > 0) {
+            unreadCount--;
+          }
+          notifications.removeAt(index);
+        });
         
-//         switch (statusData.status.toLowerCase()) {
-//           case 'diterima':
-//             body = "Pengajuan santunan anda telah diterima. Proses pencairan akan segera dilakukan.";
-//             break;
-//           case 'ditolak':
-//             body = "Pengajuan santunan anda ditolak. Silahkan cek email untuk informasi lebih lanjut.";
-//             break;
-//           case 'diverifikasi':
-//             body = "Pengajuan santunan anda sedang dalam proses verifikasi. Harap menunggu untuk informasi selanjutnya.";
-//             break;
-//           case 'dibayar':
-//             body = "Dana santunan anda telah dikirimkan. Silahkan cek rekening anda.";
-//             break;
-//           case 'terkirim':
-//             body = "Pengajuan santunan anda berhasil terkirim. Silahkan cek email untuk melihat ulang nomor pendaftaran.";
-//             break;
-//           default:
-//             body = "Status pengajuan santunan anda telah diperbarui menjadi '${statusData.status}'.";
-//         }
-//       }
-      
-//       // Show snackbar or other UI component
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         SnackBar(
-//           content: Column(
-//             mainAxisSize: MainAxisSize.min,
-//             crossAxisAlignment: CrossAxisAlignment.start,
-//             children: [
-//               Text(title, style: TextStyle(fontWeight: FontWeight.bold)),
-//               SizedBox(height: 4),
-//               Text(body),
-//             ],
-//           ),
-//           duration: Duration(seconds: 4),
-//           action: SnackBarAction(
-//             label: 'View',
-//             onPressed: () {
-//               // Navigate to relevant screen based on the specific table name
-//               switch (statusData.tableName) {
-//                 case 'pengaduan-bpjs':
-//                   Navigator.of(context).pushNamed(
-//                     '/pengaduan-detail',
-//                     arguments: {'id': statusData.recordId}
-//                   );
-//                   break;
-//                 case 'pengajuan-santunan1':
-//                   Navigator.of(context).pushNamed(
-//                     '/santunan1-detail',
-//                     arguments: {'id': statusData.recordId}
-//                   );
-//                   break;
-//                 case 'pengajuan-santunan2':
-//                   Navigator.of(context).pushNamed(
-//                     '/santunan2-detail',
-//                     arguments: {'id': statusData.recordId}
-//                   );
-//                   break;
-//                 case 'pengajuan-santunan3':
-//                   Navigator.of(context).pushNamed(
-//                     '/santunan3-detail',
-//                     arguments: {'id': statusData.recordId}
-//                   );
-//                   break;
-//                 case 'pengajuan-santunan4':
-//                   Navigator.of(context).pushNamed(
-//                     '/santunan4-detail',
-//                     arguments: {'id': statusData.recordId}
-//                   );
-//                   break;
-//                 case 'pengajuan-santunan5':
-//                   Navigator.of(context).pushNamed(
-//                     '/santunan5-detail',
-//                     arguments: {'id': statusData.recordId}
-//                   );
-//                   break;
-//               }
-//             },
-//           ),
-//         ),
-//       );
-//     }
-//   }
-  
-//   @override
-//   Widget build(BuildContext context) {
-//     return widget.child;
-//   }
-// }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Notifikasi berhasil dihapus'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal menghapus notifikasi: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
-// class NotifPage extends StatefulWidget {
-//   const NotifPage({super.key});
+  Future<void> _refreshNotifications() async {
+    setState(() {
+      currentPage = 1;
+      notifications.clear();
+    });
+    await _loadNotifications();
+    await _getUnreadCount();
+  }
 
-//   @override
-//   State<NotifPage> createState() => _NotifPageState();
-// }
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Row(
+          children: [
+            Text('Notifikasi'),
+            if (unreadCount > 0) ...[
+              SizedBox(width: 8),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.red,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '$unreadCount',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+        actions: [
+          if (unreadCount > 0)
+            IconButton(
+              icon: Icon(Icons.done_all),
+              onPressed: _markAllAsRead,
+              tooltip: 'Tandai semua sudah dibaca',
+            ),
+          IconButton(
+            icon: Icon(Icons.refresh),
+            onPressed: _refreshNotifications,
+            tooltip: 'Refresh',
+          ),
+        ],
+        bottom: TabBar(
+          controller: _tabController,
+          isScrollable: true,
+          tabs: [
+            Tab(text: 'Semua'),
+            Tab(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Belum Dibaca'),
+                  if (unreadCount > 0) ...[
+                    SizedBox(width: 4),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '$unreadCount',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            Tab(text: 'Update Status'),
+            Tab(text: 'Komentar'),
+          ],
+        ),
+      ),
+      body: RefreshIndicator(
+        onRefresh: _refreshNotifications,
+        child: _buildBody(),
+      ),
+    );
+  }
 
-// class _NotifPageState extends State<NotifPage> {
-//   final NotificationService _notificationService = NotificationService();
-//   final ApiService _apiService = ApiService();
-//   late StatusMonitorService _statusMonitorService;
-//   bool _isLoading = true;
+  Widget _buildBody() {
+    if (isLoading && notifications.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Memuat notifikasi...'),
+          ],
+        ),
+      );
+    }
 
-//   @override
-//   void initState() {
-//     super.initState();
-//     _initializeServices();
-//   }
+    if (errorMessage != null && notifications.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: Colors.grey,
+            ),
+            SizedBox(height: 16),
+            Text(
+              errorMessage!,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _refreshNotifications,
+              child: Text('Coba Lagi'),
+            ),
+          ],
+        ),
+      );
+    }
 
-//   Future<void> _initializeServices() async {
-//     // Initialize notification service
-//     await _notificationService.loadNotifications();
+    if (notifications.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.notifications_none,
+              size: 64,
+              color: Colors.grey,
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Tidak ada notifikasi',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[600],
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Notifikasi akan muncul ketika ada update status atau komentar baru',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[500],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
 
-//     // Initialize status monitor service
-//     _statusMonitorService =
-//         StatusMonitorService(_apiService, _notificationService);
-//     _statusMonitorService.startMonitoring();
+    return ListView.builder(
+      controller: _scrollController,
+      padding: EdgeInsets.all(16),
+      itemCount: notifications.length + (isLoadingMore ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (index == notifications.length) {
+          return Center(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
 
-//     setState(() {
-//       _isLoading = false;
-//     });
-//   }
+        final notification = notifications[index];
+        return _buildNotificationCard(notification, index);
+      },
+    );
+  }
 
-//   @override
-//   void dispose() {
-//     _statusMonitorService.dispose();
-//     _notificationService.dispose();
-//     super.dispose();
-//   }
+  Widget _buildNotificationCard(NotificationModel notification, int index) {
+    return Card(
+      margin: EdgeInsets.only(bottom: 12),
+      elevation: notification.isRead ? 1 : 3,
+      child: InkWell(
+        onTap: () {
+          if (!notification.isRead) {
+            _markAsRead(notification.id, index);
+          }
+          _showNotificationDetail(notification);
+        },
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            color: notification.isRead ? null : Colors.blue.shade50,
+            border: notification.isRead 
+                ? null 
+                : Border.all(color: Colors.blue.shade200, width: 1),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Row(
+                      children: [
+                        _getNotificationIcon(notification.type, notification.referenceType),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                notification.title,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: notification.isRead 
+                                      ? FontWeight.w500 
+                                      : FontWeight.bold,
+                                  color: notification.isRead 
+                                      ? Colors.grey[800] 
+                                      : Colors.black,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                _formatReferenceType(notification.referenceType),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  PopupMenuButton<String>(
+                    onSelected: (value) {
+                      switch (value) {
+                        case 'mark_read':
+                          if (!notification.isRead) {
+                            _markAsRead(notification.id, index);
+                          }
+                          break;
+                        case 'delete':
+                          _showDeleteConfirmation(notification.id, index);
+                          break;
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      if (!notification.isRead)
+                        PopupMenuItem(
+                          value: 'mark_read',
+                          child: Row(
+                            children: [
+                              Icon(Icons.done, size: 18),
+                              SizedBox(width: 8),
+                              Text('Tandai sudah dibaca'),
+                            ],
+                          ),
+                        ),
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete, size: 18, color: Colors.red),
+                            SizedBox(width: 8),
+                            Text('Hapus', style: TextStyle(color: Colors.red)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              SizedBox(height: 12),
+              Text(
+                notification.message,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[700],
+                  height: 1.4,
+                ),
+              ),
+              if (notification.referenceNumber != null) ...[
+                SizedBox(height: 8),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    'No. ${notification.referenceNumber}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                ),
+              ],
+              SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    _formatDateTime(notification.createdAt),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[500],
+                    ),
+                  ),
+                  if (!notification.isRead)
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: Colors.blue,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       backgroundColor: Colors.white,
-//       body: Column(
-//         children: [
-//           Container(
-//             margin: const EdgeInsets.only(top: 60, left: 20, right: 20),
-//             child: Row(
-//               children: [
-//                 InkWell(
-//                   onTap: () {
-//                     Navigator.pop(context);
-//                   },
-//                   child: Image.asset(
-//                     'assets/simbol back.png',
-//                     width: 28,
-//                     height: 28,
-//                   ),
-//                 ),
-//                 const SizedBox(width: 10),
-//                 const Text(
-//                   "Notifikasi",
-//                   style: TextStyle(
-//                     fontSize: 20,
-//                     color: Color(0XFF000000),
-//                     fontWeight: FontWeight.w600,
-//                   ),
-//                 ),
-//                 const Spacer(),
-//                 IconButton(
-//                   icon: const Icon(Icons.refresh),
-//                   onPressed: () {
-//                     // Manually trigger a status check
-//                     _statusMonitorService.startMonitoring();
-//                     ScaffoldMessenger.of(context).showSnackBar(
-//                       const SnackBar(
-//                           content: Text('Menyegarkan notifikasi...')),
-//                     );
-//                   },
-//                 ),
-//               ],
-//             ),
-//           ),
-//           const SizedBox(height: 10),
-//           // Clear all button
-//           if (!_isLoading)
-//             Padding(
-//               padding: const EdgeInsets.symmetric(horizontal: 20),
-//               child: Row(
-//                 children: [
-//                   const Spacer(),
-//                   TextButton(
-//                     onPressed: () {
-//                       _notificationService.clearNotifications();
-//                     },
-//                     child: const Text(
-//                       'Hapus Semua',
-//                       style: TextStyle(color: Colors.blue),
-//                     ),
-//                   ),
-//                 ],
-//               ),
-//             ),
-//           const SizedBox(height: 10),
-//           if (_isLoading)
-//             const Expanded(
-//               child: Center(
-//                 child: CircularProgressIndicator(),
-//               ),
-//             )
-//           else
-//             Expanded(
-//               child: StreamBuilder<List<NotificationModel>>(
-//                 stream: _notificationService.notificationsStream,
-//                 initialData: _notificationService.notifications,
-//                 builder: (context, snapshot) {
-//                   if (!snapshot.hasData || snapshot.data!.isEmpty) {
-//                     return const Center(
-//                       child: Text('Tidak ada notifikasi'),
-//                     );
-//                   }
+  Widget _getNotificationIcon(String type, String referenceType) {
+    IconData iconData;
+    Color iconColor;
 
-//                   // Group notifications by category
-//                   final groupedNotifications =
-//                       _notificationService.getGroupedNotifications();
-//                   final categories = groupedNotifications.keys.toList();
+    if (type == 'status_update') {
+      iconData = Icons.update;
+      iconColor = Colors.orange;
+    } else if (type == 'comment') {
+      iconData = Icons.comment;
+      iconColor = Colors.blue;
+    } else {
+      iconData = Icons.notifications;
+      iconColor = Colors.grey;
+    }
 
-//                   return RefreshIndicator(
-//                     onRefresh: () async {
-//                       // Manually trigger a status check
-//                       _statusMonitorService.startMonitoring();
-//                     },
-//                     child: ListView.builder(
-//                       padding: const EdgeInsets.all(16),
-//                       itemCount: categories.length,
-//                       itemBuilder: (context, categoryIndex) {
-//                         final category = categories[categoryIndex];
-//                         final notificationsInCategory =
-//                             groupedNotifications[category]!;
+    return Container(
+      padding: EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: iconColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Icon(
+        iconData,
+        color: iconColor,
+        size: 20,
+      ),
+    );
+  }
 
-//                         return Column(
-//                           crossAxisAlignment: CrossAxisAlignment.start,
-//                           children: [
-//                             // Category header
-//                             Container(
-//                               padding:
-//                                   const EdgeInsets.symmetric(vertical: 8.0),
-//                               decoration: BoxDecoration(
-//                                 color: Colors.grey[100],
-//                                 borderRadius: BorderRadius.circular(8),
-//                               ),
-//                               width: double.infinity,
-//                               child: Padding(
-//                                 padding: const EdgeInsets.symmetric(
-//                                     horizontal: 16.0),
-//                                 child: Text(
-//                                   category,
-//                                   style: const TextStyle(
-//                                     fontSize: 16,
-//                                     fontWeight: FontWeight.bold,
-//                                     color: Color(0xFF444444),
-//                                   ),
-//                                 ),
-//                               ),
-//                             ),
-//                             const SizedBox(height: 8),
-//                             // Notifications in this category
-//                             ListView.separated(
-//                               physics: const NeverScrollableScrollPhysics(),
-//                               shrinkWrap: true,
-//                               itemCount: notificationsInCategory.length,
-//                               separatorBuilder: (context, index) =>
-//                                   const Divider(height: 20, thickness: 1),
-//                               itemBuilder: (context, index) {
-//                                 return NotificationItem(
-//                                   notification: notificationsInCategory[index],
-//                                 );
-//                               },
-//                             ),
-//                             // Add divider between categories
-//                             if (categoryIndex < categories.length - 1)
-//                               const Divider(height: 40, thickness: 1.5),
-//                           ],
-//                         );
-//                       },
-//                     ),
-//                   );
-//                 },
-//               ),
-//             ),
-//         ],
-//       ),
-//     );
-//   }
-// }
+  String _formatReferenceType(String referenceType) {
+    switch (referenceType) {
+      case 'pengaduan_bpjs':
+        return 'Pengaduan BPJS';
+      case 'pengajuan_santunan1':
+        return 'Santunan Kematian';
+      case 'pengajuan_santunan2':
+        return 'Santunan Cacat';
+      case 'pengajuan_santunan3':
+        return 'Santunan Berkala';
+      case 'pengajuan_santunan4':
+        return 'Santunan Lainnya';
+      case 'pengajuan_santunan5':
+        return 'Santunan Khusus';
+      default:
+        return referenceType;
+    }
+  }
 
-// class NotificationItem extends StatelessWidget {
-//   final NotificationModel notification;
+  String _formatDateTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
 
-//   const NotificationItem({Key? key, required this.notification})
-//       : super(key: key);
+    if (difference.inMinutes < 1) {
+      return 'Baru saja';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes} menit yang lalu';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours} jam yang lalu';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays} hari yang lalu';
+    } else {
+      return DateFormat('dd MMM yyyy, HH:mm', 'id_ID').format(dateTime);
+    }
+  }
 
-//   @override
-//   Widget build(BuildContext context) {
-//     return Row(
-//       crossAxisAlignment: CrossAxisAlignment.start,
-//       children: [
-//         Container(
-//           padding: const EdgeInsets.all(8),
-//           decoration: BoxDecoration(
-//             color: notification.color.withOpacity(0.1),
-//             borderRadius: BorderRadius.circular(8),
-//           ),
-//           child: Icon(notification.icon, color: notification.color, size: 24),
-//         ),
-//         const SizedBox(width: 12),
-//         Expanded(
-//           child: Column(
-//             crossAxisAlignment: CrossAxisAlignment.start,
-//             children: [
-//               Row(
-//                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                 children: [
-//                   Expanded(
-//                     child: Text(
-//                       notification.title,
-//                       style: const TextStyle(fontWeight: FontWeight.bold),
-//                       overflow: TextOverflow.ellipsis,
-//                     ),
-//                   ),
-//                   Text(
-//                     notification.date,
-//                     style: const TextStyle(color: Colors.grey),
-//                   ),
-//                 ],
-//               ),
-//               const SizedBox(height: 4),
-//               Text(
-//                 notification.description,
-//                 style: TextStyle(color: Colors.grey[700]),
-//                 maxLines: 2,
-//                 overflow: TextOverflow.ellipsis,
-//               ),
-//               const SizedBox(height: 4),
-//               Text(
-//                 notification.time,
-//                 style: const TextStyle(color: Colors.grey, fontSize: 12),
-//               ),
-//             ],
-//           ),
-//         ),
-//       ],
-//     );
-//   }
-// }
+  void _showNotificationDetail(NotificationModel notification) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (context, scrollController) => Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  controller: scrollController,
+                  padding: EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          _getNotificationIcon(notification.type, notification.referenceType),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  notification.title,
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  _formatReferenceType(notification.referenceType),
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey[600],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 16),
+                      Divider(),
+                      SizedBox(height: 16),
+                      Text(
+                        'Detail Notifikasi',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      SizedBox(height: 12),
+                      Text(
+                        notification.message,
+                        style: TextStyle(
+                          fontSize: 15,
+                          height: 1.5,
+                          color: Colors.grey[800],
+                        ),
+                      ),
+                      if (notification.referenceNumber != null) ...[
+                        SizedBox(height: 16),
+                        Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey[300]!),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Nomor Referensi',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                notification.referenceNumber!,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Icon(Icons.access_time, size: 16, color: Colors.grey[500]),
+                          SizedBox(width: 4),
+                          Text(
+                            'Diterima ${_formatDateTime(notification.createdAt)}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[500],
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (notification.readAt != null) ...[
+                        SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(Icons.done, size: 16, color: Colors.green),
+                            SizedBox(width: 4),
+                            Text(
+                              'Dibaca ${_formatDateTime(notification.readAt!)}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.green,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteConfirmation(String notificationId, int index) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Hapus Notifikasi'),
+        content: Text(
+          'Apakah Anda yakin ingin menghapus notifikasi ini? Tindakan ini tidak dapat dibatalkan.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _deleteNotification(notificationId, index);
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            child: Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// NotificationModel class
+class NotificationModel {
+  final String id;
+  final String title;
+  final String message;
+  final String type;
+  final String referenceType;
+  final String? referenceNumber;
+  final DateTime createdAt;
+  bool isRead;
+  DateTime? readAt;
+
+  NotificationModel({
+    required this.id,
+    required this.title,
+    required this.message,
+    required this.type,
+    required this.referenceType,
+    this.referenceNumber,
+    required this.createdAt,
+    required this.isRead,
+    this.readAt,
+  });
+
+  factory NotificationModel.fromJson(Map<String, dynamic> json) {
+    return NotificationModel(
+      id: json['id'].toString(),
+      title: json['title'] ?? '',
+      message: json['message'] ?? '',
+      type: json['type'] ?? '',
+      referenceType: json['reference_type'] ?? '',
+      referenceNumber: json['reference_number'],
+      createdAt: DateTime.parse(json['created_at']),
+      isRead: json['is_read'] == 1 || json['is_read'] == true,
+      readAt: json['read_at'] != null ? DateTime.parse(json['read_at']) : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'message': message,
+      'type': type,
+      'reference_type': referenceType,
+      'reference_number': referenceNumber,
+      'created_at': createdAt.toIso8601String(),
+      'is_read': isRead,
+      'read_at': readAt?.toIso8601String(),
+    };
+  }
+}
