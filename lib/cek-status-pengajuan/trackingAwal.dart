@@ -269,7 +269,6 @@ class _TrackingAwalState extends State<TrackingAwal> {
           ? '${baseURL}pengajuan-santunan_$tableNumber/search-like?query=$nomorPendaftaran'
           : '${baseURL}pengajuan-santunan_$tableNumber/search?query=$nomorPendaftaran';
 
-
       final Uri uri = Uri.parse(endpoint);
 
       print('Making request to: ${uri.toString()}');
@@ -350,11 +349,18 @@ class _TrackingAwalState extends State<TrackingAwal> {
         'Ditolak',
         'Selesai'
       ];
+
       int currentIndex = orderedStatuses.indexOf(status);
+
+      List<String> visibleStatuses =
+          orderedStatuses.sublist(0, currentIndex + 1);
+      if (status == 'Selesai') {
+        visibleStatuses.remove('Ditolak');
+      }
+
       trackingInfo = [];
 
-      for (int i = 0; i <= currentIndex; i++) {
-        String currentStatus = orderedStatuses[i];
+      for (String currentStatus in visibleStatuses) {
         trackingInfo.add({
           'icon': statusIcons[currentStatus]!,
           'status': currentStatus,
@@ -463,7 +469,8 @@ class _TrackingAwalState extends State<TrackingAwal> {
                     _buildInputField(),
                     _buildCheckButton(),
                     _buildTrackingResult(),
-                    SizedBox(height: isKeyboardVisible && isLandscape ? 120 : 80)
+                    SizedBox(
+                        height: isKeyboardVisible && isLandscape ? 120 : 80)
                   ],
                 ),
               ),
@@ -514,7 +521,8 @@ class _TrackingAwalState extends State<TrackingAwal> {
   }
 
   Widget _buildInputField() {
-    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+    final isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
 
     return Padding(
       padding:
