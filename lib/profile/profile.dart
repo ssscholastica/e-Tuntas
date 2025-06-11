@@ -7,6 +7,7 @@ import 'package:etuntas/profile/editProfile.dart';
 import 'package:etuntas/profile/profileBersangkutan.dart';
 import 'package:etuntas/profile/ubahSandi.dart';
 import 'package:etuntas/splashScreen.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -81,6 +82,47 @@ class _ProfileState extends State<Profile> {
       });
     }
   }
+
+  Future<void> removeFcmTokenFromServer() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final email = prefs.getString('user_email');
+      final token = await FirebaseMessaging.instance.getToken();
+
+      debugPrint('=== FLUTTER DEBUG START ===');
+      debugPrint('Email: $email');
+      debugPrint('FCM Token: $token');
+      debugPrint('Base URL: $baseURL');
+      debugPrint('Full URL: ${baseURL}remove-token-logout');
+
+      if (email != null && token != null) {
+        debugPrint('Sending request...');
+
+        final response = await http.post(
+          Uri.parse('${baseURL}remove-token-logout'),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({
+            'email': email,
+            'device_token': token,
+          }),
+        );
+
+        debugPrint('Response Status: ${response.statusCode}');
+        debugPrint('Response Body: ${response.body}');
+        debugPrint('Response Headers: ${response.headers}');
+      } else {
+        debugPrint('Missing data - Email: $email, Token: $token');
+      }
+
+      debugPrint('=== FLUTTER DEBUG END ===');
+    } catch (e, stackTrace) {
+      debugPrint('Error removing FCM token: $e');
+      debugPrint('Stack trace: $stackTrace');
+    }
+  }
+
 
   Widget buildTemplate(String judul, String isiJudul) {
     return Padding(
@@ -329,19 +371,43 @@ class _ProfileState extends State<Profile> {
                               'assets/simbol next.png'),
                         ),
                         InkWell(
-                          onTap: () async {
-                            final prefs = await SharedPreferences.getInstance();
-                            await prefs.remove('user_email');
-                            await prefs.remove('user_token');
-                            Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const SplashScreen()),
-                            (route) => false,
-                            );
-                          },
-                          child: buildTemplateBawah(
-                            'assets/logo logout.png', 'Keluar', null))
+                            onTap: () async {
+                              try {
+                                // Remove FCM token first before clearing preferences
+                                await removeFcmTokenFromServer();
+
+                                final prefs =
+                                    await SharedPreferences.getInstance();
+                                await prefs.remove('user_email');
+                                await prefs.remove('user_token');
+                                await prefs.remove(
+                                    'access_token'); // Tambahkan ini juga
+                                await prefs.clear();
+
+                                Navigator.pushAndRemoveUntil(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          const SplashScreen()),
+                                  (route) => false,
+                                );
+                              } catch (e) {
+                                debugPrint('Logout error: $e');
+                                // Tetap logout meski ada error
+                                final prefs =
+                                    await SharedPreferences.getInstance();
+                                await prefs.clear();
+                                Navigator.pushAndRemoveUntil(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          const SplashScreen()),
+                                  (route) => false,
+                                );
+                              }
+                            },
+                            child: buildTemplateBawah(
+                                'assets/logo logout.png', 'Keluar', null))
                       ],
                     ),
                   ),
