@@ -164,8 +164,12 @@ class StatusMonitorService {
 
   void startMonitoring() {
     _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 30), () async {
-    } as void Function(Timer timer));
+    // Dummy: panggil setiap 30 detik, bisa diganti sesuai kebutuhan
+    _timer = Timer.periodic(Duration(seconds: 30), (_) async {
+      // Contoh: fetch data dan tambahkan notifikasi jika ada perubahan
+      // final data = await apiService.fetchData('endpoint');
+      // notificationService._addNotificationFromData({...});
+    });
   }
 
   void dispose() {
@@ -173,8 +177,11 @@ class StatusMonitorService {
   }
 }
 class ApiService {
+  // Dummy fetchData function, replace with actual API call
   Future<Map<String, dynamic>> fetchData(String endpoint) async {
+    // Simulate network delay
     await Future.delayed(Duration(seconds: 1));
+    // Return dummy data
     return {
       'title': 'Status Update',
       'body': 'Ada perubahan status pada $endpoint',
@@ -184,6 +191,8 @@ class ApiService {
   }
 }
 
+
+// ... (NotifPage, NotificationItem tetap sama)
 class NotifPage extends StatefulWidget {
   const NotifPage({Key? key}) : super(key: key);
 
@@ -244,7 +253,8 @@ class _NotifPageState extends State<NotifPage> {
 class NotificationItem extends StatelessWidget {
   final NotificationModel notification;
 
-  const NotificationItem({Key? key, required this.notification}) : super(key: key);
+  const NotificationItem({Key? key, required this.notification})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -255,7 +265,8 @@ class NotificationItem extends StatelessWidget {
           backgroundColor: notification.color,
           child: Icon(notification.icon, color: Colors.white),
         ),
-        title: Text(notification.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(notification.title,
+            style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -263,10 +274,12 @@ class NotificationItem extends StatelessWidget {
             const SizedBox(height: 4),
             Row(
               children: [
-                Text('${notification.date} ${notification.time}', style: const TextStyle(fontSize: 12)),
+                Text('${notification.date} ${notification.time}',
+                    style: const TextStyle(fontSize: 12)),
                 const SizedBox(width: 8),
                 Chip(
-                  label: Text(notification.category, style: const TextStyle(fontSize: 10)),
+                  label: Text(notification.category,
+                      style: const TextStyle(fontSize: 10)),
                   backgroundColor: notification.color.withOpacity(0.2),
                   visualDensity: VisualDensity.compact,
                   padding: EdgeInsets.zero,
@@ -277,7 +290,8 @@ class NotificationItem extends StatelessWidget {
         ),
         trailing: notification.statusType.isNotEmpty
             ? Chip(
-                label: Text(notification.statusType, style: const TextStyle(fontSize: 10)),
+                label: Text(notification.statusType,
+                    style: const TextStyle(fontSize: 10)),
                 backgroundColor: Colors.grey.shade200,
                 visualDensity: VisualDensity.compact,
                 padding: EdgeInsets.zero,

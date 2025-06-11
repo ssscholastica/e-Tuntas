@@ -1,17 +1,16 @@
   import 'package:etuntas/login-signup/resetPasswordScreen.dart';
-  import 'package:etuntas/network/globals.dart';
-  import 'package:etuntas/splashScreen.dart';
-  import 'package:flutter/material.dart';
-  import 'package:google_fonts/google_fonts.dart';
-  import 'package:uni_links/uni_links.dart';
-  import 'package:firebase_core/firebase_core.dart';
-  import 'package:firebase_messaging/firebase_messaging.dart';
-  import 'package:http/http.dart' as http;
+import 'package:etuntas/network/globals.dart';
+import 'package:etuntas/splashScreen.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
+import 'package:uni_links/uni_links.dart';
 
   void main() async {
     WidgetsFlutterBinding.ensureInitialized();
     await Firebase.initializeApp(
-      options:
     );
     runApp(MyApp());
   }
@@ -38,7 +37,7 @@
         .getInitialMessage()
         .then((RemoteMessage? message) {
       if (message != null) {
-        debugPrint('Opened from terminated with message');
+        debugPrint(' Opened from terminated with message');
       }
     });
     }
