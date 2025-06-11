@@ -68,7 +68,7 @@ class FCMService {
       final response = await http.post(
         Uri.parse('${baseURL}save-token'),
         headers: headers,
-        body: jsonEncode(bodyData), // This was correct in your original code
+        body: jsonEncode(bodyData), 
       );
 
       debugPrint('=== JSON API Response ===');

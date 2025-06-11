@@ -329,15 +329,19 @@ class _ProfileState extends State<Profile> {
                               'assets/simbol next.png'),
                         ),
                         InkWell(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const SplashScreen()),
-                              );
-                            },
-                            child: buildTemplateBawah(
-                                'assets/logo logout.png', 'Keluar', null))
+                          onTap: () async {
+                            final prefs = await SharedPreferences.getInstance();
+                            await prefs.remove('user_email');
+                            await prefs.remove('user_token');
+                            Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const SplashScreen()),
+                            (route) => false,
+                            );
+                          },
+                          child: buildTemplateBawah(
+                            'assets/logo logout.png', 'Keluar', null))
                       ],
                     ),
                   ),

@@ -36,7 +36,7 @@
         .getInitialMessage()
         .then((RemoteMessage? message) {
       if (message != null) {
-        debugPrint('📮 Opened from terminated with message');
+        debugPrint(' Opened from terminated with message');
       }
     });
     }
