@@ -166,3 +166,130 @@ class FCMService {
         'Access Token preview: ${prefs.getString('access_token')?.substring(0, 20)}...');
   }
 }
+
+class FCMTokenManager {
+  static const String _tokenKey = 'fcm_token';
+  static const String _lastSyncKey = 'fcm_last_sync';
+  
+  static Future<void> initializeAndSync() async {
+    print("=== FCM TOKEN SYNC DEBUG ===");
+    
+    // 1. Dapatkan token saat ini dari Firebase
+    String? currentToken = await FirebaseMessaging.instance.getToken();
+    print("FCM DEBUG: Current Firebase token: $currentToken");
+    
+    // 2. Dapatkan token yang tersimpan lokal
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? savedToken = prefs.getString(_tokenKey);
+    String? lastSync = prefs.getString(_lastSyncKey);
+    
+    print("FCM DEBUG: Saved local token: $savedToken");
+    print("FCM DEBUG: Last sync: $lastSync");
+    
+    // 3. Bandingkan token
+    bool tokenChanged = currentToken != savedToken;
+    print("FCM DEBUG: Token changed: $tokenChanged");
+    
+    // 4. Sync ke server jika berbeda atau belum pernah sync
+    if (tokenChanged || lastSync == null) {
+      await _syncTokenToServer(currentToken);
+      
+      // Simpan token baru ke local storage
+      if (currentToken != null) {
+        await prefs.setString(_tokenKey, currentToken);
+        await prefs.setString(_lastSyncKey, DateTime.now().toIso8601String());
+      }
+    }
+    
+    // 5. Listen token refresh
+    FirebaseMessaging.instance.onTokenRefresh.listen((String newToken) {
+      print("FCM DEBUG: Token refreshed to: $newToken");
+      _syncTokenToServer(newToken);
+      
+      // Update local storage
+      prefs.setString(_tokenKey, newToken);
+      prefs.setString(_lastSyncKey, DateTime.now().toIso8601String());
+    });
+    
+    // 6. Setup message listeners dengan debug
+    _setupMessageListeners();
+  }
+  
+  static Future<void> _syncTokenToServer(String? token) async {
+    if (token == null) return;
+    
+    try {
+      print("FCM DEBUG: Syncing token to server...");
+      
+      // Ambil email user (sesuaikan dengan sistem auth Anda)
+      String userEmail = await _getCurrentUserEmail(); // Implement sesuai kebutuhan
+      
+      final response = await http.post(
+        Uri.parse('YOUR_LARAVEL_DOMAIN/api/update-fcm-token'), // Sesuaikan URL
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer YOUR_AUTH_TOKEN', // Jika pakai auth
+        },
+        body: jsonEncode({
+          'email': userEmail,
+          'fcm_token': token,
+          'device_info': {
+            'platform': 'flutter',
+            'timestamp': DateTime.now().toIso8601String(),
+          }
+        }),
+      );
+      
+      if (response.statusCode == 200) {
+        print("FCM DEBUG: ✓ Token synced successfully");
+        print("FCM DEBUG: Server response: ${response.body}");
+      } else {
+        print("FCM DEBUG: ✗ Token sync failed: ${response.statusCode}");
+        print("FCM DEBUG: Error: ${response.body}");
+      }
+    } catch (e) {
+      print("FCM DEBUG: ✗ Token sync exception: $e");
+    }
+  }
+  
+  static void _setupMessageListeners() {
+    // Foreground messages
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      print("FCM DEBUG: ✓ FOREGROUND MESSAGE RECEIVED!");
+      print("FCM DEBUG: Title: ${message.notification?.title}");
+      print("FCM DEBUG: Body: ${message.notification?.body}");
+      print("FCM DEBUG: Data: ${message.data}");
+      
+      // Tampilkan notifikasi lokal jika diperlukan
+      _showLocalNotification(message);
+    });
+    
+    // Background/terminated app messages
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      print("FCM DEBUG: ✓ NOTIFICATION TAPPED!");
+      print("FCM DEBUG: Data: ${message.data}");
+    });
+  }
+  
+  static void _showLocalNotification(RemoteMessage message) {
+    // Implementasi show local notification untuk foreground
+    // Gunakan flutter_local_notifications package
+    print("FCM DEBUG: Showing local notification...");
+  }
+  
+  static Future<String> _getCurrentUserEmail() async {
+    // Implement sesuai sistem auth Anda
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString('user_email') ?? 'nzaahiya@gmail.com'; // Default untuk testing
+  }
+  
+  // Method untuk manual test
+  static Future<void> testCurrentToken() async {
+    String? token = await FirebaseMessaging.instance.getToken();
+    print("FCM TEST: Current token: $token");
+    
+    if (token != null) {
+      await _syncTokenToServer(token);
+    }
+  }
+}

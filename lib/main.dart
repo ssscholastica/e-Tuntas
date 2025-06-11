@@ -29,12 +29,20 @@
       super.initState();
       initUniLinks();
       _initFCM(); 
+      FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+    });
+
+    FirebaseMessaging.instance
+        .getInitialMessage()
+        .then((RemoteMessage? message) {
+      if (message != null) {
+        debugPrint('📮 Opened from terminated with message');
+      }
+    });
     }
 
     void _initFCM() async {
     FirebaseMessaging messaging = FirebaseMessaging.instance;
-
-    // Minta izin notifikasi (khusus iOS, Android akan auto granted)
     await messaging.requestPermission();
 
     // Ambil device token
