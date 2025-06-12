@@ -77,10 +77,8 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
       final headers = await getHeaders();
       print("Using token: ${headers['Authorization']}");
 
-      // Tambahkan log untuk debugging
       print("URL: ${baseURL}pengaduan-bpjs/by-nomor/$nomorBPJS");
 
-      // Coba cari dengan endpoint yang langsung
       final response = await http.get(
         Uri.parse('${baseURL}pengaduan-bpjs/by-nomor/$nomorBPJS'),
         headers: headers,
@@ -92,7 +90,6 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
       }
 
       if (response.statusCode == 200) {
-        // Pastikan response berisi data yang valid
         try {
           final dynamic decodedResponse = json.decode(response.body);
 
@@ -108,7 +105,6 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
                 decodedResponse['data'].isNotEmpty) {
               _processTrackingResults(decodedResponse['data']);
             } else {
-              // Coba proses sebagai objek tunggal jika memiliki field yang diperlukan
               if (decodedResponse.containsKey('id') ||
                   decodedResponse.containsKey('nomor_bpjs_nik') ||
                   decodedResponse.containsKey('status')) {
@@ -129,7 +125,6 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
           });
         }
       }
-      // Jika 500, kemungkinan masalah server
       else if (response.statusCode == 500) {
         String errorMsg =
             "Terjadi kesalahan pada server. Silakan coba lagi nanti.";
@@ -149,10 +144,8 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
         });
         _showFailureDialog(errorMsg);
 
-        // Coba endpoint alternatif jika endpoint utama gagal dengan 500
         _tryAlternativeSearch(nomorBPJS, headers);
       }
-      // Jika 403 atau data tidak ditemukan dengan metode langsung
       else if (response.statusCode == 403 || response.statusCode == 404) {
         _tryAlternativeSearch(nomorBPJS, headers);
       } else {
@@ -169,24 +162,18 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
     }
   }
 
-// Mencoba pencarian dengan endpoint alternatif
   Future<void> _tryAlternativeSearch(
       String query, Map<String, String> headers) async {
     try {
       print("Trying alternative search with query: $query");
-
-      // Coba cari dengan endpoint search
       final searchResponse = await http.get(
         Uri.parse('${baseURL}pengaduan-bpjs/search?query=$query'),
         headers: headers,
       );
-
       print("Alternative search response status: ${searchResponse.statusCode}");
-
       if (searchResponse.statusCode == 200) {
         try {
           final dynamic searchData = json.decode(searchResponse.body);
-
           if (searchData is List && searchData.isNotEmpty) {
             _processTrackingResults(searchData);
           } else if (searchData is Map<String, dynamic>) {
@@ -195,7 +182,6 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
                 searchData['data'].isNotEmpty) {
               _processTrackingResults(searchData['data']);
             }
-            // Coba proses sebagai objek tunggal
             else if (searchData.containsKey('id') ||
                 searchData.containsKey('nomor_bpjs_nik') ||
                 searchData.containsKey('status')) {
@@ -215,24 +201,18 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
       }
     } catch (e) {
       print("Error in alternative search: $e");
-      // Sudah ada dialog error di metode utama, jadi tidak perlu menampilkan lagi
     }
   }
 
-// Helper method untuk memproses hasil tracking dari list
   void _processTrackingResults(List<dynamic> jsonData) {
     setState(() {
       isLoading = false;
-
       if (jsonData.isNotEmpty) {
         isTrackingSuccess = true;
         currentPengaduan = jsonData.first;
-
-        // Pastikan field yang diperlukan ada
         if (currentPengaduan!.containsKey('status') &&
             currentPengaduan!.containsKey('tanggal_ajuan')) {
           final status = currentPengaduan!['status'] ?? 'Terkirim';
-
           DateTime tanggalAjuan;
           try {
             tanggalAjuan = DateTime.parse(currentPengaduan!['tanggal_ajuan']);
@@ -240,10 +220,8 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
             print("Error parsing date: $e");
             tanggalAjuan = DateTime.now();
           }
-
           trackingInfo = _generateTrackingInfo(status, tanggalAjuan);
         } else {
-          // Jika tidak ada field yang diperlukan, gunakan nilai default
           trackingInfo = _generateTrackingInfo('Terkirim', DateTime.now());
         }
       } else {
@@ -252,16 +230,12 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
     });
   }
 
-// Helper method untuk memproses hasil tracking dari objek tunggal
   void _processTrackingSingleResult(Map<String, dynamic> data) {
     setState(() {
       isLoading = false;
       isTrackingSuccess = true;
       currentPengaduan = data;
-
-      // Pastikan field yang diperlukan ada
       String status = data['status'] ?? 'Terkirim';
-
       DateTime tanggalAjuan;
       if (data.containsKey('tanggal_ajuan')) {
         try {
@@ -273,12 +247,10 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
       } else {
         tanggalAjuan = DateTime.now();
       }
-
       trackingInfo = _generateTrackingInfo(status, tanggalAjuan);
     });
   }
 
-// Helper method untuk menangani kasus tidak ada data
   void _handleNoData() {
     setState(() {
       isLoading = false;
@@ -290,10 +262,8 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
     _showFailureDialog("Data tidak ditemukan.");
   }
 
-// Helper method untuk menangani response error
   void _handleErrorResponse(int statusCode) {
     String errorMsg;
-
     if (statusCode == 403) {
       errorMsg = "Anda tidak berhak mengakses data ini.";
     } else if (statusCode == 401) {
@@ -353,7 +323,7 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
       String currentStatus, DateTime tanggalAjuan) {
     List<Map<String, dynamic>> result = [];
     List<String> allStatus = ['Terkirim', 'Diproses', 'Ditolak', 'Selesai'];
-    final dateFormatter = DateFormat('dd MMM yyyy');
+    final dateFormatter = DateFormat('dd MM yyyy');
     final currentStatusIndex = allStatus.indexOf(currentStatus);
     if (currentStatusIndex == -1) return result;
 
