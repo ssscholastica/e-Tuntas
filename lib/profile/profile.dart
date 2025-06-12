@@ -375,6 +375,7 @@ class _ProfileState extends State<Profile> {
                               try {
                                 // Remove FCM token first before clearing preferences
                                 await removeFcmTokenFromServer();
+                                await FirebaseMessaging.instance.deleteToken();
 
                                 final prefs =
                                     await SharedPreferences.getInstance();
