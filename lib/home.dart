@@ -5,6 +5,7 @@ import 'package:etuntas/bpjs/aduan-bpjs.dart';
 import 'package:etuntas/cara-pangajuan/caraPengajuan.dart';
 import 'package:etuntas/cek-status-pengajuan/trackingAwal.dart';
 import 'package:etuntas/login-signup/login.dart';
+import 'package:etuntas/models/notification_model.dart';
 import 'package:etuntas/navbar.dart';
 import 'package:etuntas/network/globals.dart';
 import 'package:etuntas/notifikasi.dart';
@@ -12,6 +13,7 @@ import 'package:etuntas/pengajuan-santunan/alurPengajuan1.dart';
 import 'package:etuntas/persyaratan/persyaratan.dart';
 import 'package:etuntas/pertanyaan-umum/pertanyaan-umum.dart';
 import 'package:etuntas/rekening/bank.dart';
+import 'package:etuntas/services/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -25,11 +27,30 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   String name= "";
+  List<NotificationModel> notifications = [];
+  int unreadCount = 0;
 
   @override
   void initState() {
     super.initState();
     fetchUserName();
+    loadNotifications();
+  }
+
+  void loadNotifications() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('access_token') ??'';
+      final notifData = await NotificationService.fetchNotifications(token);
+      final unread = notifData.where((n) => !n.isRead).length;
+
+      setState(() {
+        notifications = notifData;
+        unreadCount = unread;
+      });
+    } catch (e) {
+      print("Error fetching notifications: $e");
+    }
   }
 
    Future<void> fetchUserName() async {
@@ -239,13 +260,13 @@ class _HomeState extends State<Home> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => NotifPage()),
+                                builder: (context) => NotificationPage()),
                           );
                         },
                       child: badges.Badge(
-                          badgeContent: const Text(
-                            '3',
-                            style: TextStyle(color: Colors.white),
+                          badgeContent: Text(
+                            unreadCount.toString(),
+                            style: const TextStyle(color: Colors.white),
                           ),
                           position: badges.BadgePosition.topEnd(top: -8, end: -7),
                           badgeStyle: const badges.BadgeStyle(badgeColor: Colors.red),
