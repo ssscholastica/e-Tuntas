@@ -45,17 +45,29 @@ class NotificationService {
   }
 
   static Future<void> markAsRead(int id, String token) async {
+    final email = await getLoggedInEmail();
+
+    if (email == null) {
+      throw Exception('Email pengguna tidak ditemukan');
+    }
+
     final headers = await getHeaders();
-    final response = await http.post(
-      Uri.parse('$baseURL/notifications/$id/read'),
+    final response = await http.patch(
+      Uri.parse('${baseURL}notifications/$id'),
       headers: headers,
+      body: json.encode({
+        'email': email,
+      }),
     );
 
     print('MARK AS READ STATUS: ${response.statusCode}');
     print('MARK AS READ RESPONSE: ${response.body}');
 
     if (response.statusCode != 200) {
-      throw Exception('Gagal menandai sebagai dibaca');
+      final errorBody = json.decode(response.body);
+      print('ERROR DETAILS: $errorBody');
+      throw Exception(
+          'Gagal menandai sebagai dibaca: ${errorBody['message'] ?? 'Unknown error'}');
     }
   }
 }
