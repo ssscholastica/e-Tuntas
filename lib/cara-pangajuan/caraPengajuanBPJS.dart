@@ -41,7 +41,7 @@ class _CaraPengajuanBPJSState extends State<CaraPengajuanBPJS> {
                         height: 28,
                       ),
                     ),
-                    const SizedBox(width: 20),
+                    const SizedBox(width: 10),
                     const Text(
                       "Cara Pengajuan",
                       style: TextStyle(

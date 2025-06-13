@@ -5,11 +5,11 @@ import 'package:etuntas/home.dart';
 import 'package:etuntas/login-signup/forgotPassword.dart';
 import 'package:etuntas/login-signup/pendaftaran.dart';
 import 'package:etuntas/network/auth_services.dart';
+import 'package:etuntas/services/fcm_service.dart';
 import 'package:etuntas/widgets/loading_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:etuntas/services/fcm_service.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -19,7 +19,6 @@ class Login extends StatefulWidget {
 }
 
 class _LoginState extends State<Login> {
-
   final LinearGradient _gradient = const LinearGradient(
       colors: <Color>[Color(0xFF26267E), Color(0xFF2F2F9D), Color(0xFF6F6FB9)],
       begin: Alignment.centerLeft,
@@ -28,58 +27,58 @@ class _LoginState extends State<Login> {
   bool _obscureText = true;
   bool isLoading = false;
   String errorMessage = "";
-  String name = '';
+  String email = '';
   String password = '';
 
-  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-    void loginPressed() async {
-      String name = _nameController.text.trim();
-      String password = _passwordController.text.trim();
+  void loginPressed() async {
+    String email = _emailController.text.trim();
+    String password = _passwordController.text.trim();
 
-      if (name.isNotEmpty && password.isNotEmpty) {
-        setState(() {
-          isLoading = true;
-        });
+    if (email.isNotEmpty && password.isNotEmpty) {
+      setState(() {
+        isLoading = true;
+      });
 
-        http.Response response = await AuthServices.login(name, password);
+      http.Response response = await AuthServices.login(email, password);
 
-        setState(() {
-          isLoading = false;
-        });
+      setState(() {
+        isLoading = false;
+      });
 
-        if (response.statusCode == 200) {
-          Map responseMap = jsonDecode(response.body);
-          print("Response dari server: ${response.body}");
-          Map<String, dynamic> userData = responseMap['user'];
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('user_email', userData['email']);
-          await prefs.setString('user_nik', userData['nik']);
-          final token = responseMap['access_token'];
-          await prefs.setString('access_token', token);
-          await FCMService.saveTokenToServer();
-          bool isAdmin = userData['is_admin'] == 1;
-          if (isAdmin) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                  builder: (BuildContext context) => const AdminHome()),
-            );
-          } else {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (BuildContext context) => const Home()),
-            );
-          }
+      if (response.statusCode == 200) {
+        Map responseMap = jsonDecode(response.body);
+        print("Response dari server: ${response.body}");
+        Map<String, dynamic> userData = responseMap['user'];
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('user_email', userData['email']);
+        await prefs.setString('user_nik', userData['nik']);
+        final token = responseMap['access_token'];
+        await prefs.setString('access_token', token);
+        await FCMService.saveTokenToServer();
+        bool isAdmin = userData['is_admin'] == 1;
+        if (isAdmin) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+                builder: (BuildContext context) => const AdminHome()),
+          );
         } else {
-          Map responseMap = jsonDecode(response.body);
-          errorSnackBar(context, responseMap['message'] ?? "Login failed");
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (BuildContext context) => const Home()),
+          );
         }
       } else {
-        errorSnackBar(context, 'Pastikan semua kolom sudah terisi!');
+        Map responseMap = jsonDecode(response.body);
+        errorSnackBar(context, responseMap['message'] ?? "Login failed");
       }
+    } else {
+      errorSnackBar(context, 'Pastikan semua kolom sudah terisi!');
     }
+  }
 
   void errorSnackBar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -152,7 +151,7 @@ class _LoginState extends State<Login> {
                       child: Padding(
                         padding: EdgeInsets.only(left: 5),
                         child: Text(
-                          "Nama Pengguna",
+                          "Alamat Email Pengguna",
                           style: TextStyle(
                               fontWeight: FontWeight.bold, fontSize: 15),
                         ),
@@ -162,12 +161,13 @@ class _LoginState extends State<Login> {
                     TextField(
                       onChanged: (value) {
                         setState(() {
-                          name = value;
+                          email = value;
                         });
                       },
-                      controller: _nameController,
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
                       decoration: InputDecoration(
-                        hintText: "Nama Pengguna",
+                        hintText: "Email Pengguna",
                         contentPadding: const EdgeInsets.symmetric(
                             vertical: 12, horizontal: 15),
                         border: OutlineInputBorder(
@@ -193,8 +193,7 @@ class _LoginState extends State<Login> {
                       obscureText: _obscureText,
                       onChanged: (value) {
                         setState(() {
-                          password =
-                              value;
+                          password = value;
                         });
                       },
                       decoration: InputDecoration(

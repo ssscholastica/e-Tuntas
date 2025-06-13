@@ -5,8 +5,8 @@ import 'package:etuntas/profile/profile.dart';
 import 'package:etuntas/profile/ubahBerhasil.dart';
 import 'package:etuntas/widgets/loading_widget.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class UbahSandi extends StatefulWidget {
   const UbahSandi({super.key});
@@ -313,7 +313,7 @@ class _UbahSandiState extends State<UbahSandi> {
                             height: 28,
                           ),
                         ),
-                        const Spacer(),
+                        const SizedBox(width: 10),
                         const Text(
                           "Ganti Kata Sandi",
                           style: TextStyle(

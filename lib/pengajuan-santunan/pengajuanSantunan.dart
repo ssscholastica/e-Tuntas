@@ -46,6 +46,7 @@ class PengajuanSantunan extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
+        titleSpacing: -5,
         title: const Text(
           "Proses Pengajuan Santunan",
           style: TextStyle(

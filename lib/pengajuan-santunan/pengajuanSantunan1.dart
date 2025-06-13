@@ -330,6 +330,7 @@ class _PengajuanSantunan1State extends State<PengajuanSantunan1> {
                           height: 28,
                         ),
                       ),
+                      const SizedBox(width: 10),
                       const Text(
                         "Proses Pengajuan Santunan",
                         style: TextStyle(

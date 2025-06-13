@@ -118,7 +118,7 @@ class _PertanyaanUmumState extends State<PertanyaanUmum> {
                           height: 28,
                         ),
                       ),
-                      const SizedBox(width: 20),
+                      const SizedBox(width: 10),
                       const Text(
                         "Pertanyaan Umum",
                         style: TextStyle(

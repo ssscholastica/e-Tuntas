@@ -4,12 +4,12 @@ import 'package:etuntas/navbar.dart';
 import 'package:etuntas/network/globals.dart';
 import 'package:etuntas/profile/editBerhasil.dart';
 import 'package:etuntas/profile/profile.dart';
-import 'package:etuntas/widgets/loading_widget.dart'; 
+import 'package:etuntas/widgets/loading_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:http/http.dart' as http;
 
 class EditProfile extends StatefulWidget {
   const EditProfile({super.key});
@@ -280,9 +280,9 @@ class _EditProfileState extends State<EditProfile> {
                           height: 28,
                         ),
                       ),
-                      const Spacer(),
+                      const SizedBox(width: 10),
                       const Text(
-                        "Profile",
+                        "Edit Profile",
                         style: TextStyle(
                           fontSize: 18,
                           color: Color(0XFF000000),

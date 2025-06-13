@@ -503,13 +503,13 @@ class _TrackingAwalState extends State<TrackingAwal> {
                 context, MaterialPageRoute(builder: (context) => const Home())),
             child: Image.asset('assets/simbol back.png', width: 28, height: 28),
           ),
-          const Spacer(),
+          const SizedBox(width: 10),
           const Expanded(
             flex: 8,
             child: Text(
               "Cek Status Pengajuan Santunan",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-              textAlign: TextAlign.center,
+              textAlign: TextAlign.start,
               overflow: TextOverflow.ellipsis,
               maxLines: 2,
             ),

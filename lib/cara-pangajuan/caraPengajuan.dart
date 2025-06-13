@@ -90,7 +90,7 @@ class _CaraPengajuanState extends State<CaraPengajuan> {
                         height: 28,
                       ),
                     ),
-                    const SizedBox(width: 20),
+                    const SizedBox(width: 10),
                     const Text(
                       "Cara Pengajuan",
                       style: TextStyle(

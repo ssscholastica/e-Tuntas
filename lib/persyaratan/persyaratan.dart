@@ -55,6 +55,7 @@ class Persyaratan extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
+        titleSpacing: -5,
         title: const Text(
           "Persyaratan",
           style: TextStyle(

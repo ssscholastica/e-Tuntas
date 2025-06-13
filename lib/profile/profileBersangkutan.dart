@@ -177,7 +177,7 @@ class _ProfileBersangkutanState extends State<ProfileBersangkutan> {
                         height: 28,
                       ),
                     ),
-                    const Spacer(),
+                    const SizedBox(width: 10),
                     const Text(
                       "Profile Bersangkutan",
                       style: TextStyle(

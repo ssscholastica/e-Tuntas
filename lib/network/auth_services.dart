@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:etuntas/network/globals.dart';
 import 'package:http/http.dart' as http;
 
@@ -34,8 +35,8 @@ class AuthServices {
     return response;
   }
 
-  static Future<http.Response> login(String name, String password) async {
-    Map data = {'name': name, 'password': password};
+  static Future<http.Response> login(String email, String password) async {
+    Map data = {'email': email, 'password': password};
     var body = json.encode(data);
     var url = Uri.parse('${baseURL}auth/login');
     final headers = await getHeaders();
