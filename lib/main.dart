@@ -1,4 +1,4 @@
-  import 'package:etuntas/login-signup/resetPasswordScreen.dart';
+import 'package:etuntas/login-signup/resetPasswordScreen.dart';
 import 'package:etuntas/network/globals.dart';
 import 'package:etuntas/splashScreen.dart';
 import 'package:firebase_core/firebase_core.dart';
