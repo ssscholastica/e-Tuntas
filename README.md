@@ -21,12 +21,12 @@ Aplikasi ini terhubung langsung ke backend Laravel melalui REST API dan mengguna
 - SharedPreferences untuk penyimpanan lokal
 
 # Cara Menjalankan:
-# Clone repository:  
-git clone https://github.com/ssscholastica/e-Tuntas.git  
-cd e-Tuntas
-# Install dependency
-flutter pub get
-# Jalankan emulator atau hubungkan perangkat lalu:
-flutter run
+- Clone repository:
+  git clone https://github.com/ssscholastica/e-Tuntas.git
+  cd e-Tuntas
+- Install dependency
+  flutter pub get
+- Jalankan emulator atau hubungkan perangkat lalu:
+  flutter run
   
 Pastikan kamu sudah mengatur baseUrl di file globals.dart untuk mengarah ke server backend Laravel-mu.
