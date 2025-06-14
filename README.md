@@ -1,16 +1,32 @@
-# etuntas
+# E-Tuntas – Aplikasi Pengajuan Santunan Pensiunan dan Pengaduan BPJS
 
-A new Flutter project.
+Aplikasi ini terhubung langsung ke backend Laravel melalui REST API dan menggunakan Firebase untuk notifikasi real-time.
 
-## Getting Started
+Fitur Utama:
+- Autentikasi dengan email
+- Pengajuan santunan
+- Pengaduan BPJS
+- Tracking status pengajuan
+- Tracking status pengaduan
+- Notifikasi status via Firebase Cloud Messaging
+- Komentar & balasan antara user dan admin
+- Tampilan dokumen PDF di external aplikasi
+- Input data rekening bank
 
-This project is a starting point for a Flutter application.
+Teknologi:
+- Frontend: Flutter (Dart)
+- Backend: Laravel REST API (terpisah dari repository ini)
+- Push Notification: Firebase Cloud Messaging (FCM)
+- PDF Viewer: DirectPDFViewer
+- SharedPreferences untuk penyimpanan lokal
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Cara Menjalankan:
+- Clone repository:
+  git clone https://github.com/ssscholastica/e-Tuntas.git
+  cd e-Tuntas
+- Install dependency
+  flutter pub get
+- Jalankan emulator atau hubungkan perangkat lalu:
+  flutter run
+  
+Pastikan kamu sudah mengatur baseUrl di file globals.dart untuk mengarah ke server backend Laravel-mu.
