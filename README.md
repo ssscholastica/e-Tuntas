@@ -2,7 +2,7 @@
 
 Aplikasi ini terhubung langsung ke backend Laravel melalui REST API dan menggunakan Firebase untuk notifikasi real-time.
 
-Fitur Utama:
+# Fitur Utama:
 - Autentikasi dengan email
 - Pengajuan santunan
 - Pengaduan BPJS
@@ -13,16 +13,16 @@ Fitur Utama:
 - Tampilan dokumen PDF di external aplikasi
 - Input data rekening bank
 
-Teknologi:
+# Teknologi:
 - Frontend: Flutter (Dart)
 - Backend: Laravel REST API (terpisah dari repository ini)
 - Push Notification: Firebase Cloud Messaging (FCM)
 - PDF Viewer: DirectPDFViewer
 - SharedPreferences untuk penyimpanan lokal
 
-Cara Menjalankan:
-# Clone repository:
-git clone https://github.com/ssscholastica/e-Tuntas.git
+# Cara Menjalankan:
+# Clone repository:  
+git clone https://github.com/ssscholastica/e-Tuntas.git  
 cd e-Tuntas
 # Install dependency
 flutter pub get
