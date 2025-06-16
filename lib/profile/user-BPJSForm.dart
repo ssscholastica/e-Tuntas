@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 import 'package:etuntas/network/globals.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:file_picker/file_picker.dart';
 
@@ -31,48 +32,124 @@ class _formBPJSUserState extends State<formBPJSUser> {
   bool hasError = false;
   String errorMessage = '';
   bool statusChanged = false;
-
-  String? selectedStatus;
-  List<String> statusOptions = ['Terkirim', 'Diproses', 'Ditolak', 'Selesai'];
-  TextEditingController replyController = TextEditingController();
   PlatformFile? _pickedFile;
 
 
   @override
   void initState() {
     super.initState();
-    selectedStatus = widget.pengaduanData['status'] ?? 'Terkirim';
   }
 
   @override
   void dispose() {
-    replyController.dispose();
     super.dispose();
   }
 
   Future<void> submitForm() async {
-    var request = http.MultipartRequest(
-      'POST',
-      Uri.parse(
-          '${baseURL}update-pengaduan/${widget.pengaduanData['id']}'),
-    );
+    setState(() {
+      isLoading = true;
+    });
 
-    if (_pickedFile != null) {
-      request.files.add(await http.MultipartFile.fromPath(
-        'data_pendukung',
-        _pickedFile!.path!,
-      ));
-    }
+    try {
+      // Get the stored auth token
+      String? authToken = await getStoredAuthToken();
 
-    var response = await request.send();
+      if (authToken == null) {
+        throw Exception('No authentication token found');
+      }
 
-    if (response.statusCode == 200) {
-      print('Upload sukses');
-      // tampilkan notifikasi atau pop
-    } else {
-      print('Gagal upload: ${response.statusCode}');
+      FormData formData = FormData();
+
+      if (_pickedFile != null) {
+        formData.files.add(MapEntry(
+          'data_pendukung',
+          await MultipartFile.fromFile(_pickedFile!.path!,
+              filename: _pickedFile!.name),
+        ));
+      }
+
+      // Fixed URL - added 'api/' prefix
+      final url =
+          '${baseURL}update-pengaduan/${widget.pengaduanData['id']}';
+      print('Calling URL: $url'); // Debug line
+
+      final response = await _dio.post(
+        url,
+        data: formData,
+        options: Options(
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $authToken',
+            // Don't set Content-Type for multipart - let Dio handle it
+          },
+          followRedirects: false,
+          validateStatus: (status) => status! < 500,
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        print('Upload sukses');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Dokumen berhasil diupdate.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        widget.onStatusUpdated();
+      } else {
+        print('Gagal upload: ${response.statusCode}');
+        print('Response: ${response.data}');
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Gagal mengupdate dokumen. Status: ${response.statusCode}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error upload: $e');
+
+      String errorMsg = 'Terjadi kesalahan saat mengupdate dokumen';
+      if (e is DioException) {
+        print('DioException details: ${e.response?.statusCode}');
+        print('Response data: ${e.response?.data}');
+
+        if (e.response?.statusCode == 401) {
+          errorMsg = 'Sesi telah berakhir. Silakan login kembali.';
+        } else if (e.response?.statusCode == 404) {
+          errorMsg = 'Endpoint tidak ditemukan. Periksa URL server.';
+        } else if (e.response?.statusCode == 422) {
+          errorMsg = 'Data tidak valid. Periksa file yang diupload.';
+        }
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMsg),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
     }
   }
+
+// You need to implement this method based on how you store auth tokens
+  Future<String?> getStoredAuthToken() async {
+    // Example using SharedPreferences:
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('access_token');
+
+    // Or if you're using a global variable or state management:
+    // return GlobalData.authToken;
+
+  }
+
 
 
   Future<void> pickFile() async {
@@ -166,6 +243,17 @@ class _formBPJSUserState extends State<formBPJSUser> {
               if (widget.pengaduanData['data_pendukung'] != null)
                 buildDataPendukung(),
               buildInfoField('Status', widget.pengaduanData['status'] ?? '-'),
+              SizedBox(height: 20,),
+              Center(
+                child: ElevatedButton.icon(
+                  onPressed: _pickedFile != null ? submitForm : null,
+                  icon: const Icon(Icons.save),
+                  label: const Text("Update Dokumen"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                  ),
+                ),
+              ),
 
             ],
           ),
@@ -212,40 +300,43 @@ class _formBPJSUserState extends State<formBPJSUser> {
   }
 
   Widget buildDataPendukung() {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      const SizedBox(height: 10),
-      const Text(
-        'Data Pendukung',
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 16,
-        ),
-      ),
-      const SizedBox(height: 6),
-      if (_pickedFile != null)
-        Text(_pickedFile!.name)
-      else if (widget.pengaduanData['data_pendukung'] != null)
-        GestureDetector(
-          onTap: () {
-            launchUrl(Uri.parse(widget.pengaduanData['data_pendukung']));
-          },
-          child: Text(
-            widget.pengaduanData['data_pendukung'],
-            style: const TextStyle(
-              color: Colors.purple,
-              decoration: TextDecoration.underline,
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 10),
+        const Text(
+          'Data Pendukung',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
           ),
         ),
-      const SizedBox(height: 8),
-      ElevatedButton.icon(
-        onPressed: pickFile,
-        icon: const Icon(Icons.upload_file),
-        label: const Text("Upload Ulang File"),
-      ),
-    ],
-  );
-}
+        const SizedBox(height: 6),
+        if (_pickedFile != null)
+          Text(_pickedFile!.name)
+        else if (widget.pengaduanData['data_pendukung'] != null)
+          GestureDetector(
+            onTap: () {
+              final url =
+                  '${baseURLStorage}storage/${widget.pengaduanData['data_pendukung']}';
+              launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+            },
+            child: const Text(
+              "Lihat File",
+              style: TextStyle(
+                color: Colors.purple,
+                decoration: TextDecoration.underline,
+              ),
+            ),
+          ),
+        const SizedBox(height: 8),
+        ElevatedButton.icon(
+          onPressed: pickFile,
+          icon: const Icon(Icons.upload_file),
+          label: const Text("Upload Ulang File"),
+        ),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
 }

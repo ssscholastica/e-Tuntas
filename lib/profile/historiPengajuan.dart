@@ -254,9 +254,9 @@ class _HistoriPengajuanState extends State<HistoriPengajuan> {
       "id": item['id'].toString(),
       "type": "bpjs",
       "title": "Pengaduan BPJS",
-      "no_pendaftaran": item['no_pengaduan'] ?? item['nomor_pengaduan'] ?? '-',
+      "no_pendaftaran": item['nomor_bpjs_nik'] ?? item['nomor_bpjs_nik'] ?? '-',
       "subjek": item['subjek'] ?? item['subject'] ?? '-',
-      "kategori": item['kategori'] ?? item['category'] ?? '-',
+      "kategori": item['kategori_bpjs'] ?? item['kategori_bpjs'] ?? '-',
       "status": item['status'] ?? "Terkirim",
       "created_at": createdAt,
       "updated_at": updatedAt,
@@ -396,7 +396,7 @@ class _HistoriPengajuanState extends State<HistoriPengajuan> {
                           ),
                           const SizedBox(height: 2),
                           if (item['type'] == 'bpjs')
-                            Text("Subjek: ${item['subjek']}")
+                            Text("Kategori: ${item['kategori']}")
                           else
                             Text("PTPN: ${item['ptpn']}"),
                           const SizedBox(height: 2),

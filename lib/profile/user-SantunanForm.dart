@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:file_picker/file_picker.dart';
 
 class formSantunanUser extends StatefulWidget {
   final String pengaduanId;
@@ -30,81 +31,321 @@ class _formSantunanUserState extends State<formSantunanUser> {
   bool isLoading = false;
   bool hasError = false;
   String errorMessage = '';
-  bool statusChanged = false;
-  bool isSubmittingReply = false;
-  late Future<List<Comment>> commentsFuture;
-  Map<int, TextEditingController> replyControllers = {};
-
-  String? selectedStatus;
-  List<String> statusOptions = ['Terkirim', 'Diproses', 'Ditolak', 'Selesai'];
-  TextEditingController replyController = TextEditingController();
+  // Map untuk menyimpan file yang dipilih per kolom
+  Map<String, PlatformFile?> _pickedFiles = {};
+  // Map untuk menyimpan status loading per dokumen
+  Map<String, bool> _loadingStates = {};
 
   @override
   void initState() {
     super.initState();
-    selectedStatus = widget.pengaduanData['status'] ?? 'Terkirim';
-    if (!statusOptions.contains(selectedStatus)) {
-      statusOptions.add(selectedStatus!);
-      commentsFuture = fetchCommentByNoPendaftaran();
-    }
   }
 
-  @override
-  void dispose() {
-    replyController.dispose();
-    super.dispose();
-  }
-
-  Future<Comment> fetchCommentDetail() async {
-    final url = '${baseURL}comments/${widget.pengaduanId}';
-    print('Fetching comment from: $url');
-    final response = await http.get(Uri.parse(url));
-
-    if (response.statusCode == 200) {
-      return Comment.fromJson(jsonDecode(response.body));
-    } else {
-      throw Exception('Failed to load comment: ${response.statusCode}');
-    }
-  }
-
-  Future<List<Comment>> fetchCommentByNoPendaftaran() async {
-    final noPendaftaran = widget.pengaduanData['no_pendaftaran'];
-
-    if (noPendaftaran == null) {
-      throw Exception('No pendaftaran tidak ditemukan');
-    }
-
-    final url = '${baseURL}comments/registration/$noPendaftaran';
-    print('Fetching comment from: $url');
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('access_token');
-
+  // Fungsi untuk memilih file dari perangkat untuk kolom spesifik
+  Future<void> _pickFile(String documentKey) async {
     try {
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
       );
 
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        return data.map((json) => Comment.fromJson(json)).toList();
-      } else if (response.statusCode == 404) {
-        print('Komentar belum ada untuk no_pendaftaran ini');
-        return [];
+      if (result != null) {
+        setState(() {
+          _pickedFiles[documentKey] = result.files.first;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'File "${_pickedFiles[documentKey]!.name}" berhasil dipilih untuk ${documentKey.replaceAll('_', ' ').toUpperCase()}.'),
+            backgroundColor: Colors.blueAccent,
+          ),
+        );
       } else {
-        throw Exception('Gagal mengambil komentar: ${response.statusCode}');
+        setState(() {
+          _pickedFiles.remove(documentKey);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Pemilihan dokumen dibatalkan.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
       }
     } catch (e) {
-      print('Error detail: $e');
-      rethrow;
+      debugPrint('Error saat memilih file: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal memilih dokumen: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      setState(() {
+        _pickedFiles.remove(documentKey);
+      });
     }
   }
+
+  // Fungsi untuk upload dokumen individual
+  Future<void> _uploadSingleDocument(String documentKey) async {
+    final file = _pickedFiles[documentKey];
+    if (file == null) return;
+
+    setState(() {
+      _loadingStates[documentKey] = true;
+    });
+
+    try {
+      String? authToken = await getStoredAuthToken();
+
+      if (authToken == null) {
+        throw Exception('No authentication token found');
+      }
+
+      FormData formData = FormData();
+      formData.files.add(MapEntry(
+        documentKey,
+        await MultipartFile.fromFile(file.path!, filename: file.name),
+      ));
+
+      final sourceTable = widget.pengaduanData['source_table'];
+      final pengajuanId = widget.pengaduanData['id'];
+
+      // Updated URL construction logic
+      String urlSourceTable = _getUrlSourceTable(sourceTable);
+      final url = '${baseURL}update-pengajuan/$urlSourceTable/$pengajuanId';
+
+      debugPrint('Uploading single document: $documentKey to URL: $url');
+
+      final response = await _dio.post(
+        url,
+        data: formData,
+        options: Options(
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $authToken',
+          },
+          followRedirects: false,
+          validateStatus: (status) => status! < 500,
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        debugPrint('Upload dokumen $documentKey sukses');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Dokumen ${documentKey.replaceAll('_', ' ').toUpperCase()} berhasil diupdate.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        setState(() {
+          _pickedFiles.remove(documentKey);
+          // Update dokumen path di pengaduanData jika response mengembalikan path baru
+          if (response.data != null && response.data[documentKey] != null) {
+            widget.pengaduanData[documentKey] = response.data[documentKey];
+          }
+        });
+        widget.onStatusUpdated();
+      } else {
+        debugPrint('Gagal upload dokumen $documentKey: ${response.statusCode}');
+        debugPrint('Response body: ${response.data}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Gagal mengupdate dokumen ${documentKey.replaceAll('_', ' ').toUpperCase()}. Status: ${response.statusCode}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error upload dokumen $documentKey: $e');
+
+      String errorMsg =
+          'Terjadi kesalahan saat mengupdate dokumen ${documentKey.replaceAll('_', ' ').toUpperCase()}';
+      if (e is DioException) {
+        debugPrint('DioException response: ${e.response?.data}');
+        if (e.response?.statusCode == 401) {
+          errorMsg = 'Sesi telah berakhir. Silakan login kembali.';
+        } else if (e.response?.statusCode == 404) {
+          errorMsg = 'Endpoint tidak ditemukan. Periksa URL server.';
+        } else if (e.response?.statusCode == 422) {
+          errorMsg = 'Data tidak valid. Periksa file yang diupload.';
+        }
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMsg),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        _loadingStates[documentKey] = false;
+      });
+    }
+  }
+
+  Future<String?> getStoredAuthToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('access_token');
+  }
+
+  // Fungsi untuk upload semua dokumen sekaligus
+  Future<void> submitForm() async {
+  if (_pickedFiles.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Silakan pilih setidaknya satu dokumen baru untuk diunggah.'),
+        backgroundColor: Colors.orange,
+      ),
+    );
+    return;
+  }
+
+  setState(() {
+    isLoading = true;
+  });
+
+  try {
+    String? authToken = await getStoredAuthToken();
+
+    if (authToken == null) {
+      throw Exception('No authentication token found');
+    }
+
+    FormData formData = FormData();
+
+    for (var entry in _pickedFiles.entries) {
+      final documentKey = entry.key;
+      final file = entry.value;
+      if (file != null) {
+        formData.files.add(MapEntry(
+          documentKey,
+          await MultipartFile.fromFile(file.path!, filename: file.name),
+        ));
+      }
+    }
+
+    final sourceTable = widget.pengaduanData['source_table'];
+    final pengajuanId = widget.pengaduanData['id'];
+
+    // Updated URL construction logic
+    String urlSourceTable = _getUrlSourceTable(sourceTable);
+    final url = '${baseURL}update-pengajuan/$urlSourceTable/$pengajuanId';
+    
+    debugPrint('Calling URL: $url');
+    debugPrint('Uploading files with keys: ${_pickedFiles.keys.toList()}');
+
+    final response = await _dio.post(
+      url,
+      data: formData,
+      options: Options(
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $authToken',
+        },
+        followRedirects: false,
+        validateStatus: (status) => status! < 500,
+      ),
+    );
+
+    if (response.statusCode == 200) {
+      debugPrint('Upload sukses');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Semua dokumen berhasil diupdate.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      setState(() {
+        // Update semua dokumen path di pengaduanData jika response mengembalikan path baru
+        if (response.data != null && response.data is Map) {
+          response.data.forEach((key, value) {
+            if (widget.pengaduanData.containsKey(key)) {
+              widget.pengaduanData[key] = value;
+            }
+          });
+        }
+        _pickedFiles.clear();
+      });
+      widget.onStatusUpdated();
+    } else {
+      debugPrint('Gagal upload: ${response.statusCode}');
+      debugPrint('Response: ${response.data}');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal mengupdate dokumen. Status: ${response.statusCode}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  } catch (e) {
+    debugPrint('Error upload: $e');
+
+    String errorMsg = 'Terjadi kesalahan saat mengupdate dokumen';
+    if (e is DioException) {
+      debugPrint('DioException details: ${e.response?.statusCode}');
+      debugPrint('Response data: ${e.response?.data}');
+      if (e.response?.statusCode == 401) {
+        errorMsg = 'Sesi telah berakhir. Silakan login kembali.';
+      } else if (e.response?.statusCode == 404) {
+        errorMsg = 'Endpoint tidak ditemukan. Periksa URL server.';
+      } else if (e.response?.statusCode == 422) {
+        errorMsg = 'Data tidak valid. Periksa file yang diupload.';
+      }
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(errorMsg),
+        backgroundColor: Colors.red,
+      ),
+    );
+  } finally {
+    setState(() {
+      isLoading = false;
+    });
+  }
+}
+
+// Add this helper method to your class
+String _getUrlSourceTable(String sourceTable) {
+  final normalizedSourceTable = sourceTable.trim().toLowerCase();
+  
+  switch (normalizedSourceTable) {
+    case 'pengajuan-santunan':
+    case 'pengajuan_santunan':
+    case 'pengajuan-santunan1':
+    case 'pengajuan_santunan1':
+    case 'santunan1':
+      return 'pengajuan-santunan';
+      
+    case 'pengajuan-santunan2':
+    case 'pengajuan_santunan2':
+    case 'santunan2':
+      return 'pengajuan-santunan2';
+      
+    case 'pengajuan-santunan3':
+    case 'pengajuan_santunan3':
+    case 'santunan3':
+      return 'pengajuan-santunan3';
+      
+    case 'pengajuan-santunan4':
+    case 'pengajuan_santunan4':
+    case 'santunan4':
+      return 'pengajuan-santunan4';
+      
+    case 'pengajuan-santunan5':
+    case 'pengajuan_santunan5':
+    case 'santunan5':
+      return 'pengajuan-santunan5';
+      
+    default:
+      debugPrint('Unknown source table: $sourceTable, using default: pengajuan-santunan');
+      return 'pengajuan-santunan';
+  }
+}
 
   Future<String?> getCsrfToken() async {
     try {
@@ -127,207 +368,16 @@ class _formSantunanUserState extends State<formSantunanUser> {
 
       return csrfToken;
     } catch (e) {
-      print('Error getting CSRF token: $e');
+      debugPrint('Error getting CSRF token: $e');
       return null;
-    }
-  }
-
-  Future<void> submitReply(int commentId, String replyText) async {
-    if (replyText.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Balasan tidak boleh kosong')),
-      );
-      return;
-    }
-
-    setState(() {
-      isSubmittingReply = true;
-    });
-
-    try {
-      final csrfToken = await getCsrfToken();
-      final url = '${baseURL}comments/$commentId/reply';
-      print('Submitting reply to: $url');
-
-      final headers = await getHeaders();
-
-      if (csrfToken != null) {
-        headers['X-CSRF-TOKEN'] = csrfToken;
-      }
-
-      final response = await http.post(
-        Uri.parse(url),
-        headers: headers,
-        body: jsonEncode({
-          'comment': replyText.trim(),
-          'author_type': 'admin',
-        }),
-      );
-
-      print('Reply response status: ${response.statusCode}');
-      print('Reply response body: ${response.body}');
-
-      if (response.statusCode == 200 ||
-          response.statusCode == 201 ||
-          (response.statusCode == 302 &&
-              response.body.contains('Redirecting'))) {
-        setState(() {
-          commentsFuture = fetchCommentByNoPendaftaran();
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Balasan berhasil dikirim')),
-        );
-
-        if (response.statusCode == 302) {
-          _refreshSession();
-        }
-      } else if (response.statusCode == 302) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Sesi telah berakhir. Silakan login kembali.')),
-        );
-      } else {
-        String errorMessage;
-        try {
-          final errorData = jsonDecode(response.body);
-          errorMessage = errorData['message'] ?? 'Terjadi kesalahan';
-        } catch (e) {
-          errorMessage = 'Terjadi kesalahan saat mengirim balasan';
-        }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal mengirim balasan: $errorMessage')),
-        );
-      }
-    } catch (e) {
-      print('Error submitting reply: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Terjadi kesalahan: ${e.toString()}')),
-      );
-    } finally {
-      setState(() {
-        isSubmittingReply = false;
-      });
     }
   }
 
   void _refreshSession() async {
     try {
-      print('Session redirect detected, refreshing session silently');
+      debugPrint('Session redirect detected, refreshing session silently');
     } catch (e) {
-      print('Failed to refresh session: $e');
-    }
-  }
-
-  Future<void> updateStatus() async {
-    if (selectedStatus == null) return;
-    setState(() {
-      isLoading = true;
-    });
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('access_token');
-      if (token == null || token.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Sesi telah berakhir. Silakan login kembali')),
-        );
-        setState(() {
-          isLoading = false;
-        });
-        return;
-      }
-
-      final headers = {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      };
-
-      final csrfToken = await getCsrfToken();
-      if (csrfToken != null) {
-        headers['X-CSRF-TOKEN'] = csrfToken;
-      }
-
-      String apiEndpoint;
-      if (widget.pengaduanData.containsKey('source_table') &&
-          widget.pengaduanData['source_table'] != null) {
-        String sourceTable = widget.pengaduanData['source_table'];
-        apiEndpoint = '${baseURL}${sourceTable}/${widget.pengaduanId}/status';
-      } else {
-        String tableNumber = '';
-        if (widget.pengaduanData.containsKey('table_number') &&
-            widget.pengaduanData['table_number'] != null) {
-          tableNumber = widget.pengaduanData['table_number'];
-        }
-        apiEndpoint =
-            '${baseURL}pengajuan-santunan${tableNumber}/${widget.pengaduanId}/status';
-      }
-      apiEndpoint = apiEndpoint.replaceAll(RegExp(r'([^:])//'), r'$1/');
-
-      print('Making PUT request to: $apiEndpoint');
-      print('Using headers: $headers');
-
-      final response = await http.put(
-        Uri.parse(apiEndpoint),
-        headers: headers,
-        body: jsonEncode({'status': selectedStatus}),
-      );
-
-      print('Update status response: ${response.statusCode}');
-      print('Response body: ${response.body}');
-
-      if (response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Status updated successfully')),
-        );
-        setState(() {
-          statusChanged = true;
-        });
-        widget.onStatusUpdated();
-      } else if (response.statusCode == 302) {
-        if (response.body.contains('Redirecting')) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Status berhasil diperbarui')),
-          );
-          setState(() {
-            statusChanged = true;
-          });
-          widget.onStatusUpdated();
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Sesi telah berakhir. Silakan login kembali')),
-          );
-        }
-      } else if (response.statusCode == 401) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Sesi telah berakhir. Silakan login kembali')),
-        );
-      } else {
-        String errorMessage;
-        try {
-          final errorData = jsonDecode(response.body);
-          errorMessage = errorData['message'] ?? 'Terjadi kesalahan';
-        } catch (e) {
-          errorMessage = 'Gagal memperbarui status';
-        }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update status: $errorMessage')),
-        );
-      }
-    } catch (e) {
-      print('Error saat update: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
-      );
-    } finally {
-      setState(() {
-        isLoading = false;
-      });
+      debugPrint('Failed to refresh session: $e');
     }
   }
 
@@ -344,10 +394,24 @@ class _formSantunanUserState extends State<formSantunanUser> {
   List<Widget> buildDokumenList() {
     List<Map<String, String>> dokumen = [];
     final sourceTable = widget.pengaduanData['source_table'] ?? '';
-    debugPrint('source_table: $sourceTable');
 
-    switch (sourceTable) {
+    debugPrint('=== DEBUG PENGADUAN DATA ===');
+    debugPrint('Semua data pengaduan: ${widget.pengaduanData}');
+    debugPrint('source_table: "$sourceTable"');
+    debugPrint('source_table type: ${sourceTable.runtimeType}');
+    debugPrint('source_table length: ${sourceTable.length}');
+    debugPrint('================================');
+
+    final normalizedSourceTable = sourceTable.trim().toLowerCase();
+    debugPrint('Normalized source_table: "$normalizedSourceTable"');
+
+    switch (normalizedSourceTable) {
+      case 'pengajuan-santunan': 
+      case 'pengajuan_santunan': 
       case 'pengajuan-santunan1':
+      case 'pengajuan_santunan1':
+      case 'santunan1':
+        debugPrint('Masuk ke case santunan1');
         dokumen = [
           {'label': 'Surat Kematian', 'key': 'surat_kematian'},
           {'label': 'Kartu Keluarga', 'key': 'kartu_keluarga'},
@@ -357,6 +421,9 @@ class _formSantunanUserState extends State<formSantunanUser> {
         break;
 
       case 'pengajuan-santunan2':
+      case 'pengajuan_santunan2':
+      case 'santunan2':
+        debugPrint('Masuk ke case santunan2');
         dokumen = [
           {'label': 'Surat Kematian', 'key': 'surat_kematian'},
           {'label': 'Kartu Keluarga', 'key': 'kartu_keluarga'},
@@ -367,6 +434,9 @@ class _formSantunanUserState extends State<formSantunanUser> {
         break;
 
       case 'pengajuan-santunan3':
+      case 'pengajuan_santunan3':
+      case 'santunan3':
+        debugPrint('Masuk ke case santunan3');
         dokumen = [
           {'label': 'Surat Kematian', 'key': 'surat_kematian'},
           {'label': 'Kartu Keluarga', 'key': 'kartu_keluarga'},
@@ -377,6 +447,9 @@ class _formSantunanUserState extends State<formSantunanUser> {
         break;
 
       case 'pengajuan-santunan4':
+      case 'pengajuan_santunan4':
+      case 'santunan4':
+        debugPrint('Masuk ke case santunan4');
         dokumen = [
           {'label': 'Surat Kematian', 'key': 'surat_kematian'},
           {'label': 'Surat Keterangan', 'key': 'surat_keterangan'},
@@ -388,6 +461,9 @@ class _formSantunanUserState extends State<formSantunanUser> {
         break;
 
       case 'pengajuan-santunan5':
+      case 'pengajuan_santunan5':
+      case 'santunan5':
+        debugPrint('Masuk ke case santunan5');
         dokumen = [
           {'label': 'Surat Kematian', 'key': 'surat_kematian'},
           {'label': 'Kartu Keluarga', 'key': 'kartu_keluarga'},
@@ -399,68 +475,276 @@ class _formSantunanUserState extends State<formSantunanUser> {
         break;
 
       default:
-        dokumen = [
-          {'label': 'Dokumen tidak dikenali', 'key': ''},
-        ];
+        debugPrint('Masuk ke default case - source_table tidak dikenali');
+        debugPrint('Nilai source_table: "$sourceTable"');
+        debugPrint('Nilai normalized: "$normalizedSourceTable"');
+
+        List<String> possibleDocKeys = [];
+        widget.pengaduanData.keys.forEach((key) {
+          if (key.contains('surat') ||
+              key.contains('ktp') ||
+              key.contains('kartu') ||
+              key.contains('buku')) {
+            possibleDocKeys.add(key);
+          }
+        });
+
+        if (possibleDocKeys.isNotEmpty) {
+          debugPrint('Dokumen yang ditemukan: $possibleDocKeys');
+          dokumen = possibleDocKeys
+              .map((key) =>
+                  {'label': key.replaceAll('_', ' ').toUpperCase(), 'key': key})
+              .toList();
+        } else {
+          dokumen = [
+            {
+              'label': 'Dokumen tidak dikenali (source: $sourceTable)',
+              'key': ''
+            },
+          ];
+        }
     }
+
+    debugPrint('Dokumen yang akan ditampilkan: $dokumen');
 
     return dokumen.map((doc) {
       final filePath = widget.pengaduanData[doc['key']] ?? '';
       final fileName = filePath.split('/').last;
       final fileUrl = '${baseURLStorage}$filePath';
+      final currentPickedFile = _pickedFiles[doc['key']];
+      final isDocumentLoading = _loadingStates[doc['key']] ?? false;
 
-      if (filePath.isEmpty) {
-        return buildInfoField(doc['label']!, '-');
-      }
+      debugPrint(
+          'Processing dokumen: ${doc['label']}, key: ${doc['key']}, filePath: $filePath');
 
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(doc['label']!, style: TextStyle(fontWeight: FontWeight.bold)),
-          TextButton(
-            onPressed: () async {
-              final url = Uri.parse(fileUrl);
-              try {
-                bool launched = await launchUrl(
-                  url,
-                  mode: LaunchMode.externalNonBrowserApplication,
-                );
+      return Card(
+        margin: EdgeInsets.only(bottom: 16),
+        elevation: 2,
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                doc['label']!,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.black87,
+                ),
+              ),
+              SizedBox(height: 12),
 
-                if (!launched) {
-                  await launchUrl(
-                    url,
-                    mode: LaunchMode.externalApplication,
-                  );
-                }
-              } catch (e) {
-                debugPrint('Could not launch $fileUrl: $e');
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                      content: Text('Tidak dapat membuka dokumen: $fileName')),
-                );
-              }
-            },
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.file_present, size: 16),
-                const SizedBox(width: 4),
-                Flexible(
-                    child: Text(fileName, overflow: TextOverflow.ellipsis)),
-              ],
-            ),
+              // Dokumen yang sudah ada
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey[300]!),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      filePath.isNotEmpty
+                          ? Icons.file_present
+                          : Icons.file_copy_outlined,
+                      color: filePath.isNotEmpty ? Colors.green : Colors.grey,
+                      size: 20,
+                    ),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: filePath.isNotEmpty
+                          ? GestureDetector(
+                              onTap: () async {
+                                final url = Uri.parse(fileUrl);
+                                try {
+                                  bool launched = await launchUrl(
+                                    url,
+                                    mode: LaunchMode
+                                        .externalNonBrowserApplication,
+                                  );
+                                  if (!launched) {
+                                    await launchUrl(
+                                      url,
+                                      mode: LaunchMode.externalApplication,
+                                    );
+                                  }
+                                } catch (e) {
+                                  debugPrint('Could not launch $fileUrl: $e');
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                          'Tidak dapat membuka dokumen: $fileName'),
+                                    ),
+                                  );
+                                }
+                              },
+                              child: Text(
+                                fileName,
+                                style: TextStyle(
+                                  color: Colors.blue[700],
+                                  decoration: TextDecoration.underline,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            )
+                          : Text(
+                              'Belum ada dokumen',
+                              style: TextStyle(
+                                fontStyle: FontStyle.italic,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+
+              SizedBox(height: 12),
+
+              // File yang baru dipilih
+              if (currentPickedFile != null)
+                Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.green[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.green[300]!),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.insert_drive_file,
+                          color: Colors.green[700], size: 20),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'File baru: ${currentPickedFile.name}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.green[700],
+                            fontWeight: FontWeight.w500,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.clear, size: 18, color: Colors.red),
+                        onPressed: () {
+                          setState(() {
+                            _pickedFiles.remove(doc['key']);
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+
+              SizedBox(height: 12),
+
+              // Tombol aksi
+              Row(
+                children: [
+                  // Tombol pilih file
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: isDocumentLoading
+                          ? null
+                          : () => _pickFile(doc['key']!),
+                      icon: Icon(Icons.upload_file, size: 18),
+                      label: Text(
+                        currentPickedFile != null ? "Ganti File" : "Pilih File",
+                        style: TextStyle(fontSize: 13),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(width: 8),
+
+                  // Tombol update individual
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: currentPickedFile != null && !isDocumentLoading
+                          ? () => _uploadSingleDocument(doc['key']!)
+                          : null,
+                      icon: isDocumentLoading
+                          ? SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : Icon(Icons.cloud_upload, size: 18),
+                      label: Text(
+                        isDocumentLoading ? "Upload..." : "Update",
+                        style: TextStyle(fontSize: 13),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: currentPickedFile != null
+                            ? Colors.green
+                            : Colors.grey,
+                        foregroundColor: Colors.white,
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-        ],
+        ),
       );
     }).toList();
+  }
+
+  List<Map<String, String>> getDokumenByPattern(Map<String, dynamic> data) {
+    List<Map<String, String>> foundDokumen = [];
+
+    final docPatterns = {
+      'surat_kematian': 'Surat Kematian',
+      'kartu_keluarga': 'Kartu Keluarga',
+      'surat_nikah': 'Surat Nikah',
+      'surat_kuasa': 'Surat Kuasa',
+      'surat_keterangan': 'Surat Keterangan',
+      'ktp_pensiunan_dan_anak': 'KTP Pensiunan dan Anak',
+      'ktp_suami_istri': 'KTP Suami Istri',
+      'ktp_pensiunan_anak': 'KTP Pensiunan Anak',
+      'buku_rekening_anak': 'Buku Rekening Anak',
+      'buku_rekening_istri': 'Buku Rekening Istri',
+    };
+
+    data.keys.forEach((key) {
+      if (docPatterns.containsKey(key)) {
+        foundDokumen.add({
+          'label': docPatterns[key]!,
+          'key': key,
+        });
+      }
+    });
+
+    return foundDokumen;
   }
 
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        Navigator.pop(context, statusChanged);
+        Navigator.pop(context);
         return false;
       },
       child: Scaffold(
@@ -476,7 +760,7 @@ class _formSantunanUserState extends State<formSantunanUser> {
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () {
-              Navigator.pop(context, statusChanged);
+              Navigator.pop(context);
             },
           ),
         ),
@@ -485,6 +769,7 @@ class _formSantunanUserState extends State<formSantunanUser> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Info fields
               buildInfoField('No Pendaftaran',
                   widget.pengaduanData['no_pendaftaran'] ?? '-'),
               buildInfoField('PTPN', widget.pengaduanData['ptpn'] ?? '-'),
@@ -495,141 +780,55 @@ class _formSantunanUserState extends State<formSantunanUser> {
                   widget.pengaduanData['lokasi_meninggal'] ?? '-'),
               buildInfoField('Tanggal Pengajuan',
                   formatDateTime(widget.pengaduanData['updated_at'])),
-              const SizedBox(height: 10),
-              ...buildDokumenList(),
-              const SizedBox(height: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    alignment: Alignment.bottomLeft,
-                    margin: const EdgeInsets.only(top: 10, left: 10),
-                    child: const Text(
-                      'Status',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Color(0XFF000000),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(
-                        left: 10, right: 10, top: 5, bottom: 5),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 15),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade400),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: selectedStatus,
-                          isExpanded: true,
-                          items: statusOptions.map((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(value),
-                            );
-                          }).toList(),
-                          onChanged: (newValue) {
-                            setState(() {
-                              selectedStatus = newValue;
-                            });
-                          },
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Center(
-                child: ElevatedButton(
-                  onPressed: isLoading ? null : updateStatus,
-                  style: ElevatedButton.styleFrom(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 50, vertical: 8),
-                  ),
-                  child: isLoading
-                      ? const CircularProgressIndicator(
-                          color: Color(0xFF2F2F9D))
-                      : const Text(
-                          'Update Status',
-                          style:
-                              TextStyle(color: Color(0xFF2F2F9D), fontSize: 14),
-                        ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'Komentar',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              FutureBuilder(
-                future: fetchCommentByNoPendaftaran(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  } else if (snapshot.hasError) {
-                    return Text('Gagal memuat komentar: ${snapshot.error}');
-                  } else {
-                    final comments = snapshot.data!;
-                    return ListView.builder(
-                      shrinkWrap: true,
-                      physics: NeverScrollableScrollPhysics(),
-                      itemCount: comments.length,
-                      itemBuilder: (context, index) {
-                        final comment = comments[index];
-                        // Inisialisasi controller jika belum ada
-                        replyControllers.putIfAbsent(
-                            comment.id, () => TextEditingController());
+              buildInfoField('Status', widget.pengaduanData['status'] ?? '-'),
 
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 20),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(comment.comment),
-                              const SizedBox(height: 5),
-                              ...comment.replies.map((reply) => Padding(
-                                    padding:
-                                        const EdgeInsets.only(left: 20, top: 3),
-                                    child: Text("- ${reply.comment}"),
-                                  )),
-                              const SizedBox(height: 10),
-                              TextField(
-                                controller: replyControllers[comment.id],
-                                decoration: const InputDecoration(
-                                  labelText: 'Balas komentar',
-                                  border: OutlineInputBorder(),
-                                ),
-                                maxLines: 2,
-                              ),
-                              const SizedBox(height: 5),
-                              ElevatedButton(
-                                onPressed: () {
-                                  final replyText =
-                                      replyControllers[comment.id]!.text.trim();
-                                  if (replyText.isNotEmpty) {
-                                    submitReply(comment.id, replyText);
-                                    replyControllers[comment.id]!
-                                        .clear(); // Kosongkan form
-                                  }
-                                },
-                                child: const Text('Kirim Balasan'),
-                              )
-                            ],
-                          ),
-                        );
-                      },
-                    );
-                  }
-                },
+              const SizedBox(height: 20),
+
+              // Section header untuk dokumen
+              Text(
+                'Dokumen Persyaratan',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
               ),
+              SizedBox(height: 12),
+
+              // Daftar dokumen
+              ...buildDokumenList(),
+
+              const SizedBox(height: 20),
+
+              // Tombol "Update Semua Dokumen" - hanya muncul jika ada file yang dipilih
+              if (_pickedFiles.isNotEmpty)
+                Center(
+                  child: ElevatedButton.icon(
+                    onPressed: !isLoading ? submitForm : null,
+                    icon: isLoading
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Icon(Icons.cloud_upload),
+                    label: Text(isLoading
+                        ? "Mengunggah Semua..."
+                        : "Update Semua Dokumen"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      foregroundColor: Colors.white,
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
