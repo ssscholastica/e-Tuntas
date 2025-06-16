@@ -216,7 +216,6 @@ class _addBankState extends State<addBank> {
     debugPrint("Retrieved email from SharedPreferences: $email");
 
     if (email == null) {
-      // Jika belum login atau tidak ada data email
       _showDialog(
         success: false,
         title: "Error!",

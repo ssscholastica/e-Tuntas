@@ -787,7 +787,7 @@ class _RejectedStatusWidgetState extends State<RejectedStatusWidget> {
   String _formatDate(String dateString) {
     try {
       final date = DateTime.parse(dateString);
-      return DateFormat('d MMM yyyy, HH:mm').format(date);
+      return DateFormat('d MMM yyyy').format(date);
     } catch (e) {
       return dateString;
     }

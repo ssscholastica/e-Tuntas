@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:etuntas/network/comment_bpjs_service.dart';
 import 'package:etuntas/models/comment_bpjs_model.dart';
+import 'package:etuntas/network/comment_bpjs_service.dart';
 import 'package:etuntas/network/globals.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -323,7 +323,7 @@ class _CekAduanBPJSState extends State<CekAduanBPJS> {
       String currentStatus, DateTime tanggalAjuan) {
     List<Map<String, dynamic>> result = [];
     List<String> allStatus = ['Terkirim', 'Diproses', 'Ditolak', 'Selesai'];
-    final dateFormatter = DateFormat('dd MM yyyy');
+    final dateFormatter = DateFormat('d MMM yyyy');
     final currentStatusIndex = allStatus.indexOf(currentStatus);
     if (currentStatusIndex == -1) return result;
 

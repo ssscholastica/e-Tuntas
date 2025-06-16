@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:etuntas/admin/admin-BPJStrack.dart';
+import 'package:etuntas/admin/admin-faq.dart';
 import 'package:etuntas/admin/admin-santunanTrack.dart';
 import 'package:etuntas/login-signup/login.dart';
 import 'package:etuntas/network/globals.dart';
@@ -283,6 +284,16 @@ class _AdminHomeState extends State<AdminHome> {
                         },
                         child: buildImageBox(
                             "assets/pengajuan bpjs.png", "Tracking \nBPJS")),
+                    const SizedBox(width: 35),
+                    InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const DaftarFAQ()),
+                          );
+                        },
+                        child: buildImageBox(
+                            "assets/faq.png", "Tambah \nFAQ")),
                   ],
                 ),
               ),

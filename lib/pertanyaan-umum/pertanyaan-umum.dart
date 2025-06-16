@@ -1,5 +1,11 @@
+import 'dart:convert';
+
 import 'package:etuntas/home.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../network/globals.dart';
 
 class PertanyaanUmum extends StatefulWidget {
   const PertanyaanUmum({super.key});
@@ -9,15 +15,28 @@ class PertanyaanUmum extends StatefulWidget {
 }
 
 class _PertanyaanUmumState extends State<PertanyaanUmum> {
-  @override
-  void initState() {
-    super.initState();
-  }
-
   Map<String, bool> _expandedStatus = {};
 
+  Future<List<Map<String, dynamic>>> fetchFAQ() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token') ?? '';
+    final headers = await getHeaders();
+
+    final response = await http.get(
+      Uri.parse('${baseURL}faqs'),
+      headers: headers,
+    );
+
+    if (response.statusCode == 200) {
+      final List data = json.decode(response.body);
+      return data.map((e) => e as Map<String, dynamic>).toList();
+    } else {
+      throw Exception('Gagal memuat data FAQ');
+    }
+  }
+
   Widget buildImageBox(String title, String content) {
-    bool isExpanded = _expandedStatus[title] ?? false; 
+    bool isExpanded = _expandedStatus[title] ?? false;
 
     return Center(
       child: Column(
@@ -26,14 +45,12 @@ class _PertanyaanUmumState extends State<PertanyaanUmum> {
           GestureDetector(
             onTap: () {
               setState(() {
-                _expandedStatus[title] =
-                    !isExpanded; 
+                _expandedStatus[title] = !isExpanded;
               });
             },
             child: Container(
               margin: const EdgeInsets.only(bottom: 15),
               width: MediaQuery.of(context).size.width * 0.88,
-              height: MediaQuery.of(context).size.height * 0.12,
               padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -49,11 +66,14 @@ class _PertanyaanUmumState extends State<PertanyaanUmum> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   Icon(
@@ -109,7 +129,8 @@ class _PertanyaanUmumState extends State<PertanyaanUmum> {
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => const Home()),
+                            MaterialPageRoute(
+                                builder: (context) => const Home()),
                           );
                         },
                         child: Image.asset(
@@ -127,7 +148,7 @@ class _PertanyaanUmumState extends State<PertanyaanUmum> {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const Spacer(flex: 1),
+                      const Spacer(),
                     ],
                   ),
                 ),
@@ -135,16 +156,36 @@ class _PertanyaanUmumState extends State<PertanyaanUmum> {
               Stack(
                 children: [
                   Positioned.fill(
-                      child: Center(
-                        child: Image.asset('assets/background pertanyaan.png'))),
-                  Column(
-                    children: [
-                      buildImageBox('Pertanyaan Pertama', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt'),
-                      buildImageBox('Pertanyaan Kedua',
-                          'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt'),
-                      buildImageBox('Pertanyaan Ketiga',
-                          'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt')
-                    ],
+                    child: Center(
+                      child: Image.asset('assets/background pertanyaan.png'),
+                    ),
+                  ),
+                  FutureBuilder<List<Map<String, dynamic>>>(
+                    future: fetchFAQ(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      if (snapshot.hasError) {
+                        return Center(
+                          child:
+                              Text('Gagal memuat data FAQ: ${snapshot.error}'),
+                        );
+                      }
+
+                      final data = snapshot.data!;
+                      if (data.isEmpty) {
+                        return const Center(child: Text('Tidak ada FAQ.'));
+                      }
+
+                      return Column(
+                        children: data.map((faq) {
+                          final pertanyaan = faq['pertanyaan'] ?? '';
+                          final jawaban = faq['jawaban'] ?? '';
+                          return buildImageBox(pertanyaan, jawaban);
+                        }).toList(),
+                      );
+                    },
                   ),
                 ],
               ),
