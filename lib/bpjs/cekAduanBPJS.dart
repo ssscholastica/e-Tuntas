@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'package:firebase_messaging/firebase_messaging.dart';
 class CekAduanBPJS extends StatefulWidget {
   const CekAduanBPJS({super.key});
 
@@ -600,11 +600,64 @@ class _RejectedStatusWidgetState extends State<RejectedStatusWidget> {
   final TextEditingController _commentController = TextEditingController();
   bool isLoading = false;
   List<Comment> comments = [];
+  bool hasNewComment = false;
 
   @override
   void initState() {
     super.initState();
     _loadComments();
+    _setupNotificationListener();
+  }
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
+
+  void _setupNotificationListener() {
+    // Listener untuk notifikasi saat app aktif
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      final data = message.data;
+
+      // Cek apakah notifikasi adalah komentar untuk item ini
+      if ((data['type'] == 'admin_comment_bpjs') &&
+          (data['nomor_bpjs_nik'] == widget.item['nomor_bpjs_nik'])) {
+        // Refresh comments otomatis
+        _loadComments();
+
+        // Show snackbar untuk memberi tahu user
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Ada komentar baru dari admin'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 3),
+              action: SnackBarAction(
+                label: 'Lihat',
+                textColor: Colors.white,
+                onPressed: () {
+                  // Scroll ke bagian komentar atau lakukan aksi lain
+                },
+              ),
+            ),
+          );
+        }
+      }
+    });
+
+    // Listener untuk notifikasi saat app dibuka dari background
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      final data = message.data;
+
+      if ((data['type'] == 'admin_comment' ||
+              data['type'] == 'admin_comment_bpjs') &&
+          (data['no_pendaftaran'] == widget.item['no_pendaftaran'] ||
+              data['nomor_bpjs_nik'] == widget.item['nomor_bpjs_nik'])) {
+        // Refresh comments
+        _loadComments();
+      }
+    });
   }
 
   Future<void> _loadComments() async {

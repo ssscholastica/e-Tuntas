@@ -11,6 +11,7 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class TrackingAwal extends StatefulWidget {
   const TrackingAwal({super.key});
@@ -712,11 +713,66 @@ class _RejectedStatusWidgetState extends State<RejectedStatusWidget> {
   final TextEditingController _commentController = TextEditingController();
   bool isLoading = false;
   List<Comment> comments = [];
+  bool hasNewComment = false; // Tambahan untuk indicator komentar baru
 
   @override
   void initState() {
     super.initState();
     _loadComments();
+    _setupNotificationListener(); // Setup listener notifikasi
+  }
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
+
+  // Setup listener untuk notifikasi komentar baru
+  void _setupNotificationListener() {
+    // Listener untuk notifikasi saat app aktif
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      final data = message.data;
+      
+      // Cek apakah notifikasi adalah komentar untuk item ini
+      if ((data['type'] == 'admin_comment' || data['type'] == 'admin_comment_bpjs') &&
+          (data['no_pendaftaran'] == widget.item['no_pendaftaran'] ||
+           data['nomor_bpjs_nik'] == widget.item['nomor_bpjs_nik'])) {
+        
+        // Refresh comments otomatis
+        _loadComments();
+        
+        // Show snackbar untuk memberi tahu user
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Ada komentar baru dari admin'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 3),
+              action: SnackBarAction(
+                label: 'Lihat',
+                textColor: Colors.white,
+                onPressed: () {
+                  // Scroll ke bagian komentar atau lakukan aksi lain
+                },
+              ),
+            ),
+          );
+        }
+      }
+    });
+
+    // Listener untuk notifikasi saat app dibuka dari background
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      final data = message.data;
+      
+      if ((data['type'] == 'admin_comment') &&
+          (data['no_pendaftaran'] == widget.item['no_pendaftaran'])) {
+        
+        // Refresh comments
+        _loadComments();
+      }
+    });
   }
 
   Future<void> _loadComments() async {
@@ -733,12 +789,14 @@ class _RejectedStatusWidgetState extends State<RejectedStatusWidget> {
         });
         return;
       }
+      
       final commentsData =
           await _commentService.getCommentsByNomorPendaftaran(nomorPendaftaran);
 
       setState(() {
         comments = commentsData;
         isLoading = false;
+        hasNewComment = false; // Reset indicator setelah load
       });
     } catch (e) {
       print('Error loading comments: $e');
@@ -749,7 +807,12 @@ class _RejectedStatusWidgetState extends State<RejectedStatusWidget> {
   }
 
   Future<void> _submitComment() async {
-    if (_commentController.text.isEmpty) return;
+    if (_commentController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Komentar tidak boleh kosong')),
+      );
+      return;
+    }
 
     setState(() {
       isLoading = true;
@@ -762,7 +825,7 @@ class _RejectedStatusWidgetState extends State<RejectedStatusWidget> {
       final comment = await _commentService.submitComment(
         pengajuanId: pengajuanId,
         noPendaftaran: noPendaftaran,
-        commentText: _commentController.text,
+        commentText: _commentController.text.trim(),
       );
 
       if (comment != null) {
@@ -770,18 +833,33 @@ class _RejectedStatusWidgetState extends State<RejectedStatusWidget> {
           comments.insert(0, comment);
           _commentController.clear();
         });
+        
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Komentar berhasil dikirim'),
+            backgroundColor: Colors.green,
+          ),
+        );
       }
     } catch (e) {
       print('Error submitting comment: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Gagal mengirim komentar. Silakan coba lagi.')),
+          content: Text('Gagal mengirim komentar. Silakan coba lagi.'),
+          backgroundColor: Colors.red,
+        ),
       );
     } finally {
       setState(() {
         isLoading = false;
       });
     }
+  }
+
+  // Method untuk refresh manual dengan pull-to-refresh
+  Future<void> _onRefresh() async {
+    await _loadComments();
   }
 
   String _formatDate(String dateString) {
@@ -846,141 +924,207 @@ class _RejectedStatusWidgetState extends State<RejectedStatusWidget> {
           ),
           const SizedBox(height: 10),
           const Divider(),
+          
+          // Header komentar dengan refresh button
+          Row(
+            children: [
+              const Text(
+                "Komentar:",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              if (hasNewComment)
+                Container(
+                  margin: const EdgeInsets.only(left: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Text(
+                    'Baru',
+                    style: TextStyle(color: Colors.white, fontSize: 10),
+                  ),
+                ),
+              const Spacer(),
+              IconButton(
+                icon: const Icon(Icons.refresh, size: 20),
+                onPressed: isLoading ? null : _onRefresh,
+                tooltip: 'Refresh komentar',
+              ),
+            ],
+          ),
+          
           if (isLoading)
-            const Center(child: CircularProgressIndicator())
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(20.0),
+                child: CircularProgressIndicator(),
+              ),
+            )
           else if (comments.isEmpty)
             const Center(
               child: Padding(
-                padding: EdgeInsets.all(8.0),
-                child: Text(
-                    "Belum ada komentar. Tambahkan komentar untuk klarifikasi."),
+                padding: EdgeInsets.all(20.0),
+                child: Column(
+                  children: [
+                    Icon(Icons.comment_outlined, size: 48, color: Colors.grey),
+                    SizedBox(height: 8),
+                    Text(
+                      "Belum ada komentar",
+                      style: TextStyle(color: Colors.grey, fontSize: 16),
+                    ),
+                    Text(
+                      "Tambahkan komentar untuk klarifikasi",
+                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
+                  ],
+                ),
               ),
             )
           else
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Padding(
-                  padding: EdgeInsets.only(left: 8.0, bottom: 8.0),
-                  child: Text(
-                    "Komentar:",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                ),
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: comments.length,
-                  itemBuilder: (context, index) {
-                    final Comment comment = comments[index];
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          margin: const EdgeInsets.symmetric(vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[100],
-                            borderRadius: BorderRadius.circular(8),
+            RefreshIndicator(
+              onRefresh: _onRefresh,
+              child: ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: comments.length,
+                itemBuilder: (context, index) {
+                  final Comment comment = comments[index];
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        decoration: BoxDecoration(
+                          color: comment.authorType == 'admin' 
+                              ? Colors.green[50] 
+                              : Colors.blue[50],
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: comment.authorType == 'admin' 
+                                ? Colors.green[200]! 
+                                : Colors.blue[200]!,
                           ),
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: comment.authorType == 'user'
-                                  ? Colors.blue
-                                  : Colors.green,
-                              child: Text(
-                                comment.authorType == 'user' ? 'U' : 'A',
-                                style: const TextStyle(color: Colors.white),
+                        ),
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: comment.authorType == 'user'
+                                ? Colors.blue
+                                : Colors.green,
+                            child: Icon(
+                              comment.authorType == 'user' 
+                                  ? Icons.person 
+                                  : Icons.admin_panel_settings,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                          title: Row(
+                            children: [
+                              Text(
+                                comment.authorType == 'user'
+                                    ? 'Anda'
+                                    : 'Admin',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: comment.authorType == 'user'
+                                      ? Colors.blue[700]
+                                      : Colors.green[700],
+                                ),
                               ),
-                            ),
-                            title: Row(
-                              children: [
-                                Text(
-                                  comment.authorType == 'user'
-                                      ? 'Anda'
-                                      : 'Admin',
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold),
+                              const Spacer(),
+                              Text(
+                                _formatDate(comment.createdAt),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
                                 ),
-                                const Spacer(),
-                                Text(
-                                  _formatDate(comment.createdAt),
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            subtitle: Padding(
-                              padding: const EdgeInsets.only(top: 4.0),
-                              child: Text(comment.comment),
+                              ),
+                            ],
+                          ),
+                          subtitle: Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Text(
+                              comment.comment,
+                              style: const TextStyle(fontSize: 14),
                             ),
                           ),
                         ),
-                        if (comment.replies.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(left: 30.0),
-                            child: ListView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: comment.replies.length,
-                              itemBuilder: (context, replyIndex) {
-                                final reply = comment.replies[replyIndex];
-                                return Container(
-                                  margin:
-                                      const EdgeInsets.symmetric(vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[50],
-                                    borderRadius: BorderRadius.circular(8),
-                                    border:
-                                        Border.all(color: Colors.grey[200]!),
+                      ),
+                      if (comment.replies.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 30.0),
+                          child: ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: comment.replies.length,
+                            itemBuilder: (context, replyIndex) {
+                              final reply = comment.replies[replyIndex];
+                              return Container(
+                                margin: const EdgeInsets.symmetric(vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: reply.authorType == 'admin' 
+                                      ? Colors.green[25] 
+                                      : Colors.blue[25],
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.grey[300]!),
+                                ),
+                                child: ListTile(
+                                  leading: CircleAvatar(
+                                    backgroundColor: reply.authorType == 'user'
+                                        ? Colors.blue
+                                        : Colors.green,
+                                    radius: 16,
+                                    child: Icon(
+                                      reply.authorType == 'user' 
+                                          ? Icons.person 
+                                          : Icons.admin_panel_settings,
+                                      color: Colors.white,
+                                      size: 16,
+                                    ),
                                   ),
-                                  child: ListTile(
-                                    leading: CircleAvatar(
-                                      backgroundColor:
-                                          reply.authorType == 'user'
-                                              ? Colors.blue
-                                              : Colors.green,
-                                      child: Text(
-                                        reply.authorType == 'user' ? 'U' : 'A',
-                                        style: const TextStyle(
-                                            color: Colors.white),
+                                  title: Row(
+                                    children: [
+                                      Text(
+                                        reply.authorType == 'user'
+                                            ? 'Anda'
+                                            : 'Admin',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
+                                          color: reply.authorType == 'user'
+                                              ? Colors.blue[700]
+                                              : Colors.green[700],
+                                        ),
                                       ),
-                                    ),
-                                    title: Row(
-                                      children: [
-                                        Text(
-                                          reply.authorType == 'user'
-                                              ? 'Anda'
-                                              : 'Admin',
-                                          style: const TextStyle(
-                                              fontWeight: FontWeight.bold),
+                                      const Spacer(),
+                                      Text(
+                                        _formatDate(reply.createdAt),
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.grey[600],
                                         ),
-                                        const Spacer(),
-                                        Text(
-                                          _formatDate(reply.createdAt),
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey[600],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    subtitle: Padding(
-                                      padding: const EdgeInsets.only(top: 4.0),
-                                      child: Text(reply.comment),
+                                      ),
+                                    ],
+                                  ),
+                                  subtitle: Padding(
+                                    padding: const EdgeInsets.only(top: 4.0),
+                                    child: Text(
+                                      reply.comment,
+                                      style: const TextStyle(fontSize: 13),
                                     ),
                                   ),
-                                );
-                              },
-                            ),
+                                ),
+                              );
+                            },
                           ),
-                      ],
-                    );
-                  },
-                ),
-              ],
+                        ),
+                    ],
+                  );
+                },
+              ),
             ),
+          const SizedBox(height: 10),
           const Divider(),
           Row(
             children: [
@@ -992,11 +1136,16 @@ class _RejectedStatusWidgetState extends State<RejectedStatusWidget> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Color(0xFF2F2F9D)),
+                    ),
                     contentPadding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   ),
                   maxLines: 3,
                   minLines: 1,
+                  enabled: !isLoading,
                 ),
               ),
               const SizedBox(width: 10),
@@ -1004,12 +1153,25 @@ class _RejectedStatusWidgetState extends State<RejectedStatusWidget> {
                 onPressed: isLoading ? null : _submitComment,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF2F2F9D),
+                  disabledBackgroundColor: Colors.grey,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 12,
+                    horizontal: 16,
+                  ),
                 ),
-                child: const Icon(Icons.send, color: Colors.white),
+                child: isLoading
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Icon(Icons.send, color: Colors.white),
               ),
             ],
           ),
