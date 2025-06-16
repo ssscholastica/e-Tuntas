@@ -46,6 +46,13 @@ class _NotificationPageState extends State<NotificationPage> {
   Future<void> _fetchNotifications() async {
     try {
       final notifs = await NotificationService.fetchNotifications(token!);
+
+      // Urutkan: yang belum dibaca (isRead == false) di atas
+      notifs.sort((a, b) {
+        if (a.isRead == b.isRead) return 0;
+        return a.isRead ? 1 : -1;
+      });
+
       setState(() {
         _notifications = notifs;
         _loading = false;
@@ -57,6 +64,7 @@ class _NotificationPageState extends State<NotificationPage> {
       });
     }
   }
+
 
   void _startAutoRefresh() {
     _refreshTimer = Timer.periodic(const Duration(seconds: 10), (timer) {

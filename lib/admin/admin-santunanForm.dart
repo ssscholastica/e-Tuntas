@@ -32,7 +32,9 @@ class _formSantunanState extends State<formSantunan> {
   String errorMessage = '';
   bool statusChanged = false;
   bool isSubmittingReply = false;
-  Future<Comment>? commentsFuture;
+  late Future<List<Comment>> commentsFuture;
+  Map<int, TextEditingController> replyControllers = {};
+
 
   String? selectedStatus;
   List<String> statusOptions = ['Terkirim', 'Diproses', 'Ditolak', 'Selesai'];
@@ -66,7 +68,7 @@ class _formSantunanState extends State<formSantunan> {
     }
   }
 
-  Future<Comment> fetchCommentByNoPendaftaran() async {
+  Future<List<Comment>> fetchCommentByNoPendaftaran() async {
     final noPendaftaran = widget.pengaduanData['no_pendaftaran'];
 
     if (noPendaftaran == null) {
@@ -91,10 +93,11 @@ class _formSantunanState extends State<formSantunan> {
       print('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
-        return Comment.fromJson(jsonDecode(response.body));
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((json) => Comment.fromJson(json)).toList();
       } else if (response.statusCode == 404) {
         print('Komentar belum ada untuk no_pendaftaran ini');
-        return Comment.empty();
+        return [];
       } else {
         throw Exception('Gagal mengambil komentar: ${response.statusCode}');
       }
@@ -103,6 +106,7 @@ class _formSantunanState extends State<formSantunan> {
       rethrow;
     }
   }
+
 
   Future<String?> getCsrfToken() async {
     try {
@@ -130,8 +134,8 @@ class _formSantunanState extends State<formSantunan> {
     }
   }
 
-  Future<void> submitReply(int commentId) async {
-    if (replyController.text.trim().isEmpty) {
+  Future<void> submitReply(int commentId, String replyText) async {
+    if (replyText.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Balasan tidak boleh kosong')),
       );
@@ -144,7 +148,6 @@ class _formSantunanState extends State<formSantunan> {
 
     try {
       final csrfToken = await getCsrfToken();
-
       final url = '${baseURL}comments/$commentId/reply';
       print('Submitting reply to: $url');
 
@@ -157,16 +160,19 @@ class _formSantunanState extends State<formSantunan> {
       final response = await http.post(
         Uri.parse(url),
         headers: headers,
-        body: jsonEncode(
-            {'comment': replyController.text.trim(), 'author_type': 'admin'}),
+        body: jsonEncode({
+          'comment': replyText.trim(),
+          'author_type': 'admin',
+        }),
       );
+
       print('Reply response status: ${response.statusCode}');
       print('Reply response body: ${response.body}');
+
       if (response.statusCode == 200 ||
           response.statusCode == 201 ||
           (response.statusCode == 302 &&
               response.body.contains('Redirecting'))) {
-        replyController.clear();
         setState(() {
           commentsFuture = fetchCommentByNoPendaftaran();
         });
@@ -174,6 +180,7 @@ class _formSantunanState extends State<formSantunan> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Balasan berhasil dikirim')),
         );
+
         if (response.statusCode == 302) {
           _refreshSession();
         }
@@ -206,6 +213,7 @@ class _formSantunanState extends State<formSantunan> {
       });
     }
   }
+
 
   void _refreshSession() async {
     try {
@@ -575,32 +583,52 @@ class _formSantunanState extends State<formSantunan> {
                   } else if (snapshot.hasError) {
                     return Text('Gagal memuat komentar: ${snapshot.error}');
                   } else {
-                    final comment = snapshot.data as Comment;
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(comment.comment),
-                        const SizedBox(height: 10),
-                        ...comment.replies.map((reply) => Padding(
-                              padding: const EdgeInsets.only(left: 20, top: 5),
-                              child: Text("- ${reply.comment}"),
-                            )),
-                        const SizedBox(height: 20),
-                        TextField(
-                          controller: replyController,
-                          decoration: const InputDecoration(
-                            labelText: 'Balas komentar',
-                            border: OutlineInputBorder(),
-                          ),
-                          maxLines: 3,
-                        ),
-                        const SizedBox(height: 10),
-                        ElevatedButton(
-                          onPressed: () => submitReply(comment.id),
-                          child: const Text('Kirim Balasan'),
-                        )
-                      ],
-                    );
+                    final comments = snapshot.data!;
+                    return ListView.builder(
+  shrinkWrap: true,
+  physics: NeverScrollableScrollPhysics(),
+  itemCount: comments.length,
+  itemBuilder: (context, index) {
+    final comment = comments[index];
+    // Inisialisasi controller jika belum ada
+    replyControllers.putIfAbsent(comment.id, () => TextEditingController());
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(comment.comment),
+          const SizedBox(height: 5),
+          ...comment.replies.map((reply) => Padding(
+                padding: const EdgeInsets.only(left: 20, top: 3),
+                child: Text("- ${reply.comment}"),
+              )),
+          const SizedBox(height: 10),
+          TextField(
+            controller: replyControllers[comment.id],
+            decoration: const InputDecoration(
+              labelText: 'Balas komentar',
+              border: OutlineInputBorder(),
+            ),
+            maxLines: 2,
+          ),
+          const SizedBox(height: 5),
+          ElevatedButton(
+            onPressed: () {
+              final replyText = replyControllers[comment.id]!.text.trim();
+              if (replyText.isNotEmpty) {
+                submitReply(comment.id, replyText);
+                replyControllers[comment.id]!.clear(); // Kosongkan form
+              }
+            },
+            child: const Text('Kirim Balasan'),
+          )
+        ],
+      ),
+    );
+  },
+);
                   }
                 },
               ),

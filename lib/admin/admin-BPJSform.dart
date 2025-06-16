@@ -34,7 +34,7 @@ class _formBPJSState extends State<formBPJS> {
   String errorMessage = '';
   bool statusChanged = false;
   bool isSubmittingReply = false;
-  Future<Comment>? commentsFuture;
+  late Future<List<Comment>> commentsFuture;
 
   String? selectedStatus;
   List<String> statusOptions = ['Terkirim', 'Diproses', 'Ditolak', 'Selesai'];
@@ -69,15 +69,15 @@ class _formBPJSState extends State<formBPJS> {
     }
   }
 
-  Future<Comment> fetchCommentByNoBPJS() async {
+  Future<List<Comment>> fetchCommentByNoBPJS() async {
     final nomorBPJS = widget.pengaduanData['nomor_bpjs_nik'];
 
     if (nomorBPJS == null) {
-      throw Exception('No BPJS tidak ditemukan');
+      throw Exception('Nomor BPJS tidak ditemukan');
     }
 
     final url = '${baseURL}commentsbpjs/registration/$nomorBPJS';
-    print('Fetching comment from: $url');
+    print('Fetching comments from: $url');
 
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('access_token');
@@ -95,17 +95,18 @@ class _formBPJSState extends State<formBPJS> {
       print('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
-        return Comment.fromJson(jsonDecode(response.body));
+        final List<dynamic> data = jsonDecode(response.body);
+
+        return data.map((json) => Comment.fromJson(json)).toList();
       } else if (response.statusCode == 404) {
-        // Return Comment kosong bukan null
-        print('Komentar belum ada untuk no_pendaftaran ini');
-        return Comment.empty();
+        print('Tidak ada komentar ditemukan');
+        return []; // list kosong
       } else {
         throw Exception('Gagal mengambil komentar: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error detail: $e');
-      rethrow; // Biar error tetap dilempar ke atas (optional tergantung use case)
+      print('Error fetchCommentByNoBPJS: $e');
+      rethrow;
     }
   }
 
@@ -135,8 +136,8 @@ class _formBPJSState extends State<formBPJS> {
     }
   }
 
-  Future<void> submitReply(int commentId) async {
-    if (replyController.text.trim().isEmpty) {
+  Future<void> submitReplyBPJS(int commentId, String replyText) async {
+    if (replyText.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Balasan tidak boleh kosong')),
       );
@@ -149,7 +150,6 @@ class _formBPJSState extends State<formBPJS> {
 
     try {
       final csrfToken = await getCsrfToken();
-
       final url = '${baseURL}commentsbpjs/$commentId/reply';
       print('Submitting reply to: $url');
 
@@ -162,21 +162,19 @@ class _formBPJSState extends State<formBPJS> {
       final response = await http.post(
         Uri.parse(url),
         headers: headers,
-        body: jsonEncode(
-            {'comment': replyController.text.trim(), 'author_type': 'admin'}),
+        body: jsonEncode({
+          'comment': replyText.trim(),
+          'author_type': 'admin',
+        }),
       );
 
       print('Reply response status: ${response.statusCode}');
       print('Reply response body: ${response.body}');
 
-      // If we get a 302 redirect but still want to consider it a success
-      // (since data was saved in the database)
       if (response.statusCode == 200 ||
           response.statusCode == 201 ||
           (response.statusCode == 302 &&
               response.body.contains('Redirecting'))) {
-        replyController.clear();
-
         setState(() {
           commentsFuture = fetchCommentByNoBPJS();
         });
@@ -185,20 +183,14 @@ class _formBPJSState extends State<formBPJS> {
           const SnackBar(content: Text('Balasan berhasil dikirim')),
         );
 
-        // If it was a redirect, you might want to refresh the session or token
         if (response.statusCode == 302) {
-          // This might be a good place to refresh your auth token silently
-          // without showing the error message to the user
           _refreshSession();
         }
       } else if (response.statusCode == 302) {
-        // This is for other types of 302 redirects that might indicate an error
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
               content: Text('Sesi telah berakhir. Silakan login kembali.')),
         );
-        // You might want to navigate to login page
-        // Navigator.of(context).pushReplacementNamed('/login');
       } else {
         String errorMessage;
         try {
@@ -223,6 +215,7 @@ class _formBPJSState extends State<formBPJS> {
       });
     }
   }
+
 
 // Function to refresh session or token silently
   void _refreshSession() async {
@@ -452,43 +445,61 @@ class _formBPJSState extends State<formBPJS> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              FutureBuilder(
+              FutureBuilder<List<Comment>>(
                 future: fetchCommentByNoBPJS(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
                   } else if (snapshot.hasError) {
                     return Text('Gagal memuat komentar: ${snapshot.error}');
+                  } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return const Text('Belum ada komentar.');
                   } else {
-                    final comment = snapshot.data as Comment;
+                    final comments = snapshot.data!;
+
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(comment.comment),
-                        const SizedBox(height: 10),
-                        ...comment.replies.map((reply) => Padding(
-                              padding: const EdgeInsets.only(left: 20, top: 5),
-                              child: Text("- ${reply.comment}"),
-                            )),
-                        const SizedBox(height: 20),
-                        TextField(
-                          controller: replyController,
-                          decoration: const InputDecoration(
-                            labelText: 'Balas komentar',
-                            border: OutlineInputBorder(),
+                      children: comments.map((comment) {
+                        final replyController =
+                            TextEditingController(); // per komentar
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 20.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(comment.comment,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 10),
+                              ...comment.replies.map((reply) => Padding(
+                                    padding:
+                                        const EdgeInsets.only(left: 20, top: 5),
+                                    child: Text("- ${reply.comment}"),
+                                  )),
+                              const SizedBox(height: 10),
+                              TextField(
+                                controller: replyController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Balas komentar',
+                                  border: OutlineInputBorder(),
+                                ),
+                                maxLines: 2,
+                              ),
+                              const SizedBox(height: 5),
+                              ElevatedButton(
+                                onPressed: () => submitReplyBPJS(
+                                    comment.id, replyController.text),
+                                child: const Text('Kirim Balasan'),
+                              )
+                            ],
                           ),
-                          maxLines: 3,
-                        ),
-                        const SizedBox(height: 10),
-                        ElevatedButton(
-                          onPressed: () => submitReply(comment.id),
-                          child: const Text('Kirim Balasan'),
-                        )
-                      ],
+                        );
+                      }).toList(),
                     );
                   }
                 },
-              ),
+              )
+
             ],
           ),
         ),
