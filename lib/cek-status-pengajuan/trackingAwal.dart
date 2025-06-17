@@ -728,21 +728,13 @@ class _RejectedStatusWidgetState extends State<RejectedStatusWidget> {
     super.dispose();
   }
 
-  // Setup listener untuk notifikasi komentar baru
   void _setupNotificationListener() {
-    // Listener untuk notifikasi saat app aktif
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       final data = message.data;
-      
-      // Cek apakah notifikasi adalah komentar untuk item ini
       if ((data['type'] == 'admin_comment' || data['type'] == 'admin_comment_bpjs') &&
           (data['no_pendaftaran'] == widget.item['no_pendaftaran'] ||
            data['nomor_bpjs_nik'] == widget.item['nomor_bpjs_nik'])) {
-        
-        // Refresh comments otomatis
         _loadComments();
-        
-        // Show snackbar untuk memberi tahu user
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -753,7 +745,6 @@ class _RejectedStatusWidgetState extends State<RejectedStatusWidget> {
                 label: 'Lihat',
                 textColor: Colors.white,
                 onPressed: () {
-                  // Scroll ke bagian komentar atau lakukan aksi lain
                 },
               ),
             ),
@@ -762,14 +753,11 @@ class _RejectedStatusWidgetState extends State<RejectedStatusWidget> {
       }
     });
 
-    // Listener untuk notifikasi saat app dibuka dari background
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       final data = message.data;
       
       if ((data['type'] == 'admin_comment') &&
           (data['no_pendaftaran'] == widget.item['no_pendaftaran'])) {
-        
-        // Refresh comments
         _loadComments();
       }
     });

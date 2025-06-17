@@ -13,8 +13,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class AduanFormPage extends StatefulWidget {
   final String kategori;
+  final String nik;
 
-  AduanFormPage({Key? key, required this.kategori});
+  AduanFormPage({Key? key, required this.kategori, required this.nik})
+      : super(key: key);
 
   @override
   _AduanFormPageState createState() => _AduanFormPageState();
@@ -131,15 +133,56 @@ class _AduanFormPageState extends State<AduanFormPage> {
   final Map<String, TextEditingController> controllers = {};
 
   @override
+  @override
   void initState() {
     super.initState();
+
     controllers["Tanggal Ajuan"] = TextEditingController(
       text: DateFormat('yyyy-MM-dd').format(DateTime.now()),
     );
-    controllers["Nomor BPJS/NIK"] = TextEditingController();
+    controllers["NIK"] = TextEditingController();
     controllers["Deskripsi"] = TextEditingController();
     controllers["Kategori"] = TextEditingController(text: widget.kategori);
-  }
+
+    fetchUserNIK();
+    }
+
+    Future<void> fetchUserNIK() async {
+    final prefs = await SharedPreferences.getInstance();
+    final email = prefs.getString('user_email');
+
+    if (email != null && email.isNotEmpty) {
+      try {
+      // Kirim email sebagai parameter agar backend tahu user mana
+      final response = await http.get(
+        Uri.parse('${baseURL}user/get-nik?email=$email'),
+        headers: await getHeaders(),
+      );
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final nik = data['nik'] ?? '';
+        setState(() {
+        controllers["NIK"]?.text = nik;
+        });
+      } else {
+        debugPrint("Gagal mengambil NIK: ${response.statusCode}");
+        setState(() {
+        controllers["NIK"]?.text = '';
+        });
+      }
+      } catch (e) {
+      debugPrint("Error mengambil NIK: $e");
+      setState(() {
+        controllers["NIK"]?.text = '';
+      });
+      }
+    } else {
+      debugPrint("Email tidak ditemukan di SharedPreferences.");
+      setState(() {
+      controllers["NIK"]?.text = '';
+      });
+    }
+    }
 
   String? _filePath;
   File? _selectedFile;
@@ -189,11 +232,9 @@ class _AduanFormPageState extends State<AduanFormPage> {
     }
 
     String tanggalAjuan = controllers["Tanggal Ajuan"]!.text;
-    String nomorBpjsNik = controllers["Nomor BPJS/NIK"]!.text;
     String deskripsi = controllers["Deskripsi"]!.text;
 
     if (tanggalAjuan.isEmpty ||
-        nomorBpjsNik.isEmpty ||
         deskripsi.isEmpty ||
         _filePath == null ||
         _filePath!.isEmpty ||
@@ -221,7 +262,7 @@ class _AduanFormPageState extends State<AduanFormPage> {
       request.headers.addAll(headers);
       request.fields['kategori_bpjs'] = controllers["Kategori"]!.text;
       request.fields['tanggal_ajuan'] = tanggalAjuan;
-      request.fields['nomor_bpjs_nik'] = nomorBpjsNik;
+      request.fields['nomor_bpjs_nik'] = controllers["NIK"]!.text;
       request.fields['deskripsi'] = deskripsi;
       request.files.add(await http.MultipartFile.fromPath(
         'data_pendukung',
@@ -250,7 +291,6 @@ class _AduanFormPageState extends State<AduanFormPage> {
             Navigator.pop(context, {
               "Email": email,
               "Tanggal Ajuan": tanggalAjuan,
-              "Nomor BPJS/NIK": nomorBpjsNik,
               "Deskripsi": deskripsi,
               "Data Pendukung": _filePath!,
             });
@@ -371,7 +411,6 @@ class _AduanFormPageState extends State<AduanFormPage> {
       int maxLines = 1,
       VoidCallback? onTap,
       bool isNumber = false}) {
-    // Check orientation for better padding in landscape
     final isLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;
 
@@ -403,7 +442,6 @@ class _AduanFormPageState extends State<AduanFormPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Get screen metrics
     final mediaQuery = MediaQuery.of(context);
     final isKeyboardVisible = mediaQuery.viewInsets.bottom > 0;
     final isLandscape = mediaQuery.orientation == Orientation.landscape;
@@ -416,7 +454,6 @@ class _AduanFormPageState extends State<AduanFormPage> {
           children: [
             Column(
               children: [
-                // Header section - fixed at top
                 Padding(
                   padding: EdgeInsets.only(
                       top: isLandscape ? 10 : 20, left: 20, right: 20),
@@ -454,8 +491,6 @@ class _AduanFormPageState extends State<AduanFormPage> {
                     ],
                   ),
                 ),
-
-                // Form content - scrollable
                 Expanded(
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
@@ -478,13 +513,12 @@ class _AduanFormPageState extends State<AduanFormPage> {
                               hint: "",
                               controller: controllers["Tanggal Ajuan"]!,
                               readOnly: true,
-                              onTap: () => selectDate(context),
                             ),
                             buildTextField(
-                              label: "Nomor BPJS/NIK",
-                              hint: "Nomor BPJS/NIK",
-                              controller: controllers["Nomor BPJS/NIK"]!,
-                              isNumber: true,
+                              label: "NIK",
+                              hint: "",
+                              controller: controllers["NIK"]!,
+                              readOnly: true,
                             ),
                             buildTextField(
                               label: "Deskripsi",
@@ -499,12 +533,9 @@ class _AduanFormPageState extends State<AduanFormPage> {
                                 _filePath = selectedFile?.path.split('/').last;
                               });
                             }),
-
-                            // Submit button with bottom padding adjusted for keyboard
                             SizedBox(
                               width: double.infinity,
                               child: Padding(
-                                // Adjust padding dynamically based on keyboard and orientation
                                 padding: EdgeInsets.only(
                                     top: isKeyboardVisible && isLandscape
                                         ? 20

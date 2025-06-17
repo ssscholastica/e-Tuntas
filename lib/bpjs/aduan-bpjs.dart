@@ -145,7 +145,7 @@ class AduanBPJSPage extends StatelessWidget {
                   Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => AduanFormPage(kategori: item["title"])),
+                            builder: (context) => AduanFormPage(kategori: item["title"], nik: '',)),
                       );
                 },
               ));
