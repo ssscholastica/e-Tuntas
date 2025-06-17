@@ -4,6 +4,7 @@ import 'dart:core';
 import 'package:etuntas/navbar.dart';
 import 'package:etuntas/network/globals.dart';
 import 'package:etuntas/profile/editProfile.dart';
+import 'package:etuntas/profile/historiPengajuan.dart';
 import 'package:etuntas/profile/profileBersangkutan.dart';
 import 'package:etuntas/profile/ubahSandi.dart';
 import 'package:etuntas/splashScreen.dart';
@@ -368,6 +369,20 @@ class _ProfileState extends State<Profile> {
                           child: buildTemplateBawah(
                               'assets/logo informasi.png',
                               'Informasi Data Bersangkutan',
+                              'assets/simbol next.png'),
+                        ),
+                        InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) =>
+                                      const HistoriPengajuan()),
+                            );
+                          },
+                          child: buildTemplateBawah(
+                              'assets/History.png',
+                              'Histori Pengajuan',
                               'assets/simbol next.png'),
                         ),
                         InkWell(
