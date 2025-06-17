@@ -50,18 +50,13 @@ class _UploadDokumenState extends State<_UploadDokumen> {
       });
       widget.onFileSelected(_selectedFile);
     }
-
-    if (result != null) {
-      setState(() {
-        _selectedFile = File(result.files.single.path!);
-      });
-    }
   }
 
   void _removeFile() {
     setState(() {
       _selectedFile = null;
     });
+    widget.onFileSelected(null);
   }
 
   void _previewFile() {
@@ -130,13 +125,14 @@ class _UploadDokumenState extends State<_UploadDokumen> {
 class _AduanFormPageState extends State<AduanFormPage> {
   final _formKey = GlobalKey<FormState>();
   bool isLoading = false;
+  bool isLoadingNIK = false;
   final Map<String, TextEditingController> controllers = {};
 
-  @override
   @override
   void initState() {
     super.initState();
 
+    // Initialize controllers
     controllers["Tanggal Ajuan"] = TextEditingController(
       text: DateFormat('yyyy-MM-dd').format(DateTime.now()),
     );
@@ -144,45 +140,172 @@ class _AduanFormPageState extends State<AduanFormPage> {
     controllers["Deskripsi"] = TextEditingController();
     controllers["Kategori"] = TextEditingController(text: widget.kategori);
 
+    // Fetch user NIK on initialization
     fetchUserNIK();
-    }
+  }
 
-    Future<void> fetchUserNIK() async {
-    final prefs = await SharedPreferences.getInstance();
-    final email = prefs.getString('user_email');
+  @override
+  void dispose() {
+    // Dispose controllers to prevent memory leaks
+    controllers.forEach((key, controller) {
+      controller.dispose();
+    });
+    super.dispose();
+  }
 
-    if (email != null && email.isNotEmpty) {
-      try {
-      // Kirim email sebagai parameter agar backend tahu user mana
+  // Updated fetchUserNIK method with better debugging and error handling
+  Future<void> fetchUserNIK() async {
+    setState(() {
+      isLoadingNIK = true;
+    });
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final email = prefs.getString('user_email');
+      final token = prefs.getString('access_token'); 
+
+      if (email == null || email.isEmpty) {
+        debugPrint("Email tidak ditemukan di SharedPreferences.");
+        _showNIKError("Email pengguna tidak ditemukan. Silakan login kembali.");
+        return;
+      }
+
+      // Debug token info
+      debugPrint("Fetching NIK for email: $email");
+      debugPrint("Auth token exists: ${token != null}");
+      debugPrint("Token preview: ${token?.substring(0, 20) ?? 'null'}...");
+
+      final headers = await getHeaders();
+      debugPrint("Headers being sent: $headers");
+
+      // Use the existing route with email as query parameter
       final response = await http.get(
-        Uri.parse('${baseURL}user/get-nik?email=$email'),
-        headers: await getHeaders(),
+        Uri.parse('${baseURL}user/get-nikBPJS?email=${Uri.encodeComponent(email)}'),
+        headers: headers,
       );
+
+      debugPrint("NIK fetch response status: ${response.statusCode}");
+      debugPrint("NIK fetch response body: ${response.body}");
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        final nik = data['nik'] ?? '';
+
+        String nik = '';
+        if (data is Map<String, dynamic>) {
+          if (data['success'] == true) {
+            nik = data['nik']?.toString() ?? '';
+          } else {
+            _showNIKError(data['message'] ?? 'NIK tidak ditemukan');
+            return;
+          }
+        }
+
         setState(() {
-        controllers["NIK"]?.text = nik;
+          controllers["NIK"]?.text = nik;
         });
+
+        if (nik.isEmpty) {
+          _showNIKError("NIK tidak ditemukan untuk user ini.");
+        } else {
+          debugPrint("NIK berhasil diambil: $nik");
+        }
+      } else if (response.statusCode == 401) {
+        // Handle authentication error specifically
+        debugPrint("Authentication failed - token might be expired or invalid");
+        _showAuthError("Sesi Anda telah berakhir. Silakan login kembali.");
+      } else if (response.statusCode == 403) {
+        // Handle authorization error
+        debugPrint("Unauthorized access to NIK");
+        _showNIKError("Anda tidak memiliki akses untuk mengambil NIK ini.");
+      } else if (response.statusCode == 404) {
+        debugPrint("User atau NIK tidak ditemukan: ${response.statusCode}");
+        _showNIKError("User tidak ditemukan atau NIK belum diatur.");
       } else {
         debugPrint("Gagal mengambil NIK: ${response.statusCode}");
-        setState(() {
-        controllers["NIK"]?.text = '';
-        });
+        String errorMessage = "Gagal mengambil data NIK";
+
+        try {
+          final errorData = json.decode(response.body);
+          if (errorData is Map<String, dynamic> &&
+              errorData.containsKey('message')) {
+            errorMessage = errorData['message'];
+          }
+        } catch (e) {
+          debugPrint("Error parsing error response: $e");
+        }
+
+        _showNIKError(errorMessage);
       }
-      } catch (e) {
+    } catch (e) {
       debugPrint("Error mengambil NIK: $e");
+      _showNIKError("Terjadi kesalahan saat mengambil data NIK: $e");
+    } finally {
       setState(() {
-        controllers["NIK"]?.text = '';
+        isLoadingNIK = false;
       });
-      }
-    } else {
-      debugPrint("Email tidak ditemukan di SharedPreferences.");
-      setState(() {
+    }
+  }
+
+// Add this new method to handle authentication errors
+  void _showAuthError(String message) {
+    setState(() {
       controllers["NIK"]?.text = '';
-      });
-    }
-    }
+    });
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sesi Berakhir'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              // Navigate to login page or clear stored credentials
+              _handleLogout();
+            },
+            child: const Text('Login Ulang'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              fetchUserNIK(); // Retry once
+            },
+            child: const Text('Coba Lagi'),
+          ),
+        ],
+      ),
+    );
+  }
+
+// Add this method to handle logout
+  Future<void> _handleLogout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear(); // Clear all stored data
+
+    // Navigate to login page
+    // Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+    // Or however you handle navigation to login in your app
+  }
+
+  void _showNIKError(String message) {
+    setState(() {
+      controllers["NIK"]?.text = '';
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 3),
+        action: SnackBarAction(
+          label: 'Retry',
+          textColor: Colors.white,
+          onPressed: fetchUserNIK,
+        ),
+      ),
+    );
+  }
 
   String? _filePath;
   File? _selectedFile;
@@ -208,77 +331,80 @@ class _AduanFormPageState extends State<AduanFormPage> {
   }
 
   void submitForm() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
     setState(() {
       isLoading = true;
     });
 
-    final prefs = await SharedPreferences.getInstance();
-    final email = await getUserEmail();
-    debugPrint("Retrieved email from SharedPreferences: $email");
-
-    if (email == null || email.isEmpty) {
-      debugPrint("Email tidak ditemukan dalam SharedPreferences.");
-      setState(() {
-        isLoading = false;
-      });
-      _showDialog(
-        success: false,
-        title: "Gagal Upload!",
-        message: "Email pengguna tidak ditemukan. Silakan login kembali.",
-        buttonText: "Kembali",
-        onPressed: () => Navigator.pop(context),
-      );
-      return;
-    }
-
-    String tanggalAjuan = controllers["Tanggal Ajuan"]!.text;
-    String deskripsi = controllers["Deskripsi"]!.text;
-
-    if (tanggalAjuan.isEmpty ||
-        deskripsi.isEmpty ||
-        _filePath == null ||
-        _filePath!.isEmpty ||
-        _selectedFile == null) {
-      setState(() {
-        isLoading = false;
-      });
-      _showDialog(
-        success: false,
-        title: "Gagal!",
-        message: "Harap lengkapi semua data terlebih dahulu.",
-        buttonText: "Kembali",
-        onPressed: () => Navigator.pop(context),
-      );
-      return;
-    }
-
     try {
+      final email = await getUserEmail();
+      debugPrint("Retrieved email from SharedPreferences: $email");
+
+      if (email == null || email.isEmpty) {
+        debugPrint("Email tidak ditemukan dalam SharedPreferences.");
+        _showDialog(
+          success: false,
+          title: "Gagal Upload!",
+          message: "Email pengguna tidak ditemukan. Silakan login kembali.",
+          buttonText: "Kembali",
+          onPressed: () => Navigator.pop(context),
+        );
+        return;
+      }
+
+      String tanggalAjuan = controllers["Tanggal Ajuan"]!.text;
+      String deskripsi = controllers["Deskripsi"]!.text;
+      String nik = controllers["NIK"]!.text;
+
+      // Validation
+      if (tanggalAjuan.isEmpty) {
+        _showValidationError("Tanggal ajuan tidak boleh kosong");
+        return;
+      }
+      if (nik.isEmpty) {
+        _showValidationError("NIK tidak boleh kosong");
+        return;
+      }
+      if (deskripsi.isEmpty) {
+        _showValidationError("Deskripsi tidak boleh kosong");
+        return;
+      }
+      if (_selectedFile == null) {
+        _showValidationError("Data pendukung harus dipilih");
+        return;
+      }
+
       final headers = await getHeaders();
       var uri = Uri.parse('${baseURL}pengaduan-bpjs/');
       var request = http.MultipartRequest('POST', uri);
 
-      request.fields['email'] = email;
-      debugPrint("Request fields: ${request.fields}");
+      // Add headers
       request.headers.addAll(headers);
+
+      // Add fields
+      request.fields['email'] = email;
       request.fields['kategori_bpjs'] = controllers["Kategori"]!.text;
       request.fields['tanggal_ajuan'] = tanggalAjuan;
-      request.fields['nomor_bpjs_nik'] = controllers["NIK"]!.text;
+      request.fields['nomor_bpjs_nik'] = nik;
       request.fields['deskripsi'] = deskripsi;
+      request.fields['send_email'] = 'true';
+
+      // Add file
       request.files.add(await http.MultipartFile.fromPath(
         'data_pendukung',
         _selectedFile!.path,
       ));
-      request.fields['send_email'] = 'true';
+
+      debugPrint("Request fields: ${request.fields}");
 
       final response = await request.send();
       final respStr = await response.stream.bytesToString();
 
       debugPrint('Status code: ${response.statusCode}');
       debugPrint('Response body: $respStr');
-
-      setState(() {
-        isLoading = false;
-      });
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         _showDialog(
@@ -303,7 +429,7 @@ class _AduanFormPageState extends State<AduanFormPage> {
           var jsonResp = json.decode(respStr);
           errorMessage = jsonResp["message"] ?? errorMessage;
         } catch (e) {
-          print("Gagal decode JSON: $e");
+          debugPrint("Gagal decode JSON: $e");
           if (respStr.contains('<!DOCTYPE html>')) {
             errorMessage = "Terjadi kesalahan pada server (HTML error page).";
           }
@@ -318,9 +444,7 @@ class _AduanFormPageState extends State<AduanFormPage> {
         );
       }
     } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
+      debugPrint("Error during form submission: $e");
       _showDialog(
         success: false,
         title: "Error",
@@ -328,7 +452,25 @@ class _AduanFormPageState extends State<AduanFormPage> {
         buttonText: "Kembali",
         onPressed: () => Navigator.pop(context),
       );
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
     }
+  }
+
+  void _showValidationError(String message) {
+    setState(() {
+      isLoading = false;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   void _showDialog({
@@ -403,14 +545,16 @@ class _AduanFormPageState extends State<AduanFormPage> {
     );
   }
 
-  Widget buildTextField(
-      {required String label,
-      required String hint,
-      required TextEditingController controller,
-      bool readOnly = false,
-      int maxLines = 1,
-      VoidCallback? onTap,
-      bool isNumber = false}) {
+  Widget buildTextField({
+    required String label,
+    required String hint,
+    required TextEditingController controller,
+    bool readOnly = false,
+    int maxLines = 1,
+    VoidCallback? onTap,
+    bool isNumber = false,
+    String? Function(String?)? validator,
+  }) {
     final isLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;
 
@@ -427,11 +571,22 @@ class _AduanFormPageState extends State<AduanFormPage> {
           keyboardType: isNumber ? TextInputType.number : TextInputType.text,
           inputFormatters:
               isNumber ? [FilteringTextInputFormatter.digitsOnly] : null,
+          validator: validator,
           decoration: InputDecoration(
             hintText: hint,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
             contentPadding: EdgeInsets.symmetric(
                 vertical: isLandscape ? 6 : 8, horizontal: 12),
+            suffixIcon: readOnly && label == "NIK" && isLoadingNIK
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: Padding(
+                      padding: EdgeInsets.all(12.0),
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  )
+                : null,
           ),
           onTap: onTap,
         ),
@@ -445,7 +600,6 @@ class _AduanFormPageState extends State<AduanFormPage> {
     final mediaQuery = MediaQuery.of(context);
     final isKeyboardVisible = mediaQuery.viewInsets.bottom > 0;
     final isLandscape = mediaQuery.orientation == Orientation.landscape;
-    final screenHeight = mediaQuery.size.height;
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
@@ -516,15 +670,29 @@ class _AduanFormPageState extends State<AduanFormPage> {
                             ),
                             buildTextField(
                               label: "NIK",
-                              hint: "",
+                              hint: isLoadingNIK
+                                  ? "Mengambil NIK..."
+                                  : "NIK akan diambil otomatis",
                               controller: controllers["NIK"]!,
                               readOnly: true,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'NIK tidak boleh kosong';
+                                }
+                                return null;
+                              },
                             ),
                             buildTextField(
                               label: "Deskripsi",
-                              hint: "Deskripsi",
+                              hint: "Masukkan deskripsi aduan",
                               controller: controllers["Deskripsi"]!,
                               maxLines: isLandscape ? 3 : 4,
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Deskripsi tidak boleh kosong';
+                                }
+                                return null;
+                              },
                             ),
                             uploadDokumen("Data Pendukung",
                                 (File? selectedFile) {
@@ -544,18 +712,23 @@ class _AduanFormPageState extends State<AduanFormPage> {
                                         ? (isLandscape ? 80 : 40)
                                         : 20),
                                 child: ElevatedButton(
-                                  onPressed: submitForm,
+                                  onPressed: (isLoading || isLoadingNIK)
+                                      ? null
+                                      : submitForm,
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF2F2F9D),
+                                    disabledBackgroundColor: Colors.grey,
                                     padding: EdgeInsets.symmetric(
                                         vertical: isLandscape ? 10 : 15),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                   ),
-                                  child: const Text(
-                                    "Kirim",
-                                    style: TextStyle(
+                                  child: Text(
+                                    isLoadingNIK
+                                        ? "Mengambil Data..."
+                                        : "Kirim",
+                                    style: const TextStyle(
                                         fontSize: 16, color: Colors.white),
                                   ),
                                 ),
